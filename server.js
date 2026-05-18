@@ -16,7 +16,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // increased for custom audio uploads
 
 // ── MongoDB ─────────────────────────────────────────────────
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -326,6 +326,56 @@ async function loadTimerState(instructorId) {
   } catch (e) {
     console.error('  MongoDB loadTimerState failed:', e.message);
     return null;
+  }
+}
+
+// ── Alarm settings (per-instructor) ────────────────────────
+async function loadAlarmSettings(instructorId) {
+  if (!db) return null;
+  try {
+    const doc = await db.collection('alarmSettings').findOne({ _id: instructorId });
+    return doc ? doc.settings : null;
+  } catch (e) {
+    console.error('  MongoDB loadAlarmSettings failed:', e.message);
+    return null;
+  }
+}
+
+async function saveAlarmSettings(instructorId, settings) {
+  if (!db) return;
+  try {
+    await db.collection('alarmSettings').updateOne(
+      { _id: instructorId },
+      { $set: { settings, updatedAt: new Date() } },
+      { upsert: true }
+    );
+  } catch (e) {
+    console.error('  MongoDB saveAlarmSettings failed:', e.message);
+  }
+}
+
+// ── Custom sounds (per-instructor, stored as base64) ───────
+async function loadCustomSounds(instructorId) {
+  if (!db) return [];
+  try {
+    const doc = await db.collection('customSounds').findOne({ _id: instructorId });
+    return doc && doc.sounds ? doc.sounds : [];
+  } catch (e) {
+    console.error('  MongoDB loadCustomSounds failed:', e.message);
+    return [];
+  }
+}
+
+async function saveCustomSounds(instructorId, sounds) {
+  if (!db) return;
+  try {
+    await db.collection('customSounds').updateOne(
+      { _id: instructorId },
+      { $set: { sounds, updatedAt: new Date() } },
+      { upsert: true }
+    );
+  } catch (e) {
+    console.error('  MongoDB saveCustomSounds failed:', e.message);
   }
 }
 
@@ -651,6 +701,61 @@ app.delete('/api/sequences/:id', requireAuth, async (req, res) => {
   s.sequences = s.sequences.filter(x => x.id !== req.params.id);
   await saveSequences(req.instructorId, s.sequences);
   res.json(s.sequences);
+});
+
+// ── Alarm settings REST endpoints (auth required) ──────────
+app.get('/api/alarm-settings', requireAuth, async (req, res) => {
+  const settings = await loadAlarmSettings(req.instructorId);
+  res.json(settings || {});
+});
+
+app.post('/api/alarm-settings', requireAuth, async (req, res) => {
+  const settings = req.body;
+  await saveAlarmSettings(req.instructorId, settings);
+  res.json({ success: true });
+});
+
+// ── Custom sounds REST endpoints (auth required) ───────────
+app.get('/api/custom-sounds', requireAuth, async (req, res) => {
+  const sounds = await loadCustomSounds(req.instructorId);
+  res.json(sounds);
+});
+
+app.post('/api/custom-sounds', requireAuth, async (req, res) => {
+  const { name, data, mimeType } = req.body;
+  if (!name || !data) return res.status(400).json({ error: 'name and data required' });
+  const sounds = await loadCustomSounds(req.instructorId);
+  // Check for duplicate name
+  if (sounds.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+    return res.status(400).json({ error: 'A custom sound with that name already exists' });
+  }
+  // Enforce 10 MB aggregate cap per instructor
+  const MAX_TOTAL_BYTES = 10 * 1024 * 1024;
+  const existingBytes = sounds.reduce((sum, s) => sum + (s.data ? s.data.length : 0), 0);
+  if (existingBytes + data.length > MAX_TOTAL_BYTES) {
+    const usedMB = (existingBytes / (1024 * 1024)).toFixed(1);
+    return res.status(400).json({ error: `Storage limit reached (${usedMB} MB of 10 MB used). Delete some sounds to make room.` });
+  }
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  sounds.push({ id, name, data, mimeType: mimeType || 'audio/mpeg', createdAt: new Date() });
+  await saveCustomSounds(req.instructorId, sounds);
+  // Return list without data field to keep response small
+  res.json(sounds.map(s => ({ id: s.id, name: s.name, mimeType: s.mimeType })));
+});
+
+app.delete('/api/custom-sounds/:id', requireAuth, async (req, res) => {
+  let sounds = await loadCustomSounds(req.instructorId);
+  sounds = sounds.filter(s => s.id !== req.params.id);
+  await saveCustomSounds(req.instructorId, sounds);
+  res.json(sounds.map(s => ({ id: s.id, name: s.name, mimeType: s.mimeType })));
+});
+
+// Get a single custom sound's audio data (for playback)
+app.get('/api/custom-sounds/:id/data', requireAuth, async (req, res) => {
+  const sounds = await loadCustomSounds(req.instructorId);
+  const sound = sounds.find(s => s.id === req.params.id);
+  if (!sound) return res.status(404).json({ error: 'Sound not found' });
+  res.json({ id: sound.id, name: sound.name, data: sound.data, mimeType: sound.mimeType });
 });
 
 // ── Auth endpoints (no middleware needed) ────────────────────

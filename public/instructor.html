@@ -2034,6 +2034,10 @@ async function startApp() {
   try { await fetchSavedOrders(); } catch(e) { console.error('fetchSavedOrders:', e); }
   try { await loadSequences(); renderSequenceList(); } catch(e) { console.error('loadSequences:', e); }
   try { loadQRCode(); } catch(e) { console.error('loadQRCode:', e); }
+
+  // Load alarm settings and custom sounds from server
+  try { await fetchCustomSounds(); } catch(e) { console.error('fetchCustomSounds:', e); }
+  try { await fetchAlarmSettings(); } catch(e) { console.error('fetchAlarmSettings:', e); }
 }
 
 // ── Change password ──
@@ -5294,11 +5298,18 @@ function playAlarm() {
   const soundName = document.getElementById('alarmSound').value;
   const shouldLoop = document.getElementById('alarmLoop').checked;
   stopAlarmLoop();
-  playSound(soundName);
-  if (shouldLoop) {
-    const intervals = { beep: 3000, bell: 2500, gong: 3500, chime: 1500 };
-    const gap = intervals[soundName] || 3000;
-    alarmLoopTimer = setInterval(() => playSound(soundName), gap);
+  if (soundName.startsWith('custom:')) {
+    playCustomSound(soundName.split(':')[1]);
+    if (shouldLoop) {
+      alarmLoopTimer = setInterval(() => playCustomSound(soundName.split(':')[1]), 3000);
+    }
+  } else {
+    playSound(soundName);
+    if (shouldLoop) {
+      const intervals = { beep: 3000, bell: 2500, gong: 3500, chime: 1500 };
+      const gap = intervals[soundName] || 3000;
+      alarmLoopTimer = setInterval(() => playSound(soundName), gap);
+    }
   }
 }
 
@@ -5308,7 +5319,11 @@ function stopAlarmLoop() {
 
 function previewSound(selectId) {
   const soundName = document.getElementById(selectId).value;
-  playSound(soundName);
+  if (soundName.startsWith('custom:')) {
+    playCustomSound(soundName.split(':')[1]);
+  } else {
+    playSound(soundName);
+  }
 }
 
 // ── Warning alert ──
@@ -5321,20 +5336,166 @@ function checkWarning(remainingSeconds) {
   if (remainingSeconds <= warnSecs && remainingSeconds > 0 && !warningFired) {
     warningFired = true;
     const soundName = document.getElementById('warningSound').value;
-    playSound(soundName);
+    if (soundName.startsWith('custom:')) {
+      playCustomSound(soundName.split(':')[1]);
+    } else {
+      playSound(soundName);
+    }
   }
   if (remainingSeconds > warnSecs) {
     warningFired = false;
   }
 }
 
-// ── Custom sounds (placeholder) ──
-function addCustomSound(input) {
+// ── Custom sounds (stored per-instructor in MongoDB) ──
+var customSoundsCache = []; // { id, name, mimeType } — audio data fetched on demand
+
+async function fetchCustomSounds() {
+  try {
+    const resp = await authFetch('/api/custom-sounds');
+    if (resp.ok) {
+      customSoundsCache = await resp.json();
+      populateCustomSoundsInDropdowns();
+      renderCustomSoundsList();
+    }
+  } catch (e) { console.error('fetchCustomSounds:', e); }
+}
+
+function populateCustomSoundsInDropdowns() {
+  ['alarmSound', 'warningSound'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    // Remove old custom options
+    sel.querySelectorAll('option[data-custom]').forEach(o => o.remove());
+    // Add current custom sounds
+    customSoundsCache.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = 'custom:' + s.id;
+      opt.textContent = s.name;
+      opt.setAttribute('data-custom', '1');
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function renderCustomSoundsList() {
+  const container = document.getElementById('customSoundsList');
+  if (!customSoundsCache.length) { container.innerHTML = ''; return; }
+  container.innerHTML = customSoundsCache.map(s =>
+    `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+      <span style="font-size:0.8rem; color:#aaa;">${s.name}</span>
+      <button class="settings-btn" onclick="previewCustomSound('${s.id}')" style="font-size:0.7rem; padding:2px 8px;">&#9654;</button>
+      <button class="settings-btn" onclick="deleteCustomSound('${s.id}')" style="font-size:0.7rem; padding:2px 8px; color:#e55;">&#10005;</button>
+    </div>`
+  ).join('');
+}
+
+async function addCustomSound(input) {
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];
-  // TODO: upload to server, add to dropdown, render in custom sounds list
-  customAlert('Custom sound upload coming soon: ' + file.name);
+  if (file.size > 5 * 1024 * 1024) {
+    await customAlert('File too large. Maximum size is 5 MB.');
+    input.value = '';
+    return;
+  }
+  // Read file as base64
+  const reader = new FileReader();
+  reader.onload = async function() {
+    const base64 = reader.result.split(',')[1]; // strip data:... prefix
+    const name = file.name.replace(/\.[^.]+$/, ''); // strip extension for display name
+    try {
+      const resp = await authFetch('/api/custom-sounds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, data: base64, mimeType: file.type || 'audio/mpeg' }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { await customAlert(data.error || 'Upload failed'); return; }
+      customSoundsCache = data;
+      populateCustomSoundsInDropdowns();
+      renderCustomSoundsList();
+      saveAlarmSettingsToServer();
+    } catch (e) {
+      await customAlert('Upload failed: ' + e.message);
+    }
+  };
+  reader.readAsDataURL(file);
   input.value = '';
+}
+
+async function deleteCustomSound(id) {
+  if (!await customConfirm('Delete this custom sound?')) return;
+  // If this sound is currently selected, reset to default
+  ['alarmSound', 'warningSound'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    if (sel.value === 'custom:' + id) sel.value = 'beep';
+  });
+  try {
+    const resp = await authFetch('/api/custom-sounds/' + id, { method: 'DELETE' });
+    if (resp.ok) {
+      customSoundsCache = await resp.json();
+      populateCustomSoundsInDropdowns();
+      renderCustomSoundsList();
+      saveAlarmSettingsToServer();
+    }
+  } catch (e) { console.error('deleteCustomSound:', e); }
+}
+
+// Cache for fetched custom sound audio data
+var customSoundDataCache = {};
+
+async function playCustomSound(soundId) {
+  // Check cache first
+  if (customSoundDataCache[soundId]) {
+    const cached = customSoundDataCache[soundId];
+    const audio = new Audio('data:' + cached.mimeType + ';base64,' + cached.data);
+    audio.play().catch(() => {});
+    return audio;
+  }
+  // Fetch from server
+  try {
+    const resp = await authFetch('/api/custom-sounds/' + soundId + '/data');
+    if (!resp.ok) return null;
+    const snd = await resp.json();
+    customSoundDataCache[snd.id] = { data: snd.data, mimeType: snd.mimeType };
+    const audio = new Audio('data:' + snd.mimeType + ';base64,' + snd.data);
+    audio.play().catch(() => {});
+    return audio;
+  } catch (e) { console.error('playCustomSound:', e); return null; }
+}
+
+function previewCustomSound(soundId) {
+  playCustomSound(soundId);
+}
+
+// ── Alarm settings persistence ──
+async function fetchAlarmSettings() {
+  try {
+    const resp = await authFetch('/api/alarm-settings');
+    if (!resp.ok) return;
+    const s = await resp.json();
+    if (s.alarmSound) document.getElementById('alarmSound').value = s.alarmSound;
+    if (s.alarmLoop !== undefined) document.getElementById('alarmLoop').checked = s.alarmLoop;
+    if (s.warningSound) document.getElementById('warningSound').value = s.warningSound;
+    if (s.warningEnabled !== undefined) document.getElementById('warningEnabled').checked = s.warningEnabled;
+    if (s.warningMinutes !== undefined) document.getElementById('warningMinutes').value = s.warningMinutes;
+    if (s.optStartTab) document.getElementById('optStartTab').value = s.optStartTab;
+  } catch (e) { console.error('fetchAlarmSettings:', e); }
+}
+
+function saveAlarmSettingsToServer() {
+  const settings = {
+    alarmSound: document.getElementById('alarmSound').value,
+    alarmLoop: document.getElementById('alarmLoop').checked,
+    warningSound: document.getElementById('warningSound').value,
+    warningEnabled: document.getElementById('warningEnabled').checked,
+    warningMinutes: parseInt(document.getElementById('warningMinutes').value) || 5,
+    optStartTab: document.getElementById('optStartTab').value,
+  };
+  authFetch('/api/alarm-settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
+  }).catch(e => console.error('saveAlarmSettings:', e));
 }
 
 // ── Update mockup digits when spinners change ──
@@ -5858,6 +6019,12 @@ function initSocketLate() {
     }
   });
 } // end initSocketLate
+
+// ── Auto-save alarm settings on any change ──
+['alarmSound', 'alarmLoop', 'warningSound', 'warningEnabled', 'warningMinutes', 'optStartTab'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', () => saveAlarmSettingsToServer());
+});
 </script>
 <div class="prompt-backdrop" id="promptBackdrop">
   <div class="prompt-box" style="position:relative;">

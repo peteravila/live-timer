@@ -96,6 +96,13 @@
     cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit;
   }
   .btn-pull-all:hover { background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green); }
+  .btn-to-library {
+    padding: 10px 16px; border: 2px solid var(--blue); border-radius: 8px;
+    background: transparent; color: var(--blue); font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit;
+    width: 100%; margin-top: 6px;
+  }
+  .btn-to-library:hover { background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green); }
   .push-all-hint { font-size: 0.6rem; color: #555; line-height: 1.3; text-align: center; }
 
   /* Phone mockup frame */
@@ -280,12 +287,13 @@
   }
   .duration-popup-backdrop.open { display: flex; }
   .duration-popup {
-    background: rgba(180, 180, 200, 0.2);
-    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+    background: rgba(30, 30, 50, 0.75);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255,255,255,0.35);
     border-radius: 16px; padding: 24px 28px 28px;
     position: absolute; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     max-width: 520px; pointer-events: auto; cursor: grab;
+    max-height: 85vh; overflow-y: auto;
   }
   .dialog-close {
     position: absolute; top: 8px; right: 12px;
@@ -307,18 +315,19 @@
   }
   .save-lib-backdrop.open { display: flex; }
   .save-lib-box {
-    background: rgba(180, 180, 200, 0.2);
-    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+    background: rgba(30, 30, 50, 0.75);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255,255,255,0.35);
     border-radius: 16px; padding: 24px 28px 20px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     max-width: 420px; width: 90vw; text-align: center;
     position: absolute;
+    max-height: 85vh; overflow-y: auto;
   }
   .save-lib-title {
     font-size: 1.6rem; text-transform: uppercase; letter-spacing: 1px;
     color: var(--dim); margin-bottom: 6px;
-    cursor: grab; user-select: none;
+    cursor: grab; user-select: none; text-align: center;
   }
   .save-lib-title:active { cursor: grabbing; }
   .save-lib-value {
@@ -428,7 +437,7 @@
     font-family: inherit; font-weight: 600; white-space: nowrap;
     border: 1.5px solid var(--blue); background: transparent; color: var(--blue);
     transition: all 0.15s;
-    width: 38px; height: 18px;
+    min-width: 38px; width: auto; padding-left: 4px; padding-right: 4px; height: 18px;
     display: flex; align-items: center; justify-content: center;
     box-sizing: border-box;
   }
@@ -693,9 +702,16 @@
   .lib-row > * { padding: 4px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   .lib-row-cb { width: 15px; height: 15px; accent-color: var(--green); cursor: pointer; margin: 0; padding: 4px 2px; }
   .lib-row.active { background: rgba(78,204,163,0.06); }
-  .lib-row[draggable="true"] { cursor: grab; }
-  .lib-row.dragging { opacity: 0.4; }
-  .lib-row.drag-over { border-top: 2px solid var(--green); }
+  .lib-drag-handle {
+    cursor: grab; color: #555; font-size: 0.9rem; text-align: center;
+    user-select: none; padding: 0 2px !important; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lib-drag-handle:hover { color: var(--blue); }
+  .lib-drag-handle:active { cursor: grabbing; }
+  .lib-row.dragging { opacity: 0.3; }
+  .lib-row.drag-over-above { border-top: 2px solid var(--green); margin-top: -2px; }
+  .lib-row.drag-over-below { border-bottom: 2px solid var(--green); margin-bottom: -2px; }
   .lib-row-name { font-weight: 600; font-size: 0.82rem; }
   .lib-row-mins { font-size: 0.78rem; color: var(--blue); text-align: right; }
   .lib-row-title, .lib-row-msg, .lib-row-etl { font-size: 0.78rem; color: var(--dim); }
@@ -792,7 +808,18 @@
   .lib-action-btn.btn-action-cancel.enabled:hover svg { stroke: var(--red); }
   /* Locked rows: dim and disable inputs when another row is being edited */
   .lib-row.locked { opacity: 0.35; pointer-events: none; }
+  .lib-row.locked .lib-drag-handle,
+  .lib-row.editing .lib-drag-handle { visibility: hidden; }
   .lib-row.editing { background: rgba(78,204,163,0.06); }
+
+  /* Glass overlay: blocks everything outside grid during inline editing */
+  #editOverlay {
+    display: none; position: fixed; inset: 0; z-index: 500;
+    background: rgba(0, 0, 0, 0.25);
+  }
+  /* Lift grid area above overlay during editing */
+  body.inline-editing #timersView { position: relative; z-index: 501; }
+  body.admin-editing #adminSection { position: relative; z-index: 501; }
 
   /* Library toolbar: search + saved orders */
   .lib-toolbar {
@@ -1202,9 +1229,6 @@
         <input type="text" class="text-side-input" id="fieldName" placeholder="e.g. Break 15" autocomplete="off">
         <div class="text-side-hint">Library only — not shown to students.</div>
         <hr style="border:none; border-top:1px solid #888; margin:8px 0;">
-        <button class="btn-push-all" onclick="pushAllFields()" title="Pushes all checked fields">Push All</button>
-        <button class="btn-pull-all" onclick="pullAllFields()" title="Load student-visible values into mockup">Pull All</button>
-        <hr style="border:none; border-top:1px solid #888; margin:8px 0;">
         <div class="transport-grid">
           <button class="transport-btn tb-start" onclick="doStart()" title="Push all and start">&#9654;&#xFE0E;</button>
           <button class="transport-btn tb-pause" onclick="doPause()" title="Pause">&#9208;&#xFE0E;</button>
@@ -1222,6 +1246,10 @@
             <button class="seq-stop-btn" onclick="stopSequence()" title="End sequence">End</button>
           </span>
         </div>
+        <hr style="border:none; border-top:1px solid #888; margin:8px 0;">
+        <button class="btn-push-all" onclick="pushAllFields()" title="Pushes all checked fields">Push All</button>
+        <button class="btn-pull-all" onclick="pullAllFields()" title="Load student-visible values into mockup">Pull All</button>
+        <button class="btn-to-library" onclick="saveToLibrary()" title="Save mockup fields to library timers">to Library</button>
         <hr style="border:none; border-top:1px solid #888; margin:8px 0;">
         <div class="connected-badge">
           <div class="connected-label">Phones Connected</div>
@@ -1267,7 +1295,6 @@
             <button class="mock-ctx-btn mock-ctx-pull" onclick="pullField('fieldLabel')" title="Load this field from student view">Pull</button>
             <button class="mock-ctx-btn mock-ctx-clear" onclick="clearTitle()" title="Clear this field">Clear</button>
             <button class="mock-ctx-btn mock-ctx-revert" onclick="revertField('fieldLabel')" title="Revert this field to its previous value (Esc)">Revert</button>
-            <button class="mock-ctx-btn mock-ctx-save" onclick="saveFieldToLibrary('fieldLabel')" title="Save this field to one or more library items">Save</button>
             <button class="mock-ctx-btn mock-ctx-toggle is-on" id="toggleTitle" onclick="togglePushAll('includeTitle', this)" title="Include this field in Push All">On</button>
           </div>
         </div>
@@ -1299,7 +1326,6 @@
             <button class="mock-ctx-btn mock-ctx-pull" onclick="pullField('fieldEndTimeLabel')" title="Load this field from student view">Pull</button>
             <button class="mock-ctx-btn mock-ctx-clear" onclick="clearEndTimeLabel()" title="Clear this field">Clear</button>
             <button class="mock-ctx-btn mock-ctx-revert" onclick="revertField('fieldEndTimeLabel')" title="Revert this field to its previous value (Esc)">Revert</button>
-            <button class="mock-ctx-btn mock-ctx-save" onclick="saveFieldToLibrary('fieldEndTimeLabel')" title="Save this field to one or more library items">Save</button>
             <button class="mock-ctx-btn mock-ctx-toggle is-on" id="toggleEndTimeLabel" onclick="togglePushAll('includeEndTimeLabel', this)" title="Include this field in Push All">On</button>
           </div>
         </div>
@@ -1313,7 +1339,6 @@
             <button class="mock-ctx-btn mock-ctx-pull" onclick="pullField('fieldMessage')" title="Load this field from student view">Pull</button>
             <button class="mock-ctx-btn mock-ctx-clear" onclick="clearMessage()" title="Clear this field">Clear</button>
             <button class="mock-ctx-btn mock-ctx-revert" onclick="revertField('fieldMessage')" title="Revert this field to its previous value (Esc)">Revert</button>
-            <button class="mock-ctx-btn mock-ctx-save" onclick="saveFieldToLibrary('fieldMessage')" title="Save this field to one or more library items">Save</button>
             <button class="mock-ctx-btn mock-ctx-toggle is-on" id="toggleMessage" onclick="togglePushAll('includeMessage', this)" title="Include this field in Push All">On</button>
           </div>
         </div>
@@ -1361,13 +1386,13 @@
           <button class="lib-toolbar-btn btn-danger" id="btnDeleteOrder" onclick="deleteCurrentOrder()" title="Delete selected order" style="display:none;">✕</button>
         </div>
         <div class="lib-actions" id="libActions">
-          <!-- Group 1: New, New from Mockup, Delete -->
-          <button class="lib-action-btn enabled" id="btnNewTimer" onclick="newBlankRow()" title="New blank timer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="17" cy="5" r="3" fill="currentColor" stroke="none"/><path d="M15.6 3.6L18.4 6.4M18.4 3.6L15.6 6.4" stroke="#1a1a2e" stroke-width="1.5"/></svg></button>
-          <button class="lib-action-btn" id="btnNewFromMockup" onclick="if(this.classList.contains('enabled'))newTimerToFields()" title="New timer from mockup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="17" cy="5" r="3" fill="currentColor" stroke="none"/><path d="M15.6 3.6L18.4 6.4M18.4 3.6L15.6 6.4" stroke="#1a1a2e" stroke-width="1.5"/><rect x="12" y="14" width="6" height="9" rx="1" fill="var(--bg, #1a1a2e)" stroke="currentColor" stroke-width="1.5"/><line x1="14" y1="21.5" x2="16" y2="21.5" stroke="currentColor" stroke-width="1"/></svg></button>
+          <!-- Group 1: New, Delete -->
+          <button class="lib-action-btn enabled" id="btnNewTimer" onclick="newTimerDialog()" title="Create new timer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>
+          <button class="lib-action-btn enabled" id="btnNewInline" onclick="newBlankRow()" title="Create new timer inline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg></button>
           <button class="lib-action-btn btn-action-delete" id="btnBatchDelete" onclick="if(this.classList.contains('enabled'))batchDelete()" title="Delete selected timers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
           <span class="lib-btn-sep"></span>
-          <!-- Group 2: Update Several, Save, Cancel -->
-          <button class="lib-action-btn" id="btnBatchUpdate" onclick="if(this.classList.contains('enabled'))batchUpdate()" title="Update several timers at once"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="16" height="18" rx="2"/><path d="M7 3v5h8V3"/><rect x="7" y="13" width="8" height="5"/><path d="M19 7h2v16H7v-2"/></svg></button>
+          <!-- Group 2: Edit, Save, Cancel -->
+          <button class="lib-action-btn" id="btnEditTimer" onclick="if(this.classList.contains('enabled'))editTimerDialog()" title="Edit selected timer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
           <button class="lib-action-btn" id="btnLibSave" onclick="if(this.classList.contains('enabled'))libSaveEditing()" title="Save changes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></button>
           <button class="lib-action-btn btn-action-cancel" id="btnLibCancel" onclick="if(this.classList.contains('enabled'))libCancelEditing()" title="Cancel changes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           <span class="lib-btn-sep"></span>
@@ -1442,7 +1467,8 @@
         <select id="optGoToTab" style="padding:6px 10px; border:1px solid #666; border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
           <option value="library">Library</option>
           <option value="options">Options</option>
-          <option value="settings">Settings</option>
+          <option value="students">Students</option>
+          <option value="settings">Clockworks</option>
         </select>
       </div>
     </div>
@@ -1535,7 +1561,8 @@
             <select id="optStartTab" style="padding:6px 10px; border:1px solid #666; border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
               <option value="library">Library</option>
               <option value="options">Options</option>
-              <option value="settings">Settings</option>
+              <option value="students">Students</option>
+              <option value="settings">Clockworks</option>
             </select>
           </div>
 
@@ -1695,10 +1722,6 @@
                     <input type="checkbox" id="adminAddIsAdmin" class="custom-cb">
                   </label>
                   <input type="text" id="adminAddPassword" placeholder="Password (min 6)" class="admin-cell-input" style="border-color:#444; background:rgba(255,255,255,0.06);">
-                </div>
-                <div style="display:flex; gap:6px; justify-content:flex-end; padding:4px 0;">
-                  <button onclick="adminAddInstructor()" class="admin-save-btn">Save</button>
-                  <button onclick="adminHideNewRow()" class="admin-cancel-btn">Cancel</button>
                 </div>
               </div>
               <!-- Grid -->
@@ -1990,8 +2013,7 @@ async function startApp() {
       }
     }
     // Check if admin section should be visible
-    const isAdminMode = new URLSearchParams(window.location.search).has('admin');
-    if (isAdminMode && me.isAdmin) {
+    if (me.isAdmin) {
       document.getElementById('adminSection').style.display = '';
       loadAdminInstructors();
     }
@@ -2145,6 +2167,7 @@ function initAdminColResize() {
 }
 
 let adminEditingEmail = null;
+var adminAddingNew = false;
 
 function adminSetEditing(email) {
   adminEditingEmail = email;
@@ -2165,6 +2188,8 @@ function adminSetEditing(email) {
       row.classList.remove('editing');
     }
   });
+  document.getElementById('editOverlay').style.display = 'block';
+  document.body.classList.add('admin-editing');
 }
 
 function adminClearEditing() {
@@ -2182,13 +2207,17 @@ function adminClearEditing() {
   document.querySelectorAll('#adminInstructorGrid .admin-row[data-email]').forEach(row => {
     row.classList.remove('editing', 'locked');
   });
+  document.getElementById('editOverlay').style.display = 'none';
+  document.body.classList.remove('admin-editing');
 }
 
 function adminSaveEditing() {
+  if (adminAddingNew) { adminAddInstructor(); return; }
   if (adminEditingEmail) adminSaveRow(adminEditingEmail);
 }
 
 function adminCancelEditing() {
+  if (adminAddingNew) { adminHideNewRow(); return; }
   if (adminEditingEmail) adminCancelRow(adminEditingEmail);
 }
 
@@ -2282,7 +2311,8 @@ async function adminToggleAdmin(email, isAdmin) {
 }
 
 function adminShowNewRow() {
-  if (adminEditingEmail) return;
+  if (adminEditingEmail || adminAddingNew) return;
+  adminAddingNew = true;
   const row = document.getElementById('adminNewRow');
   row.style.display = '';
   const rowGrid = row.querySelector('.lib-row');
@@ -2291,11 +2321,35 @@ function adminShowNewRow() {
   document.getElementById('adminAddEmail').value = '';
   document.getElementById('adminAddPassword').value = '';
   document.getElementById('adminAddIsAdmin').checked = false;
+  // Lock existing rows, enable only Save/Cancel, show overlay
+  document.querySelectorAll('#adminInstructorGrid .admin-row[data-email]').forEach(r => r.classList.add('locked'));
+  document.querySelectorAll('#adminActions .lib-action-btn').forEach(btn => {
+    if (btn.id === 'btnAdminSave' || btn.id === 'btnAdminCancel') {
+      btn.classList.add('enabled');
+    } else {
+      btn.classList.remove('enabled');
+    }
+  });
+  document.getElementById('editOverlay').style.display = 'block';
+  document.body.classList.add('admin-editing');
   document.getElementById('adminAddName').focus();
 }
 
 function adminHideNewRow() {
+  adminAddingNew = false;
   document.getElementById('adminNewRow').style.display = 'none';
+  document.querySelectorAll('#adminInstructorGrid .admin-row[data-email]').forEach(r => r.classList.remove('locked'));
+  const alwaysOn = ['btnAdminNew', 'btnAdminSearch', 'btnAdminResetCols'];
+  document.querySelectorAll('#adminActions .lib-action-btn').forEach(btn => {
+    if (btn.id === 'btnAdminSave' || btn.id === 'btnAdminCancel') {
+      btn.classList.remove('enabled');
+    } else if (alwaysOn.includes(btn.id)) {
+      btn.classList.add('enabled');
+    }
+  });
+  adminUpdateSelection();
+  document.getElementById('editOverlay').style.display = 'none';
+  document.body.classList.remove('admin-editing');
 }
 
 async function adminAddInstructor() {
@@ -2700,50 +2754,109 @@ function pullAllFields() {
 }
 
 // ── Save field to multiple library items ──
-const fieldToLibProp = {
-  fieldLabel: 'label',
-  fieldEndTimeLabel: 'endTimeLabel',
-  fieldMessage: 'message'
-};
-const fieldDisplayName = {
-  fieldLabel: 'Title',
-  fieldEndTimeLabel: 'End Time Label',
-  fieldMessage: 'Message'
-};
+// ── Save to Library: unified dialog for pushing mockup fields to library timers ──
+function toggleToLibMode() {
+  const mode = document.querySelector('input[name="toLibMode"]:checked').value;
+  document.getElementById('toLibTimerSection').style.display = mode === 'update' ? '' : 'none';
+  document.getElementById('toLibNewName').style.display = mode === 'create' ? '' : 'none';
+  document.getElementById('toLibApply').textContent = mode === 'create' ? 'Create' : 'Apply';
+}
 
-function saveFieldToLibrary(fieldId) {
-  const prop = fieldToLibProp[fieldId];
-  if (!prop || library.length === 0) return;
+function saveToLibrary() {
+  const backdrop = document.getElementById('toLibraryBackdrop');
+  const fieldsEl = document.getElementById('toLibFields');
+  const listEl = document.getElementById('toLibList');
 
-  const value = getField(fieldId);
-  const displayName = fieldDisplayName[fieldId] || fieldId;
-  const backdrop = document.getElementById('saveLibBackdrop');
-  const titleEl = document.getElementById('saveLibTitle');
-  const valueEl = document.getElementById('saveLibValue');
-  const listEl = document.getElementById('saveLibList');
+  // Reset mode to Update Selected (default)
+  const updateRadio = document.querySelector('input[name="toLibMode"][value="update"]');
+  updateRadio.checked = true;
+  // If library is empty, default to Create New
+  if (library.length === 0) {
+    document.querySelector('input[name="toLibMode"][value="create"]').checked = true;
+  }
+  toggleToLibMode();
 
-  titleEl.textContent = `Save ${displayName} to library items`;
-  valueEl.textContent = value ? `"${value}"` : '(empty)';
+  // Pre-fill name from mockup's fieldName if present
+  const nameInput = document.getElementById('toLibNameInput');
+  nameInput.value = document.getElementById('fieldName')?.value.trim() || '';
 
-  // Build checklist of library items
-  listEl.innerHTML = library.map(t => `
-    <label class="save-lib-item" data-id="${t.id}">
-      <input type="checkbox" value="${t.id}">
-      <span class="save-lib-item-name">${esc(t.name)}</span>
-      <span class="save-lib-item-detail">${esc(t[prop] || '—')}</span>
-    </label>
-  `).join('');
+  // Read current mockup values
+  const currentMins = getDurationMinutes();
+  const currentLabel = getField('fieldLabel');
+  const currentEndTimeLabel = getField('fieldEndTimeLabel');
+  const currentMessage = getField('fieldMessage');
+  const currentShowEnd = document.getElementById('fieldShowEnd').checked;
+  const currentModes = getDisplayModePayload();
+  const currentGoToTab = document.getElementById('optGoToTab').value;
+  const bgPreview = currentModes.transparent ? 'Transparent' : currentModes.blackBg ? 'Black' : 'Default';
+  const tabNames = { library: 'Library', options: 'Options', students: 'Students', settings: 'Clockworks' };
+  const empty = '<span style="color:#666;font-style:italic;">(empty)</span>';
 
-  // Clear and focus the filter
-  const saveSearch = document.getElementById('saveLibSearch');
-  saveSearch.value = '';
+  // Build field checkboxes with editable controls
+  const inputStyle = 'padding:2px 6px;border-radius:4px;border:1px solid #444;background:rgba(255,255,255,0.06);color:var(--text);font-size:0.78rem;font-family:inherit;flex:1;min-width:0;';
+  const selectStyle = 'padding:2px 4px;border-radius:4px;border:1px solid #444;background:#2a2a3e;color:var(--text);font-size:0.78rem;font-family:inherit;';
+  const cbStyle = 'accent-color:var(--green);';
+  const currentHours = Math.floor(currentMins / 60);
+  const currentMinsPart = currentMins % 60;
+
+  const fieldRows = [
+    { key: 'minutes', label: 'Duration', control:
+      '<input type="number" id="toLibHours" min="0" max="23" value="' + currentHours + '" style="' + inputStyle + 'width:40px;flex:none;text-align:center;">' +
+      '<span style="color:var(--dim);font-size:0.7rem;">hr</span>' +
+      '<input type="number" id="toLibMins" min="0" max="59" value="' + currentMinsPart + '" style="' + inputStyle + 'width:40px;flex:none;text-align:center;">' +
+      '<span style="color:var(--dim);font-size:0.7rem;">min</span>' },
+    { key: 'label', label: 'Display Title', control:
+      '<input type="text" id="toLibLabel" value="' + esc(currentLabel) + '" style="' + inputStyle + '">' },
+    { key: 'endTimeLabel', label: 'End Time Label', control:
+      '<input type="text" id="toLibEndTimeLabel" value="' + esc(currentEndTimeLabel) + '" style="' + inputStyle + '">' },
+    { key: 'message', label: 'Message', control:
+      '<input type="text" id="toLibMessage" value="' + esc(currentMessage) + '" style="' + inputStyle + '">' },
+    { key: 'showEndTime', label: 'Show End Time', control:
+      '<input type="checkbox" id="toLibShowEnd"' + (currentShowEnd ? ' checked' : '') + ' style="' + cbStyle + '">' },
+    { key: 'bgMode', label: 'Background', control:
+      '<select id="toLibBgMode" style="' + selectStyle + '">' +
+      '<option value="default"' + (!currentModes.transparent && !currentModes.blackBg ? ' selected' : '') + ' style="background:#2a2a3e;color:#e0e0e0;">Default</option>' +
+      '<option value="transparent"' + (currentModes.transparent ? ' selected' : '') + ' style="background:#2a2a3e;color:#e0e0e0;">Transparent</option>' +
+      '<option value="black"' + (currentModes.blackBg ? ' selected' : '') + ' style="background:#2a2a3e;color:#e0e0e0;">Black</option></select>' },
+    { key: 'clockOnly', label: 'Clock Only', control:
+      '<input type="checkbox" id="toLibClockOnly"' + (currentModes.clockOnly ? ' checked' : '') + ' style="' + cbStyle + '">' },
+    { key: 'goToTab', label: 'After Loading', control:
+      '<select id="toLibGoToTab" style="' + selectStyle + '">' +
+      ['library','options','students','settings'].map(v =>
+        '<option value="' + v + '"' + (v === currentGoToTab ? ' selected' : '') + ' style="background:#2a2a3e;color:#e0e0e0;">' + (tabNames[v] || v) + '</option>'
+      ).join('') + '</select>' }
+  ];
+
+  fieldsEl.innerHTML = '<div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--blue);margin-bottom:6px;font-weight:600;">Fields</div>' +
+    '<label style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:0.82rem;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);">' +
+    '<input type="checkbox" id="toLibFieldsAll" onchange="toggleToLibFieldsAll(this)" style="accent-color:var(--green);flex-shrink:0;">' +
+    '<span style="color:var(--dim);">All</span></label>' +
+    fieldRows.map(f =>
+      '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:0.82rem;border-bottom:1px solid rgba(255,255,255,0.04);">' +
+      '<input type="checkbox" class="tolib-field-cb" value="' + f.key + '" style="accent-color:var(--green);flex-shrink:0;" onchange="syncToLibFieldsAll()">' +
+      '<span style="min-width:110px;flex-shrink:0;color:var(--dim);">' + f.label + '</span>' +
+      f.control +
+      '</div>'
+    ).join('');
+
+  // Build timer checklist
+  listEl.innerHTML = library.map(t =>
+    '<label class="save-lib-item" data-id="' + t.id + '" data-name="' + esc(t.name).toLowerCase() + '">' +
+    '<input type="checkbox" value="' + t.id + '">' +
+    '<span class="save-lib-item-name">' + esc(t.name) + '</span>' +
+    '<span class="save-lib-item-detail">' + t.minutes + 'm' + (t.label ? ' — ' + esc(t.label) : '') + '</span>' +
+    '</label>'
+  ).join('');
+
+  // Reset search and select-all
+  document.getElementById('toLibSearch').value = '';
+  document.getElementById('toLibSelectAll').checked = false;
   backdrop.classList.add('open');
-  saveSearch.focus();
 
   // Wire up buttons
-  const applyBtn = document.getElementById('saveLibApply');
-  const cancelBtn = document.getElementById('saveLibCancel');
-  const closeBtn = document.getElementById('saveLibClose');
+  const applyBtn = document.getElementById('toLibApply');
+  const cancelBtn = document.getElementById('toLibCancel');
+  const closeBtn = document.getElementById('toLibClose');
 
   function cleanup() {
     backdrop.classList.remove('open');
@@ -2754,28 +2867,94 @@ function saveFieldToLibrary(fieldId) {
     document.removeEventListener('keydown', onKey);
   }
 
-  async function onApply() {
-    const checked = [...listEl.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
-    cleanup();
-    if (checked.length === 0) return;
+  // Read editable field values from the dialog
+  function getDialogValues() {
+    const h = parseInt(document.getElementById('toLibHours').value) || 0;
+    const m = parseInt(document.getElementById('toLibMins').value) || 0;
+    const bgVal = document.getElementById('toLibBgMode').value;
+    return {
+      minutes: h * 60 + m,
+      label: document.getElementById('toLibLabel').value || '',
+      endTimeLabel: document.getElementById('toLibEndTimeLabel').value || '',
+      message: document.getElementById('toLibMessage').value || '',
+      showEndTime: document.getElementById('toLibShowEnd').checked,
+      transparent: bgVal === 'transparent',
+      blackBg: bgVal === 'black',
+      clockOnly: document.getElementById('toLibClockOnly').checked,
+      goToTab: document.getElementById('toLibGoToTab').value
+    };
+  }
 
-    // Update each selected library item
-    for (const id of checked) {
-      const t = library.find(x => x.id === id);
-      if (!t) continue;
-      t[prop] = value;
-      await authFetch('/api/library', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(t)
-      });
+  async function onApply() {
+    const mode = document.querySelector('input[name="toLibMode"]:checked').value;
+    const chosenFields = [...fieldsEl.querySelectorAll('.tolib-field-cb:checked')].map(cb => cb.value);
+    const vals = getDialogValues();
+
+    if (mode === 'create') {
+      // ── Create New timer ──
+      const name = nameInput.value.trim();
+      if (!name) { await customAlert('Timer name is required.'); return; }
+      if (isTimerNameTaken(name)) { await customAlert('A timer named "' + name + '" already exists.'); return; }
+      if (chosenFields.includes('minutes') && !vals.minutes) { await customAlert('Duration is required.'); return; }
+      const item = { name };
+      if (chosenFields.includes('minutes'))      item.minutes = vals.minutes;
+      if (chosenFields.includes('label'))        item.label = vals.label;
+      if (chosenFields.includes('endTimeLabel')) item.endTimeLabel = vals.endTimeLabel;
+      if (chosenFields.includes('message'))      item.message = vals.message;
+      if (chosenFields.includes('showEndTime'))  item.showEndTime = vals.showEndTime;
+      if (chosenFields.includes('bgMode')) {
+        item.transparent = vals.transparent;
+        item.blackBg = vals.blackBg;
+      }
+      if (chosenFields.includes('clockOnly'))    item.clockOnly = vals.clockOnly;
+      if (chosenFields.includes('goToTab'))      item.goToTab = vals.goToTab;
+      cleanup();
+      const res = await authFetch('/api/library', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(item) });
+      library = await res.json();
+      saveLibraryLocal();
+      const newest = library[library.length - 1];
+      activeLibId = newest.id;
+      renderLibrary();
+      await customAlert('Created "' + name + '".');
+    } else {
+      // ── Update Selected timers ──
+      const chosenTimers = [...listEl.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+      cleanup();
+      if (chosenFields.length === 0 || chosenTimers.length === 0) {
+        if (chosenFields.length === 0) await customAlert('No fields selected.');
+        else await customAlert('No timers selected.');
+        return;
+      }
+
+      for (const id of chosenTimers) {
+        const t = library.find(x => x.id === id);
+        if (!t) continue;
+        if (chosenFields.includes('minutes'))      t.minutes = vals.minutes;
+        if (chosenFields.includes('label'))        t.label = vals.label;
+        if (chosenFields.includes('endTimeLabel')) t.endTimeLabel = vals.endTimeLabel;
+        if (chosenFields.includes('message'))      t.message = vals.message;
+        if (chosenFields.includes('showEndTime'))  t.showEndTime = vals.showEndTime;
+        if (chosenFields.includes('bgMode')) {
+          t.transparent = vals.transparent;
+          t.blackBg = vals.blackBg;
+        }
+        if (chosenFields.includes('clockOnly'))    t.clockOnly = vals.clockOnly;
+        if (chosenFields.includes('goToTab'))      t.goToTab = vals.goToTab;
+        await authFetch('/api/library', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(t) });
+      }
+      await fetchLibrary();
+      await customAlert('Updated ' + chosenTimers.length + ' timer' + (chosenTimers.length > 1 ? 's' : '') + '.');
     }
-    await fetchLibrary();
-    await customAlert(`Updated ${checked.length} library item${checked.length > 1 ? 's' : ''}.`);
   }
 
   function onCancel() { cleanup(); }
-  function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); onCancel(); } }
+  function onKey(e) {
+    if (e.key === 'Escape') {
+      const higherDialogs = ['confirmBackdrop','promptBackdrop'];
+      if (higherDialogs.some(id => document.getElementById(id)?.classList.contains('open'))) return;
+      e.preventDefault(); onCancel();
+    }
+  }
   function onBackdropClick(e) { if (e.target === backdrop) onCancel(); }
 
   applyBtn.addEventListener('click', onApply);
@@ -2783,6 +2962,31 @@ function saveFieldToLibrary(fieldId) {
   closeBtn.addEventListener('click', onCancel);
   backdrop.addEventListener('click', onBackdropClick);
   document.addEventListener('keydown', onKey);
+}
+
+function filterToLib() {
+  const q = document.getElementById('toLibSearch').value.toLowerCase();
+  document.querySelectorAll('#toLibList .save-lib-item').forEach(item => {
+    item.style.display = !q || item.dataset.name.includes(q) ? '' : 'none';
+  });
+}
+
+function toggleToLibSelectAll(cb) {
+  document.querySelectorAll('#toLibList .save-lib-item:not([style*="display: none"]) input[type="checkbox"]').forEach(c => c.checked = cb.checked);
+}
+
+function toggleToLibFieldsAll(cb) {
+  document.querySelectorAll('#toLibFields .tolib-field-cb').forEach(c => c.checked = cb.checked);
+}
+
+function syncToLibFieldsAll() {
+  const all = document.querySelectorAll('#toLibFields .tolib-field-cb');
+  const checked = document.querySelectorAll('#toLibFields .tolib-field-cb:checked');
+  const allCb = document.getElementById('toLibFieldsAll');
+  if (allCb) {
+    allCb.checked = all.length > 0 && checked.length === all.length;
+    allCb.indeterminate = checked.length > 0 && checked.length < all.length;
+  }
 }
 
 function togglePushAll(checkboxId, btn) {
@@ -2944,7 +3148,7 @@ function closeDurationPopup() {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && document.getElementById('durationPopupBackdrop').classList.contains('open')) {
     // Don't close duration popup if a higher-z dialog is open on top
-    const higherDialogs = ['confirmBackdrop','promptBackdrop','saveLibBackdrop','fieldPickerBackdrop'];
+    const higherDialogs = ['confirmBackdrop','promptBackdrop','toLibraryBackdrop','newTimerBackdrop'];
     if (higherDialogs.some(id => document.getElementById(id)?.classList.contains('open'))) return;
     closeDurationPopup();
   }
@@ -2987,40 +3191,7 @@ document.getElementById('durationPopupBackdrop').addEventListener('click', (e) =
   document.addEventListener('mouseup', () => { dragging = false; });
 })();
 
-// ── Draggable save-to-library popup (modal) ──
-document.addEventListener('DOMContentLoaded', () => {
-  const box = document.querySelector('.save-lib-box');
-  const backdrop = document.getElementById('saveLibBackdrop');
-  if (!box || !backdrop) return;
-  let dragging = false, offsetX = 0, offsetY = 0;
-
-  // Center when opened
-  const observer = new MutationObserver(() => {
-    if (backdrop.classList.contains('open')) {
-      box.style.left = '';
-      box.style.top = '';
-      const rect = box.getBoundingClientRect();
-      box.style.left = ((window.innerWidth - rect.width) / 2) + 'px';
-      box.style.top = ((window.innerHeight - rect.height) / 2) + 'px';
-    }
-  });
-  observer.observe(backdrop, { attributes: true, attributeFilter: ['class'] });
-
-  box.addEventListener('mousedown', (e) => {
-    if (e.target.closest('button, input, label, .save-lib-list')) return;
-    dragging = true;
-    const rect = box.getBoundingClientRect();
-    offsetX = e.clientX - rect.left;
-    offsetY = e.clientY - rect.top;
-    e.preventDefault();
-  });
-  document.addEventListener('mousemove', (e) => {
-    if (!dragging) return;
-    box.style.left = (e.clientX - offsetX) + 'px';
-    box.style.top = (e.clientY - offsetY) + 'px';
-  });
-  document.addEventListener('mouseup', () => { dragging = false; });
-});
+// ── Draggable to-library popup — initialized in DOMContentLoaded below ──
 
 // ── Generic draggable helper for dark glass dialogs ──
 function makeDraggable(boxSelector, backdropSelector) {
@@ -3043,7 +3214,7 @@ function makeDraggable(boxSelector, backdropSelector) {
   observer.observe(backdrop, { attributes: true, attributeFilter: ['class'] });
 
   box.addEventListener('mousedown', (e) => {
-    if (e.target.closest('button, input, label, a, .confirm-btn')) return;
+    if (e.target.closest('button, input, select, label, a, .confirm-btn')) return;
     dragging = true;
     const rect = box.getBoundingClientRect();
     offsetX = e.clientX - rect.left;
@@ -3061,7 +3232,8 @@ function makeDraggable(boxSelector, backdropSelector) {
 document.addEventListener('DOMContentLoaded', () => {
   makeDraggable('.confirm-box', '#confirmBackdrop');
   makeDraggable('.prompt-box', '#promptBackdrop');
-  makeDraggable('#fieldPickerBackdrop .save-lib-box', '#fieldPickerBackdrop');
+  makeDraggable('#toLibraryBackdrop .save-lib-box', '#toLibraryBackdrop');
+  makeDraggable('#newTimerPopup', '#newTimerBackdrop');
   // Login box drag
   const loginBox = document.querySelector('.login-box');
   const loginOverlay = document.querySelector('.login-overlay');
@@ -3849,12 +4021,13 @@ function clearSort() {
 // ── Library column definitions and resize ──
 function getLibCols() {
   return [
+    { key: 'drag',         hdr: '',              sort: null,       defaultW: 20  },
     { key: 'cb',           hdr: '',              sort: null,       defaultW: 28  },
     { key: 'load',         hdr: '',              sort: null,       defaultW: 44  },
     { key: 'play',         hdr: '',              sort: null,       defaultW: 44  },
     { key: 'name',         hdr: 'Name',          sort: 'name',    defaultW: 150 },
     { key: 'minutes',      hdr: 'Duration',        sort: 'minutes', defaultW: 64, align: 'right' },
-    { key: 'label',        hdr: 'Title',           sort: 'label',   defaultW: 140 },
+    { key: 'label',        hdr: 'Display Title',   sort: 'label',   defaultW: 140 },
     { key: 'endTimeLabel', hdr: 'End Time Label',  sort: null,      defaultW: 120 },
     { key: 'message',      hdr: 'Message',         sort: 'message', defaultW: 180 },
     { key: 'showEndTime',  hdr: 'Show End Time',   sort: null,      defaultW: 100, align: 'center' },
@@ -3961,10 +4134,11 @@ function renderLibrary() {
   // Build grid HTML
   let gridHtml = '<div class="lib-grid">' +
     '<div class="lib-grid-header" style="grid-template-columns:' + gridCols + '">' +
+    '<div class="lib-hdr-cell"></div>' +
     '<div class="lib-hdr-cell" style="padding:4px 2px 4px 0;"><input type="checkbox" class="lib-select-all" id="libSelectAll" onchange="toggleSelectAll(this)" title="Select all"></div>' +
     '<div class="lib-hdr-cell"></div><div class="lib-hdr-cell"></div>' +
-    libCols.slice(3).map((c, ci) => {
-      const idx = ci + 3;
+    libCols.slice(4).map((c, ci) => {
+      const idx = ci + 4;
       const cls = c.sort ? sc(c.sort) : '';
       const click = c.sort ? ' onclick="toggleSort(\'' + c.sort + '\')"' : '';
       const txt = c.hdr + (c.sort ? arrow(c.sort) : '');
@@ -3979,7 +4153,8 @@ function renderLibrary() {
     const goTo = t.goToTab || 'library';
     const bg = bgVal(t);
     gridHtml += `
-    <div class="lib-row" style="grid-template-columns:${gridCols}" draggable="true" data-id="${t.id}">
+    <div class="lib-row" style="grid-template-columns:${gridCols}" data-id="${t.id}">
+      <span class="lib-drag-handle" title="Drag to reorder">⠿</span>
       <input type="checkbox" class="lib-row-cb" data-id="${t.id}" onchange="updateLibSelection()" ${prevSelected.has(t.id) ? 'checked' : ''}>
       <button class="lib-row-btn ${active(t.id) ? 'btn-loaded' : ''}" onclick="event.stopPropagation();loadLibTimer('${t.id}')">${active(t.id) ? 'Loaded' : 'Load'}</button>
       <button class="lib-row-btn lib-row-go" onclick="event.stopPropagation();loadAndStart('${t.id}')" title="Load all, push all, and start">&#9654;&#xFE0E;</button>
@@ -3998,7 +4173,8 @@ function renderLibrary() {
       <select class="lib-cell-select" data-field="goToTab" data-orig="${goTo}" onchange="libMarkDirty(this)">
         <option value="library" ${goTo === 'library' ? 'selected' : ''}>Library</option>
         <option value="options" ${goTo === 'options' ? 'selected' : ''}>Options</option>
-        <option value="settings" ${goTo === 'settings' ? 'selected' : ''}>Settings</option>
+        <option value="students" ${goTo === 'students' ? 'selected' : ''}>Students</option>
+        <option value="settings" ${goTo === 'settings' ? 'selected' : ''}>Clockworks</option>
       </select>
     </div>`;
   });
@@ -4041,12 +4217,15 @@ function libSetEditing(id) {
       row.classList.remove('editing');
     }
   });
+  // Show glass overlay to block everything outside the grid area
+  document.getElementById('editOverlay').style.display = 'block';
+  document.body.classList.add('inline-editing');
 }
 
 function libClearEditing() {
   libEditingId = null;
   // Restore toolbar: disable Save/Cancel, re-enable always-on buttons
-  const alwaysOn = ['btnNewTimer', 'btnLibSearch', 'btnResetCols'];
+  const alwaysOn = ['btnNewTimer', 'btnNewInline', 'btnLibSearch', 'btnResetCols'];
   document.querySelectorAll('#libActions .lib-action-btn').forEach(btn => {
     if (btn.id === 'btnLibSave' || btn.id === 'btnLibCancel') {
       btn.classList.remove('enabled');
@@ -4060,6 +4239,9 @@ function libClearEditing() {
   document.querySelectorAll('#libraryList .lib-row[data-id]').forEach(row => {
     row.classList.remove('editing', 'locked');
   });
+  // Hide glass overlay
+  document.getElementById('editOverlay').style.display = 'none';
+  document.body.classList.remove('inline-editing');
 }
 
 function libSaveEditing() {
@@ -4122,6 +4304,8 @@ async function libSaveRow(id) {
   const name = (get('name') || '').trim();
   const minutes = parseFloat(get('minutes')) || 0;
   if (!name) { await customAlert('Name is required.'); return; }
+  const excludeId = row.dataset.newRow ? undefined : id;
+  if (isTimerNameTaken(name, excludeId)) { await customAlert('A timer named "' + name + '" already exists.'); return; }
   if (minutes <= 0) { await customAlert('Duration must be greater than 0.'); return; }
   const bgMode = get('bgMode');
   const item = {
@@ -4151,6 +4335,118 @@ async function libSaveRow(id) {
   }
 }
 
+// ── Name uniqueness helper ──
+function isTimerNameTaken(name, excludeId) {
+  const lower = name.trim().toLowerCase();
+  return library.some(t => t.name.trim().toLowerCase() === lower && t.id !== excludeId);
+}
+
+// ── New / Edit Timer Dialog (form-based creation and editing) ──
+var ntEditId = null; // null = create mode, string = edit mode (timer id)
+
+function newTimerDialog() {
+  if (libEditingId) return;
+  ntEditId = null;
+  const bd = document.getElementById('newTimerBackdrop');
+  document.querySelector('#newTimerPopup .duration-popup-title').textContent = 'New Timer';
+  document.getElementById('ntSubmitBtn').textContent = 'Create';
+  // Reset all fields
+  document.getElementById('ntName').value = '';
+  document.getElementById('ntHours').value = '0';
+  document.getElementById('ntMinutes').value = '15';
+  document.getElementById('ntLabel').value = '';
+  document.getElementById('ntEndTimeLabel').value = 'Class resumes at';
+  document.getElementById('ntMessage').value = '';
+  document.getElementById('ntShowEndTime').checked = true;
+  document.getElementById('ntClockOnly').checked = false;
+  document.getElementById('ntBgMode').value = 'default';
+  document.getElementById('ntGoToTab').value = 'library';
+  bd.classList.add('open');
+  document.getElementById('ntName').focus();
+}
+
+function editTimerDialog() {
+  if (libEditingId) return;
+  const ids = getSelectedTimerIds();
+  if (ids.length !== 1) return;
+  const t = library.find(x => x.id === ids[0]);
+  if (!t) return;
+  ntEditId = t.id;
+  const bd = document.getElementById('newTimerBackdrop');
+  document.querySelector('#newTimerPopup .duration-popup-title').textContent = 'Edit Timer';
+  document.getElementById('ntSubmitBtn').textContent = 'Save';
+  // Populate fields from timer
+  document.getElementById('ntName').value = t.name || '';
+  const totalMins = t.minutes || 0;
+  document.getElementById('ntHours').value = Math.floor(totalMins / 60);
+  document.getElementById('ntMinutes').value = totalMins % 60;
+  document.getElementById('ntLabel').value = t.label || '';
+  document.getElementById('ntEndTimeLabel').value = t.endTimeLabel || 'Class resumes at';
+  document.getElementById('ntMessage').value = t.message || '';
+  document.getElementById('ntShowEndTime').checked = t.showEndTime !== false;
+  document.getElementById('ntClockOnly').checked = !!t.clockOnly;
+  document.getElementById('ntBgMode').value = t.transparent ? 'transparent' : t.blackBg ? 'black' : 'default';
+  document.getElementById('ntGoToTab').value = t.goToTab || 'library';
+  bd.classList.add('open');
+  document.getElementById('ntName').focus();
+}
+
+function closeNewTimerDialog() {
+  document.getElementById('newTimerBackdrop').classList.remove('open');
+}
+
+async function submitNewTimerDialog() {
+  const name = document.getElementById('ntName').value.trim();
+  const hours = parseInt(document.getElementById('ntHours').value) || 0;
+  const mins = parseInt(document.getElementById('ntMinutes').value) || 0;
+  const minutes = hours * 60 + mins;
+  if (!name) { await customAlert('Name is required.'); return; }
+  if (isTimerNameTaken(name, ntEditId)) { await customAlert('A timer named "' + name + '" already exists.'); return; }
+  if (minutes <= 0) { await customAlert('Duration must be greater than 0.'); return; }
+  const bgMode = document.getElementById('ntBgMode').value;
+  const item = {
+    name,
+    minutes,
+    label: document.getElementById('ntLabel').value || '',
+    endTimeLabel: document.getElementById('ntEndTimeLabel').value || '',
+    message: document.getElementById('ntMessage').value || '',
+    showEndTime: document.getElementById('ntShowEndTime').checked,
+    transparent: bgMode === 'transparent',
+    blackBg: bgMode === 'black',
+    clockOnly: document.getElementById('ntClockOnly').checked,
+    goToTab: document.getElementById('ntGoToTab').value || 'library'
+  };
+  // In edit mode, include the existing timer's id so the server updates rather than creates
+  if (ntEditId) item.id = ntEditId;
+  try {
+    const res = await authFetch('/api/library', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(item)
+    });
+    library = await res.json();
+    saveLibraryLocal();
+    renderLibrary();
+    closeNewTimerDialog();
+  } catch (e) {
+    await customAlert('Failed to save timer.');
+  }
+}
+
+// Escape closes the new timer dialog
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('newTimerBackdrop').classList.contains('open')) {
+    e.preventDefault(); e.stopPropagation();
+    closeNewTimerDialog();
+  }
+});
+
+// Click backdrop to close (deferred — element is later in DOM)
+document.addEventListener('click', (e) => {
+  const bd = document.getElementById('newTimerBackdrop');
+  if (bd && e.target === bd) closeNewTimerDialog();
+});
+
 function newBlankRow() {
   // If another row is being edited, block
   if (libEditingId) return;
@@ -4173,9 +4469,10 @@ function newBlankRow() {
       <span></span>
       <span></span>
       <span></span>
+      <span></span>
       <input type="text" class="lib-cell-input" data-field="name" data-orig="" value="" placeholder="Timer name" oninput="libMarkDirty(this)" style="font-weight:600;border-color:#444;background:rgba(255,255,255,0.06);">
       <input type="number" class="lib-cell-input" data-field="minutes" data-orig="15" value="15" min="0" step="1" oninput="libMarkDirty(this)" style="border-color:#444;background:rgba(255,255,255,0.06);">
-      <input type="text" class="lib-cell-input" data-field="label" data-orig="" value="" placeholder="Title" oninput="libMarkDirty(this)" style="border-color:#444;background:rgba(255,255,255,0.06);">
+      <input type="text" class="lib-cell-input" data-field="label" data-orig="" value="" placeholder="Display Title" oninput="libMarkDirty(this)" style="border-color:#444;background:rgba(255,255,255,0.06);">
       <input type="text" class="lib-cell-input" data-field="endTimeLabel" data-orig="" value="Class resumes at" placeholder="End time label" oninput="libMarkDirty(this)" style="border-color:#444;background:rgba(255,255,255,0.06);">
       <input type="text" class="lib-cell-input" data-field="message" data-orig="" value="" placeholder="Message" oninput="libMarkDirty(this)" style="border-color:#444;background:rgba(255,255,255,0.06);">
       <input type="checkbox" class="lib-cell-cb" data-field="showEndTime" data-orig="true" checked onchange="libMarkDirty(this)">
@@ -4188,7 +4485,8 @@ function newBlankRow() {
       <select class="lib-cell-select" data-field="goToTab" data-orig="library" onchange="libMarkDirty(this)" style="border-color:#444;background:rgba(255,255,255,0.06);">
         <option value="library" selected>Library</option>
         <option value="options">Options</option>
-        <option value="settings">Settings</option>
+        <option value="students">Students</option>
+        <option value="settings">Clockworks</option>
       </select>
     </div>`;
 
@@ -4238,36 +4536,93 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-let draggedId = null;
+// ── Custom mouse-based drag-and-drop for library grid ──
+var libDragState = null;  // { id, row, startY, scrollTop }
+
 function initLibDragDrop() {
-  const rows = document.querySelectorAll('.lib-row[draggable]');
-  rows.forEach(row => {
-    row.addEventListener('dragstart', (e) => {
-      draggedId = row.dataset.id;
-      row.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    row.addEventListener('dragend', () => {
-      row.classList.remove('dragging');
-      document.querySelectorAll('.lib-row.drag-over').forEach(r => r.classList.remove('drag-over'));
-      draggedId = null;
-    });
-    row.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      if (row.dataset.id !== draggedId) {
-        document.querySelectorAll('.lib-row.drag-over').forEach(r => r.classList.remove('drag-over'));
-        row.classList.add('drag-over');
+  const gridWrap = document.querySelector('#libraryList .lib-grid-wrap');
+  const grid = document.querySelector('#libraryList .lib-grid');
+  if (!grid || !gridWrap) return;
+
+  grid.addEventListener('mousedown', (e) => {
+    // Only start from drag handle or Ctrl+click on non-interactive area
+    const row = e.target.closest('.lib-row[data-id]');
+    if (!row) return;
+    const fromHandle = !!e.target.closest('.lib-drag-handle');
+    const ctrlDrag = e.ctrlKey && !e.target.closest('input, select, button');
+    if (!fromHandle && !ctrlDrag) return;
+
+    e.preventDefault();
+    libDragState = {
+      id: row.dataset.id,
+      row: row,
+      startY: e.clientY,
+      started: false
+    };
+
+    const onMouseMove = (ev) => {
+      if (!libDragState) return;
+      // Require 5px of movement to start drag (prevents accidental drags)
+      if (!libDragState.started) {
+        if (Math.abs(ev.clientY - libDragState.startY) < 5) return;
+        libDragState.started = true;
+        libDragState.row.classList.add('dragging');
+        document.body.style.cursor = 'grabbing';
+        document.body.style.userSelect = 'none';
       }
-    });
-    row.addEventListener('dragleave', () => {
-      row.classList.remove('drag-over');
-    });
-    row.addEventListener('drop', async (e) => {
-      e.preventDefault();
-      row.classList.remove('drag-over');
-      const targetId = row.dataset.id;
-      if (!draggedId || draggedId === targetId) return;
+
+      // Find which row the cursor is over
+      const rows = grid.querySelectorAll('.lib-row[data-id]');
+      grid.querySelectorAll('.lib-row.drag-over-above, .lib-row.drag-over-below').forEach(
+        r => r.classList.remove('drag-over-above', 'drag-over-below')
+      );
+      for (const r of rows) {
+        if (r.dataset.id === libDragState.id) continue;
+        const rect = r.getBoundingClientRect();
+        if (ev.clientY >= rect.top && ev.clientY < rect.bottom) {
+          // Show indicator above or below based on cursor position relative to row center
+          const mid = rect.top + rect.height / 2;
+          if (ev.clientY < mid) {
+            r.classList.add('drag-over-above');
+          } else {
+            r.classList.add('drag-over-below');
+          }
+          break;
+        }
+      }
+
+      // Auto-scroll the grid wrapper if near edges
+      const wrapRect = gridWrap.getBoundingClientRect();
+      const scrollZone = 30;
+      if (ev.clientY < wrapRect.top + scrollZone && ev.clientY > wrapRect.top) {
+        gridWrap.scrollTop -= 4;
+      } else if (ev.clientY > wrapRect.bottom - scrollZone && ev.clientY < wrapRect.bottom) {
+        gridWrap.scrollTop += 4;
+      }
+    };
+
+    const onMouseUp = async (ev) => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      if (!libDragState) return;
+
+      const dragId = libDragState.id;
+      libDragState.row.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+
+      // Find the drop target
+      const overAbove = grid.querySelector('.lib-row.drag-over-above');
+      const overBelow = grid.querySelector('.lib-row.drag-over-below');
+      grid.querySelectorAll('.lib-row.drag-over-above, .lib-row.drag-over-below').forEach(
+        r => r.classList.remove('drag-over-above', 'drag-over-below')
+      );
+
+      const targetRow = overAbove || overBelow;
+      if (!libDragState.started || !targetRow) { libDragState = null; return; }
+      libDragState = null;
+      const targetId = targetRow.dataset.id;
+      if (dragId === targetId) return;
 
       // If sorted, apply sorted order as new manual order first
       if (libSortCol) {
@@ -4277,10 +4632,17 @@ function initLibDragDrop() {
       }
 
       // Move dragged item to target position
-      const fromIdx = library.findIndex(t => t.id === draggedId);
-      const toIdx = library.findIndex(t => t.id === targetId);
+      const fromIdx = library.findIndex(t => t.id === dragId);
+      let toIdx = library.findIndex(t => t.id === targetId);
       if (fromIdx < 0 || toIdx < 0) return;
+
+      // If dropping below the target, insert after it
+      if (overBelow && fromIdx < toIdx) toIdx; // same index
+      else if (overBelow && fromIdx > toIdx) toIdx += 1;
+
       const [moved] = library.splice(fromIdx, 1);
+      // Adjust toIdx after removal
+      if (fromIdx < toIdx) toIdx -= 1;
       library.splice(toIdx, 0, moved);
 
       // Save new order to server
@@ -4292,7 +4654,10 @@ function initLibDragDrop() {
       });
       saveLibraryLocal();
       renderLibrary();
-    });
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
   });
 }
 
@@ -4476,7 +4841,7 @@ async function saveOverTimer(id) {
   const missing = [];
   if (!newName) missing.push('Name');
   if (!newMins) missing.push('Duration');
-  if (!newLabel) missing.push('Title');
+  if (!newLabel) missing.push('Display Title');
   if (missing.length) { await customAlert(missing.join(', ') + ' required.'); return; }
   t.name = newName;
   t.label = newLabel;
@@ -4567,34 +4932,6 @@ async function duplicateTimer(id) {
   renderLibrary();
 }
 
-async function newTimerToFields() {
-  if (libEditingId) return;
-  activeLibId = null;
-  let name = document.getElementById('fieldName').value.trim();
-  if (!name) {
-    name = await customPrompt('Timer name:');
-    if (!name) return;
-    document.getElementById('fieldName').value = name;
-  }
-  const label = getField('fieldLabel');
-  const minutes = getDurationMinutes();
-  const missing = [];
-  if (!minutes) missing.push('Duration');
-  if (!label) missing.push('Title');
-  if (missing.length) { await customAlert(missing.join(', ') + ' required.'); return; }
-  const endTimeLabel = getField('fieldEndTimeLabel') || 'Class resumes at';
-  const message = getField('fieldMessage');
-  const showEndTime = document.getElementById('fieldShowEnd').checked;
-  const goToTab = document.getElementById('optGoToTab').value;
-  const item = { name, label, minutes, endTimeLabel, message, showEndTime, goToTab };
-  const res = await authFetch('/api/library', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(item) });
-  library = await res.json();
-  saveLibraryLocal();
-  const newest = library[library.length - 1];
-  activeLibId = newest.id;
-  renderLibrary();
-}
-
 // ── Batch operations (toolbar) ──
 
 function getSelectedTimerIds() {
@@ -4605,18 +4942,17 @@ function updateLibSelection() {
   const ids = getSelectedTimerIds();
   const n = ids.length;
   const btnNew = document.getElementById('btnNewTimer');
-  const btnUpdate = document.getElementById('btnBatchUpdate');
   const btnDup = document.getElementById('btnBatchDuplicate');
   const btnDel = document.getElementById('btnBatchDelete');
   const countEl = document.getElementById('libSelCount');
 
-  // +New and +New from Mockup are always enabled
+  // +New and +New Inline are always enabled
   if (btnNew) btnNew.classList.add('enabled');
-  const btnFromMockup = document.getElementById('btnNewFromMockup');
-  if (btnFromMockup) btnFromMockup.classList.toggle('enabled', !!document.getElementById('fieldName').value.trim() && !!getField('fieldLabel') && getDurationMinutes() > 0);
+  const btnInline = document.getElementById('btnNewInline');
+  if (btnInline) btnInline.classList.add('enabled');
 
-  // Update just requires a selection — the field picker handles the rest
-  if (btnUpdate) btnUpdate.classList.toggle('enabled', n > 0);
+  const btnEdit = document.getElementById('btnEditTimer');
+  if (btnEdit) btnEdit.classList.toggle('enabled', n === 1);
   if (btnDup) btnDup.classList.toggle('enabled', n > 0);
   if (btnDel) btnDel.classList.toggle('enabled', n > 0);
   if (countEl) countEl.textContent = n + ' selected';
@@ -4636,111 +4972,6 @@ function toggleSelectAll(masterCb) {
   updateLibSelection();
 }
 
-async function batchUpdate() {
-  const ids = getSelectedTimerIds();
-  if (ids.length === 0) return;
-
-  // Read current field values for preview
-  const currentLabel = getField('fieldLabel');
-  const currentMins = getDurationMinutes();
-  const currentEndTimeLabel = getField('fieldEndTimeLabel');
-  const currentMessage = getField('fieldMessage');
-  const currentShowEnd = document.getElementById('fieldShowEnd').checked;
-  const currentModes = getDisplayModePayload();
-  const currentGoToTab = document.getElementById('optGoToTab').value;
-
-  // Background mode label
-  const bgPreview = currentModes.transparent ? 'Transparent' : currentModes.blackBg ? 'Black' : 'Default';
-  const clockPreview = currentModes.clockOnly ? 'Yes' : 'No';
-
-  // Tab name mapping
-  const tabNames = { library: 'Library', options: 'Options', settings: 'Settings' };
-
-  // Build field picker with current values shown — two sections
-  const timerFields = [
-    { key: 'minutes',      label: 'Duration',        preview: currentMins ? currentMins + 'm' : '' },
-    { key: 'label',        label: 'Title',           preview: currentLabel },
-    { key: 'endTimeLabel', label: 'End Time Label',  preview: currentEndTimeLabel },
-    { key: 'message',      label: 'Message',         preview: currentMessage }
-  ];
-  const optionFields = [
-    { key: 'showEndTime',  label: 'Show End Time',    preview: currentShowEnd ? 'Yes' : 'No' },
-    { key: 'bgMode',       label: 'Background Mode',  preview: bgPreview },
-    { key: 'clockOnly',    label: 'Clock Only',        preview: clockPreview },
-    { key: 'goToTab',      label: 'After-Loading Tab', preview: tabNames[currentGoToTab] || currentGoToTab }
-  ];
-
-  const empty = '<span style="color:#666;font-style:italic;">(empty)</span>';
-  function fieldRow(f) {
-    return '<label style="display:flex;align-items:baseline;gap:6px;padding:5px 0;font-size:0.85rem;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.04);">' +
-      '<input type="checkbox" class="batch-field-cb" value="' + f.key + '" style="accent-color:var(--green);flex-shrink:0;margin-top:2px;">' +
-      '<span style="min-width:120px;color:var(--dim);">' + f.label + '</span>' +
-      '<span style="color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (f.preview ? esc(f.preview) : empty) + '</span>' +
-      '</label>';
-  }
-  const divider = '<div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--blue);margin:12px 0 6px;font-weight:600;">Options</div>';
-  const pickerHTML = '<div style="margin-top:4px;">' +
-    '<p style="font-size:0.8rem;color:var(--dim);margin-bottom:10px;">Select fields to write to ' + ids.length + ' timer' + (ids.length > 1 ? 's' : '') + ':</p>' +
-    timerFields.map(fieldRow).join('') +
-    divider +
-    optionFields.map(fieldRow).join('') +
-    '</div>';
-
-  const chosen = await showFieldPickerDialog('Update ' + ids.length + ' Timer' + (ids.length > 1 ? 's' : ''), pickerHTML);
-  if (!chosen || chosen.length === 0) return;
-
-  // Apply chosen fields to each selected timer
-  for (const id of ids) {
-    const t = library.find(x => x.id === id);
-    if (!t) continue;
-    if (chosen.includes('minutes'))     t.minutes = currentMins;
-    if (chosen.includes('label'))       t.label = currentLabel;
-    if (chosen.includes('endTimeLabel')) t.endTimeLabel = currentEndTimeLabel;
-    if (chosen.includes('message'))     t.message = currentMessage;
-    if (chosen.includes('showEndTime')) t.showEndTime = currentShowEnd;
-    if (chosen.includes('bgMode')) {
-      t.transparent = currentModes.transparent;
-      t.blackBg = currentModes.blackBg;
-    }
-    if (chosen.includes('clockOnly'))   t.clockOnly = currentModes.clockOnly;
-    if (chosen.includes('goToTab'))     t.goToTab = currentGoToTab;
-    await authFetch('/api/library', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(t) });
-  }
-  await fetchLibrary();
-}
-
-function showFieldPickerDialog(title, bodyHTML) {
-  return new Promise(resolve => {
-    const backdrop = document.getElementById('fieldPickerBackdrop');
-    const closeBtn = document.getElementById('fpClose');
-    document.getElementById('fpTitle').textContent = title;
-    document.getElementById('fpBody').innerHTML = bodyHTML;
-    backdrop.classList.add('open');
-
-    function cleanup(result) {
-      backdrop.classList.remove('open');
-      document.getElementById('fpOK').removeEventListener('click', onOK);
-      document.getElementById('fpCancel').removeEventListener('click', onCancel);
-      closeBtn.removeEventListener('click', onCancel);
-      backdrop.removeEventListener('click', onBackdropClick);
-      document.removeEventListener('keydown', onKey);
-      resolve(result);
-    }
-    function onOK() {
-      const checked = Array.from(backdrop.querySelectorAll('.batch-field-cb:checked')).map(cb => cb.value);
-      cleanup(checked);
-    }
-    function onCancel() { cleanup(null); }
-    function onKey(e) { if (e.key === 'Escape') { e.preventDefault(); onCancel(); } }
-    function onBackdropClick(e) { if (e.target === backdrop) onCancel(); }
-
-    document.getElementById('fpOK').addEventListener('click', onOK);
-    document.getElementById('fpCancel').addEventListener('click', onCancel);
-    closeBtn.addEventListener('click', onCancel);
-    backdrop.addEventListener('click', onBackdropClick);
-    document.addEventListener('keydown', onKey);
-  });
-}
 
 async function batchDuplicate() {
   const ids = getSelectedTimerIds();
@@ -4860,18 +5091,8 @@ function filterLibrary() {
   });
 }
 
-function filterSaveLib() {
-  const query = (document.getElementById('saveLibSearch').value || '').toLowerCase().trim();
-  const items = document.querySelectorAll('#saveLibList .save-lib-item');
-  items.forEach(item => {
-    if (!query) { item.style.display = ''; return; }
-    const text = item.textContent.toLowerCase();
-    item.style.display = text.includes(query) ? '' : 'none';
-  });
-}
-
 // ── Saved orders ──
-let savedOrdersList = [];
+var savedOrdersList = [];
 
 async function fetchSavedOrders() {
   try {
@@ -5208,7 +5429,7 @@ document.getElementById('optStartTab').addEventListener('change', () => {
 if (startTab) document.getElementById('optStartTab').value = startTab;
 
 // ── Students tab: check-in status board ──
-let studentList = [];
+var studentList = [];
 
 function renderStudentBoard() {
   const summaryEl = document.getElementById('studentsSummary');
@@ -5306,7 +5527,7 @@ function switchLibView(view) {
 }
 
 // ── Sequences ──
-let sequenceData = []; // loaded from server
+var sequenceData = []; // loaded from server
 let editingSequenceId = null; // null = new, string = editing existing
 let seqBuilderSteps = []; // current builder step list [{timerId, name, minutes}]
 
@@ -5529,7 +5750,7 @@ function stopSequence() {
 }
 
 // Sequence state
-let activeSeqState = null;
+var activeSeqState = null;
 
 function updateSeqWaiting() {
   const waitEl = document.getElementById('seqWaitingMsg');
@@ -5649,27 +5870,28 @@ function initSocketLate() {
     </div>
   </div>
 </div>
-<div class="save-lib-backdrop" id="saveLibBackdrop">
-  <div class="save-lib-box" style="position:relative;">
-    <button class="dialog-close" id="saveLibClose">&#10005;</button>
-    <div class="save-lib-title" id="saveLibTitle">Save field to library items</div>
-    <div class="save-lib-value" id="saveLibValue"></div>
-    <input type="text" class="lib-search" id="saveLibSearch" placeholder="Filter..." oninput="filterSaveLib()" style="padding-left:10px; margin-bottom:10px; width:100%;">
-    <div class="save-lib-list" id="saveLibList"></div>
-    <div class="save-lib-buttons">
-      <button class="confirm-btn confirm-btn-yes" id="saveLibApply">Apply</button>
-      <button class="confirm-btn confirm-btn-no" id="saveLibCancel">Cancel</button>
+<div class="save-lib-backdrop" id="toLibraryBackdrop">
+  <div class="save-lib-box" style="max-width:480px; text-align:left;">
+    <button class="dialog-close" id="toLibClose">&#10005;</button>
+    <div class="save-lib-title" id="toLibTitle">to Library</div>
+    <div id="toLibMode" style="display:flex;gap:16px;margin-bottom:14px;">
+      <label style="font-size:0.82rem;cursor:pointer;color:var(--dim);"><input type="radio" name="toLibMode" value="update" checked onchange="toggleToLibMode()" style="accent-color:var(--green);"> Update Selected</label>
+      <label style="font-size:0.82rem;cursor:pointer;color:var(--dim);"><input type="radio" name="toLibMode" value="create" onchange="toggleToLibMode()" style="accent-color:var(--green);"> Create New</label>
     </div>
-  </div>
-</div>
-<div class="save-lib-backdrop" id="fieldPickerBackdrop">
-  <div class="save-lib-box" style="max-width:340px; text-align:left; position:relative;">
-    <button class="dialog-close" id="fpClose">&#10005;</button>
-    <div class="save-lib-title" id="fpTitle" style="cursor:default;"></div>
-    <div id="fpBody"></div>
-    <div class="save-lib-buttons" style="margin-top:16px;">
-      <button class="confirm-btn confirm-btn-yes" id="fpOK">Update</button>
-      <button class="confirm-btn confirm-btn-no" id="fpCancel">Cancel</button>
+    <div id="toLibNewName" style="display:none;margin-bottom:14px;">
+      <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--blue);margin-bottom:6px;font-weight:600;">Timer Name</div>
+      <input type="text" id="toLibNameInput" class="lib-search" placeholder="Enter timer name..." style="padding-left:10px;width:100%;box-sizing:border-box;">
+    </div>
+    <div id="toLibFields" style="margin-bottom:14px;"></div>
+    <div id="toLibTimerSection">
+      <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--blue);margin:10px 0 6px;font-weight:600;">Timers</div>
+      <input type="text" class="lib-search" id="toLibSearch" placeholder="Filter timers..." oninput="filterToLib()" style="padding-left:10px;width:100%;box-sizing:border-box;margin-bottom:4px;">
+      <label class="save-lib-item" style="padding:4px 10px;margin-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.06);"><input type="checkbox" id="toLibSelectAll" onchange="toggleToLibSelectAll(this)" style="accent-color:var(--green);"> <span style="font-size:0.82rem;color:var(--dim);">All</span></label>
+      <div class="save-lib-list" id="toLibList"></div>
+    </div>
+    <div class="save-lib-buttons" style="margin-top:14px;">
+      <button class="confirm-btn confirm-btn-yes" id="toLibApply">Apply</button>
+      <button class="confirm-btn confirm-btn-no" id="toLibCancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -5683,5 +5905,71 @@ function initSocketLate() {
     </div>
   </div>
 </div>
+<div class="duration-popup-backdrop" id="newTimerBackdrop">
+  <div class="duration-popup" id="newTimerPopup" style="max-width:380px; cursor:default;">
+    <button class="duration-popup-close" onclick="closeNewTimerDialog()">&#10005;</button>
+    <div class="duration-popup-title">New Timer</div>
+    <div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+      <div>
+        <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Name *</label>
+        <input type="text" id="ntName" placeholder="Timer name" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid #444; background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
+      </div>
+      <div>
+        <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Duration *</label>
+        <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+          <input type="number" id="ntHours" min="0" max="23" value="0" style="width:50px; padding:6px; border-radius:6px; border:1px solid #444; background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.9rem; text-align:center;">
+          <span style="color:var(--dim); font-size:0.75rem;">hr</span>
+          <input type="number" id="ntMinutes" min="0" max="59" value="15" style="width:50px; padding:6px; border-radius:6px; border:1px solid #444; background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.9rem; text-align:center;">
+          <span style="color:var(--dim); font-size:0.75rem;">min</span>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Display Title</label>
+        <input type="text" id="ntLabel" placeholder="e.g. Break, Lab 1" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid #444; background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
+      </div>
+      <div>
+        <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">End Time Label</label>
+        <input type="text" id="ntEndTimeLabel" value="Class resumes at" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid #444; background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
+      </div>
+      <div>
+        <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Message</label>
+        <input type="text" id="ntMessage" placeholder="e.g. Enjoy your break!" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid #444; background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
+      </div>
+      <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--dim); cursor:pointer;">
+          <input type="checkbox" id="ntShowEndTime" checked style="accent-color:var(--green);"> Show End Time
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--dim); cursor:pointer;">
+          <input type="checkbox" id="ntClockOnly" style="accent-color:var(--green);"> Clock Only
+        </label>
+      </div>
+      <div style="display:flex; gap:16px;">
+        <div style="flex:1;">
+          <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Background</label>
+          <select id="ntBgMode" style="width:100%; padding:6px; border-radius:6px; border:1px solid #444; background:#2a2a3e; color:var(--text); font-family:inherit; font-size:0.8rem;">
+            <option value="default" style="background:#2a2a3e; color:#e0e0e0;">Default</option>
+            <option value="transparent" style="background:#2a2a3e; color:#e0e0e0;">Transparent</option>
+            <option value="black" style="background:#2a2a3e; color:#e0e0e0;">Black</option>
+          </select>
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">After Loading</label>
+          <select id="ntGoToTab" style="width:100%; padding:6px; border-radius:6px; border:1px solid #444; background:#2a2a3e; color:var(--text); font-family:inherit; font-size:0.8rem;">
+            <option value="library" selected style="background:#2a2a3e; color:#e0e0e0;">Library</option>
+            <option value="options" style="background:#2a2a3e; color:#e0e0e0;">Options</option>
+            <option value="students" style="background:#2a2a3e; color:#e0e0e0;">Students</option>
+            <option value="settings" style="background:#2a2a3e; color:#e0e0e0;">Clockworks</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex; gap:12px; justify-content:center; margin-top:4px;">
+        <button class="confirm-btn confirm-btn-yes" id="ntSubmitBtn" onclick="submitNewTimerDialog()">Create</button>
+        <button class="confirm-btn confirm-btn-no" onclick="closeNewTimerDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Glass overlay for inline editing modal behavior -->
+<div id="editOverlay"></div>
 </body>
 </html>

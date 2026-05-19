@@ -56,6 +56,25 @@ async function createInstructor(email, password, name, isAdmin = false) {
   };
   const result = await db.collection('instructors').insertOne(instructor);
   instructor._id = result.insertedId;
+
+  // Seed new instructor with default sounds (if any exist)
+  try {
+    const defaults = await loadDefaultSounds();
+    if (defaults.length > 0) {
+      // Give each sound a new ID so they're independent copies
+      const seeded = defaults.map(s => ({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: s.name,
+        data: s.data,
+        mimeType: s.mimeType,
+        createdAt: new Date(),
+      }));
+      await saveCustomSounds(result.insertedId.toString(), seeded);
+    }
+  } catch (e) {
+    console.error('  Failed to seed default sounds for new instructor:', e.message);
+  }
+
   return instructor;
 }
 
@@ -376,6 +395,31 @@ async function saveCustomSounds(instructorId, sounds) {
     );
   } catch (e) {
     console.error('  MongoDB saveCustomSounds failed:', e.message);
+  }
+}
+
+// ── Default sounds (shared, admin-managed, seeded to new instructors) ──
+async function loadDefaultSounds() {
+  if (!db) return [];
+  try {
+    const doc = await db.collection('defaultSounds').findOne({ _id: 'defaults' });
+    return doc && doc.sounds ? doc.sounds : [];
+  } catch (e) {
+    console.error('  MongoDB loadDefaultSounds failed:', e.message);
+    return [];
+  }
+}
+
+async function saveDefaultSounds(sounds) {
+  if (!db) return;
+  try {
+    await db.collection('defaultSounds').updateOne(
+      { _id: 'defaults' },
+      { $set: { sounds, updatedAt: new Date() } },
+      { upsert: true }
+    );
+  } catch (e) {
+    console.error('  MongoDB saveDefaultSounds failed:', e.message);
   }
 }
 
@@ -919,6 +963,40 @@ app.post('/api/admin/delete-instructor', requireAdmin, async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete instructor' });
   }
+});
+
+// ── Admin: default sounds management ───────────────────────
+app.get('/api/admin/default-sounds', requireAdmin, async (req, res) => {
+  const sounds = await loadDefaultSounds();
+  // Return without audio data to keep response small
+  res.json(sounds.map(s => ({ id: s.id, name: s.name, mimeType: s.mimeType })));
+});
+
+app.post('/api/admin/default-sounds', requireAdmin, async (req, res) => {
+  const { name, data, mimeType } = req.body;
+  if (!name || !data) return res.status(400).json({ error: 'name and data required' });
+  const sounds = await loadDefaultSounds();
+  if (sounds.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+    return res.status(400).json({ error: 'A default sound with that name already exists' });
+  }
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  sounds.push({ id, name, data, mimeType: mimeType || 'audio/mpeg', createdAt: new Date() });
+  await saveDefaultSounds(sounds);
+  res.json(sounds.map(s => ({ id: s.id, name: s.name, mimeType: s.mimeType })));
+});
+
+app.delete('/api/admin/default-sounds/:id', requireAdmin, async (req, res) => {
+  let sounds = await loadDefaultSounds();
+  sounds = sounds.filter(s => s.id !== req.params.id);
+  await saveDefaultSounds(sounds);
+  res.json(sounds.map(s => ({ id: s.id, name: s.name, mimeType: s.mimeType })));
+});
+
+app.get('/api/admin/default-sounds/:id/data', requireAdmin, async (req, res) => {
+  const sounds = await loadDefaultSounds();
+  const sound = sounds.find(s => s.id === req.params.id);
+  if (!sound) return res.status(404).json({ error: 'Sound not found' });
+  res.json({ id: sound.id, name: sound.name, data: sound.data, mimeType: sound.mimeType });
 });
 
 // ── QR code (auth required — scoped to instructor's class code) ──

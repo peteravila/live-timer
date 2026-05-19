@@ -1514,22 +1514,20 @@
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
             <label for="alarmSound" style="font-size:0.85rem; color:#aaa; white-space:nowrap; min-width:95px;">Alarm sound:</label>
             <select id="alarmSound" style="flex:1; padding:6px 10px; border:1px solid #333; border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
-              <option value="beep">Beep (default)</option>
-              <option value="bell">Gentle Bell</option>
-              <option value="gong">Gong</option>
-              <option value="chime">Chime</option>
+              <option value="">— no sound —</option>
             </select>
             <button class="settings-btn" onclick="previewSound('alarmSound')">&#9654; Test</button>
+            <button class="settings-btn" onclick="stopPreview()">&#9632; Stop</button>
+            <button class="settings-btn" onclick="deleteSelectedSound('alarmSound')" style="color:#e55;">&#10005;</button>
           </div>
           <div style="margin-left:103px;">
             <div class="checkbox-row" style="margin-bottom:8px;">
               <input type="checkbox" id="alarmLoop" class="custom-cb">
               <label for="alarmLoop">Loop alarm until stopped</label>
             </div>
-            <div id="customSoundsList" style="margin-bottom:8px;"></div>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
               <label class="settings-btn" style="cursor:pointer;">
-                + Add Custom Sound (.mp3)
+                + Add Sound (.mp3)
                 <input type="file" id="customSoundUpload" accept=".mp3,audio/mpeg" style="display:none;" onchange="addCustomSound(this)">
               </label>
             </div>
@@ -1540,12 +1538,11 @@
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
             <label for="warningSound" style="font-size:0.85rem; color:#aaa; white-space:nowrap; min-width:95px;">Warning alert:</label>
             <select id="warningSound" style="flex:1; padding:6px 10px; border:1px solid #333; border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
-              <option value="beep">Beep</option>
-              <option value="bell" selected>Gentle Bell</option>
-              <option value="gong">Gong</option>
-              <option value="chime">Chime</option>
+              <option value="">— no sound —</option>
             </select>
             <button class="settings-btn" onclick="previewSound('warningSound')">&#9654; Test</button>
+            <button class="settings-btn" onclick="stopPreview()">&#9632; Stop</button>
+            <button class="settings-btn" onclick="deleteSelectedSound('warningSound')" style="color:#e55;">&#10005;</button>
           </div>
           <div style="margin-left:103px; display:flex; align-items:center; gap:8px;">
             <input type="checkbox" id="warningEnabled" class="custom-cb">
@@ -1727,6 +1724,17 @@
               <!-- Grid -->
               <div id="adminInstructorGrid" style="width:100%; max-width:100%;"></div>
               <div id="adminStatus" style="font-size:0.75rem; margin-top:8px; min-height:1.2em;"></div>
+            </div>
+
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
+            <label style="font-size:0.85rem; color:#e74c3c;">Admin — Default Sounds</label>
+            <div style="font-size:0.75rem; color:var(--dim); margin-top:4px; margin-bottom:8px;">These sounds are copied to every new instructor account on creation.</div>
+            <div id="defaultSoundsList" style="margin-bottom:8px;"></div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <label class="settings-btn" style="cursor:pointer;">
+                + Add Default Sound (.mp3)
+                <input type="file" id="defaultSoundUpload" accept=".mp3,audio/mpeg" style="display:none;" onchange="addDefaultSound(this)">
+              </label>
             </div>
 
             <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
@@ -2016,6 +2024,7 @@ async function startApp() {
     if (me.isAdmin) {
       document.getElementById('adminSection').style.display = '';
       loadAdminInstructors();
+      loadDefaultSounds();
     }
   } catch (e) { /* couldn't fetch — no greeting, no admin */ }
   // Fetch permanent API key for OBS/display URLs
@@ -3484,6 +3493,89 @@ document.getElementById('muteStudents').addEventListener('change', () => {
 });
 
 // ── Screenshot mode ──
+// ── Admin: Default sounds management ──
+var defaultSoundsCache = [];
+
+async function loadDefaultSounds() {
+  try {
+    const resp = await authFetch('/api/admin/default-sounds');
+    if (resp.ok) {
+      defaultSoundsCache = await resp.json();
+      renderDefaultSoundsList();
+    }
+  } catch (e) { console.error('loadDefaultSounds:', e); }
+}
+
+function renderDefaultSoundsList() {
+  const container = document.getElementById('defaultSoundsList');
+  if (!defaultSoundsCache.length) {
+    container.innerHTML = '<div style="font-size:0.8rem; color:#666; font-style:italic;">No default sounds configured.</div>';
+    return;
+  }
+  container.innerHTML = defaultSoundsCache.map(s =>
+    `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+      <span style="font-size:0.8rem; color:#aaa;">${s.name}</span>
+      <button class="settings-btn" onclick="previewDefaultSound('${s.id}')" style="font-size:0.7rem; padding:2px 8px;">&#9654; Test</button>
+      <button class="settings-btn" onclick="stopPreview()" style="font-size:0.7rem; padding:2px 8px;">&#9632; Stop</button>
+      <button class="settings-btn" onclick="deleteDefaultSound('${s.id}')" style="font-size:0.7rem; padding:2px 8px; color:#e55;">&#10005;</button>
+    </div>`
+  ).join('');
+}
+
+async function previewDefaultSound(soundId) {
+  stopPreview();
+  try {
+    const resp = await authFetch('/api/admin/default-sounds/' + soundId + '/data');
+    if (!resp.ok) return;
+    const snd = await resp.json();
+    const audio = new Audio('data:' + snd.mimeType + ';base64,' + snd.data);
+    currentPreviewAudio = audio;
+    audio.play().catch(() => {});
+    audio.onended = () => { if (currentPreviewAudio === audio) currentPreviewAudio = null; };
+  } catch (e) { console.error('previewDefaultSound:', e); }
+}
+
+async function addDefaultSound(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) {
+    await customAlert('File too large. Maximum size is 5 MB.');
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async function() {
+    const base64 = reader.result.split(',')[1];
+    const name = file.name.replace(/\.[^.]+$/, '');
+    try {
+      const resp = await authFetch('/api/admin/default-sounds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, data: base64, mimeType: file.type || 'audio/mpeg' }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { await customAlert(data.error || 'Upload failed'); return; }
+      defaultSoundsCache = data;
+      renderDefaultSoundsList();
+    } catch (e) {
+      await customAlert('Upload failed: ' + e.message);
+    }
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+async function deleteDefaultSound(id) {
+  if (!await customConfirm('Delete this default sound?')) return;
+  try {
+    const resp = await authFetch('/api/admin/default-sounds/' + id, { method: 'DELETE' });
+    if (resp.ok) {
+      defaultSoundsCache = await resp.json();
+      renderDefaultSoundsList();
+    }
+  } catch (e) { console.error('deleteDefaultSound:', e); }
+}
+
 function toggleScreenshotMode() {
   const on = document.getElementById('screenshotMode').checked;
   socket.emit('set-screenshot-mode', on);
@@ -5211,105 +5303,18 @@ function loadQRCode() {
 loadQRCode();
 
 // ── Audio: distinct synthesized sounds ──
-function playSound(soundName) {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const t = ctx.currentTime;
-    switch (soundName) {
-      case 'bell': {
-        // Gentle bell: soft sine with harmonic overtone, slow decay
-        [1, 1.5].forEach((mult, i) => {
-          const o = ctx.createOscillator(), g = ctx.createGain();
-          o.type = 'sine'; o.frequency.value = 523.25 * mult;
-          g.gain.setValueAtTime(i === 0 ? 0.35 : 0.12, t);
-          g.gain.exponentialRampToValueAtTime(0.001, t + 2.0);
-          o.connect(g).connect(ctx.destination);
-          o.start(t); o.stop(t + 2.1);
-        });
-        // second strike
-        setTimeout(() => {
-          const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
-          const t2 = ctx2.currentTime;
-          [1, 1.5].forEach((mult, i) => {
-            const o = ctx2.createOscillator(), g = ctx2.createGain();
-            o.type = 'sine'; o.frequency.value = 659.25 * mult;
-            g.gain.setValueAtTime(i === 0 ? 0.30 : 0.10, t2);
-            g.gain.exponentialRampToValueAtTime(0.001, t2 + 2.0);
-            o.connect(g).connect(ctx2.destination);
-            o.start(t2); o.stop(t2 + 2.1);
-          });
-        }, 800);
-        break;
-      }
-      case 'gong': {
-        // Gong: low fundamental with inharmonic partials, long decay
-        const partials = [
-          { f: 110, gain: 0.4, decay: 3.0 },
-          { f: 156, gain: 0.25, decay: 2.5 },
-          { f: 220, gain: 0.15, decay: 2.0 },
-          { f: 311, gain: 0.10, decay: 1.5 },
-          { f: 466, gain: 0.06, decay: 1.2 },
-        ];
-        partials.forEach(p => {
-          const o = ctx.createOscillator(), g = ctx.createGain();
-          o.type = 'sine'; o.frequency.value = p.f;
-          g.gain.setValueAtTime(p.gain, t);
-          g.gain.exponentialRampToValueAtTime(0.001, t + p.decay);
-          o.connect(g).connect(ctx.destination);
-          o.start(t); o.stop(t + p.decay + 0.1);
-        });
-        break;
-      }
-      case 'chime': {
-        // Chime: bright ascending arpeggio
-        const notes = [523.25, 659.25, 783.99, 1046.50];
-        notes.forEach((freq, i) => {
-          const start = t + i * 0.2;
-          const o = ctx.createOscillator(), g = ctx.createGain();
-          o.type = 'triangle'; o.frequency.value = freq;
-          g.gain.setValueAtTime(0.25, start);
-          g.gain.exponentialRampToValueAtTime(0.001, start + 0.8);
-          o.connect(g).connect(ctx.destination);
-          o.start(start); o.stop(start + 0.9);
-        });
-        break;
-      }
-      default: { // 'beep'
-        [
-          {f:880,s:0,d:.15},{f:880,s:.25,d:.15},{f:880,s:.5,d:.15},{f:1100,s:.85,d:.3},
-          {f:880,s:1.35,d:.15},{f:880,s:1.6,d:.15},{f:880,s:1.85,d:.15},{f:1100,s:2.2,d:.3},
-        ].forEach(b => {
-          const o = ctx.createOscillator(), g = ctx.createGain();
-          o.type='sine'; o.frequency.value=b.f;
-          g.gain.setValueAtTime(0.3,t+b.s);
-          g.gain.exponentialRampToValueAtTime(0.001,t+b.s+b.d);
-          o.connect(g).connect(ctx.destination);
-          o.start(t+b.s); o.stop(t+b.s+b.d+.05);
-        });
-      }
-    }
-  } catch(e){}
-}
-
 // ── Alarm / warning playback ──
 let alarmLoopTimer = null;
 
 function playAlarm() {
-  const soundName = document.getElementById('alarmSound').value;
+  const val = document.getElementById('alarmSound').value;
   const shouldLoop = document.getElementById('alarmLoop').checked;
   stopAlarmLoop();
-  if (soundName.startsWith('custom:')) {
-    playCustomSound(soundName.split(':')[1]);
-    if (shouldLoop) {
-      alarmLoopTimer = setInterval(() => playCustomSound(soundName.split(':')[1]), 3000);
-    }
-  } else {
-    playSound(soundName);
-    if (shouldLoop) {
-      const intervals = { beep: 3000, bell: 2500, gong: 3500, chime: 1500 };
-      const gap = intervals[soundName] || 3000;
-      alarmLoopTimer = setInterval(() => playSound(soundName), gap);
-    }
+  if (!val || !val.startsWith('custom:')) return;
+  const soundId = val.split(':')[1];
+  playCustomSound(soundId);
+  if (shouldLoop) {
+    alarmLoopTimer = setInterval(() => playCustomSound(soundId), 3000);
   }
 }
 
@@ -5318,12 +5323,9 @@ function stopAlarmLoop() {
 }
 
 function previewSound(selectId) {
-  const soundName = document.getElementById(selectId).value;
-  if (soundName.startsWith('custom:')) {
-    playCustomSound(soundName.split(':')[1]);
-  } else {
-    playSound(soundName);
-  }
+  const val = document.getElementById(selectId).value;
+  if (!val || !val.startsWith('custom:')) return;
+  playCustomSound(val.split(':')[1]);
 }
 
 // ── Warning alert ──
@@ -5335,11 +5337,9 @@ function checkWarning(remainingSeconds) {
   const warnSecs = warnMins * 60;
   if (remainingSeconds <= warnSecs && remainingSeconds > 0 && !warningFired) {
     warningFired = true;
-    const soundName = document.getElementById('warningSound').value;
-    if (soundName.startsWith('custom:')) {
-      playCustomSound(soundName.split(':')[1]);
-    } else {
-      playSound(soundName);
+    const val = document.getElementById('warningSound').value;
+    if (val && val.startsWith('custom:')) {
+      playCustomSound(val.split(':')[1]);
     }
   }
   if (remainingSeconds > warnSecs) {
@@ -5356,7 +5356,6 @@ async function fetchCustomSounds() {
     if (resp.ok) {
       customSoundsCache = await resp.json();
       populateCustomSoundsInDropdowns();
-      renderCustomSoundsList();
     }
   } catch (e) { console.error('fetchCustomSounds:', e); }
 }
@@ -5364,7 +5363,8 @@ async function fetchCustomSounds() {
 function populateCustomSoundsInDropdowns() {
   ['alarmSound', 'warningSound'].forEach(selId => {
     const sel = document.getElementById(selId);
-    // Remove old custom options
+    const curVal = sel.value;
+    // Remove old custom options (keep the "no sound" option)
     sel.querySelectorAll('option[data-custom]').forEach(o => o.remove());
     // Add current custom sounds
     customSoundsCache.forEach(s => {
@@ -5374,19 +5374,33 @@ function populateCustomSoundsInDropdowns() {
       opt.setAttribute('data-custom', '1');
       sel.appendChild(opt);
     });
+    // Restore previous selection if still valid, otherwise keep as-is
+    if (curVal && sel.querySelector('option[value="' + CSS.escape(curVal) + '"]')) {
+      sel.value = curVal;
+    }
   });
 }
 
-function renderCustomSoundsList() {
-  const container = document.getElementById('customSoundsList');
-  if (!customSoundsCache.length) { container.innerHTML = ''; return; }
-  container.innerHTML = customSoundsCache.map(s =>
-    `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-      <span style="font-size:0.8rem; color:#aaa;">${s.name}</span>
-      <button class="settings-btn" onclick="previewCustomSound('${s.id}')" style="font-size:0.7rem; padding:2px 8px;">&#9654;</button>
-      <button class="settings-btn" onclick="deleteCustomSound('${s.id}')" style="font-size:0.7rem; padding:2px 8px; color:#e55;">&#10005;</button>
-    </div>`
-  ).join('');
+async function deleteSelectedSound(selectId) {
+  const sel = document.getElementById(selectId);
+  const val = sel.value;
+  if (!val || !val.startsWith('custom:')) return;
+  const soundId = val.split(':')[1];
+  const soundName = sel.options[sel.selectedIndex].textContent;
+  if (!await customConfirm('Delete "' + soundName + '"?')) return;
+  // Reset both dropdowns if they reference this sound
+  ['alarmSound', 'warningSound'].forEach(id => {
+    const s = document.getElementById(id);
+    if (s.value === 'custom:' + soundId) s.value = '';
+  });
+  try {
+    const resp = await authFetch('/api/custom-sounds/' + soundId, { method: 'DELETE' });
+    if (resp.ok) {
+      customSoundsCache = await resp.json();
+      populateCustomSoundsInDropdowns();
+      saveAlarmSettingsToServer();
+    }
+  } catch (e) { console.error('deleteSelectedSound:', e); }
 }
 
 async function addCustomSound(input) {
@@ -5412,7 +5426,6 @@ async function addCustomSound(input) {
       if (!resp.ok) { await customAlert(data.error || 'Upload failed'); return; }
       customSoundsCache = data;
       populateCustomSoundsInDropdowns();
-      renderCustomSoundsList();
       saveAlarmSettingsToServer();
     } catch (e) {
       await customAlert('Upload failed: ' + e.message);
@@ -5422,33 +5435,28 @@ async function addCustomSound(input) {
   input.value = '';
 }
 
-async function deleteCustomSound(id) {
-  if (!await customConfirm('Delete this custom sound?')) return;
-  // If this sound is currently selected, reset to default
-  ['alarmSound', 'warningSound'].forEach(selId => {
-    const sel = document.getElementById(selId);
-    if (sel.value === 'custom:' + id) sel.value = 'beep';
-  });
-  try {
-    const resp = await authFetch('/api/custom-sounds/' + id, { method: 'DELETE' });
-    if (resp.ok) {
-      customSoundsCache = await resp.json();
-      populateCustomSoundsInDropdowns();
-      renderCustomSoundsList();
-      saveAlarmSettingsToServer();
-    }
-  } catch (e) { console.error('deleteCustomSound:', e); }
-}
-
 // Cache for fetched custom sound audio data
 var customSoundDataCache = {};
+var currentPreviewAudio = null; // tracks the currently playing preview
+
+function stopPreview() {
+  if (currentPreviewAudio) {
+    currentPreviewAudio.pause();
+    currentPreviewAudio.currentTime = 0;
+    currentPreviewAudio = null;
+  }
+}
 
 async function playCustomSound(soundId) {
+  // Stop any currently playing preview
+  stopPreview();
   // Check cache first
   if (customSoundDataCache[soundId]) {
     const cached = customSoundDataCache[soundId];
     const audio = new Audio('data:' + cached.mimeType + ';base64,' + cached.data);
+    currentPreviewAudio = audio;
     audio.play().catch(() => {});
+    audio.onended = () => { if (currentPreviewAudio === audio) currentPreviewAudio = null; };
     return audio;
   }
   // Fetch from server
@@ -5458,14 +5466,13 @@ async function playCustomSound(soundId) {
     const snd = await resp.json();
     customSoundDataCache[snd.id] = { data: snd.data, mimeType: snd.mimeType };
     const audio = new Audio('data:' + snd.mimeType + ';base64,' + snd.data);
+    currentPreviewAudio = audio;
     audio.play().catch(() => {});
+    audio.onended = () => { if (currentPreviewAudio === audio) currentPreviewAudio = null; };
     return audio;
   } catch (e) { console.error('playCustomSound:', e); return null; }
 }
 
-function previewCustomSound(soundId) {
-  playCustomSound(soundId);
-}
 
 // ── Alarm settings persistence ──
 async function fetchAlarmSettings() {

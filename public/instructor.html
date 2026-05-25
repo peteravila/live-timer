@@ -1,24 +1,30 @@
-<!-- public/instructor.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Instructor Timer Control</title>
-<script src="/socket.io/socket.io.js"></script>
 <style>
   :root {
     --bg: #1a1a2e; --card: #16213e; --card2: #1c2a4a;
     --accent: #0f3460; --text: #e0e0e0; --dim: #888;
     --green: #4ecca3; --yellow: #f0c24b; --red: #e74c3c; --blue: #3498db;
+    --border: #333; --border-mid: #444; --border-light: #666;
+    --text-muted: #aaa; --text-faint: #555; --text-sub: #bbb;
+    --hover-green: rgba(78,204,163,0.08); --hover-green-strong: rgba(78,204,163,0.15);
+    --hover-blue: rgba(52,152,219,0.15); --hover-red: rgba(231,76,60,0.08);
+    --overlay: rgba(0,0,0,0.4); --glass: rgba(30,30,50,0.5);
+    --glass-border: rgba(255,255,255,0.25); --glass-strong: rgba(30,30,50,0.75);
+    --subtle-border: rgba(255,255,255,0.1); --subtle-bg: rgba(255,255,255,0.04);
+    --subtle-bg2: rgba(255,255,255,0.08); --highlight: rgba(255,255,255,0.06);
+    --shadow: rgba(0,0,0,0.3); --scrollbar-thumb: #333; --scrollbar-hover: #444;
+    --input-bg: var(--bg); --btn-text-on-accent: #111;
+    --orange: #e67e22; --blue-hover: #2980b9;
+    --color-scheme: dark;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { color-scheme: var(--color-scheme); }
 
   /* Dark scrollbars for the whole page */
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: #444; }
-  html { scrollbar-color: #333 var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-mid); }
+  html { scrollbar-color: var(--scrollbar-thumb) var(--bg); }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg); color: var(--text);
@@ -79,7 +85,7 @@
     font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--dim);
   }
   .text-side-input {
-    width: 100%; padding: 8px 10px; border: 1px solid #666; border-radius: 6px;
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border-light); border-radius: 6px;
     background: var(--bg); color: var(--text); font-size: 0.9rem; font-family: inherit;
   }
   .text-side-input:focus { outline: none; border-color: var(--blue); }
@@ -89,21 +95,21 @@
     background: transparent; color: var(--blue); font-size: 0.85rem; font-weight: 600;
     cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit;
   }
-  .btn-push-all:hover { background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green); }
+  .btn-push-all:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
   .btn-pull-all {
     padding: 10px 16px; border: 2px solid var(--blue); border-radius: 8px;
     background: transparent; color: var(--blue); font-size: 0.85rem; font-weight: 600;
     cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit;
   }
-  .btn-pull-all:hover { background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green); }
+  .btn-pull-all:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
   .btn-to-library {
     padding: 10px 16px; border: 2px solid var(--blue); border-radius: 8px;
     background: transparent; color: var(--blue); font-size: 0.85rem; font-weight: 600;
     cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit;
     width: 100%; margin-top: 6px;
   }
-  .btn-to-library:hover { background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green); }
-  .push-all-hint { font-size: 0.6rem; color: #555; line-height: 1.3; text-align: center; }
+  .btn-to-library:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
+  .push-all-hint { font-size: 0.6rem; color: var(--text-faint); line-height: 1.3; text-align: center; }
 
   /* Phone mockup frame */
   .phone-mockup {
@@ -111,17 +117,17 @@
     height: 450px; /* ~1:1.8 — realistic usable viewport after browser chrome */
     background: #1a1a2e;
     border-radius: 22px;
-    border: 3px solid #333;
+    border: 3px solid var(--border);
     padding: 20px 12px 8px;
     display: flex; flex-direction: column; align-items: center;
     gap: 3px;
     position: relative;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 16px var(--shadow);
     overflow: visible;
   }
   .phone-mockup-notch {
     position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-    width: 70px; height: 5px; background: #333; border-radius: 3px;
+    width: 70px; height: 5px; background: var(--border); border-radius: 3px;
   }
 
   /* Editable fields inside the mockup — match student.html styling */
@@ -170,7 +176,7 @@
     top: 50%; transform: translateY(-62%);
   }
   .mock-message {
-    font-size: 1.4rem; color: #bbb; line-height: 1.3;
+    font-size: 1.4rem; color: var(--text-sub); line-height: 1.3;
     white-space: pre-line; max-width: 100%;
     height: 3.7rem; /* locked to ~2 lines at starting font */
     overflow: hidden;
@@ -180,7 +186,7 @@
 
   /* Non-editable elements — scaled to 64% of phone (250/390) */
   .mock-ring { width: 85px; height: 85px; margin: 1px 0; flex-shrink: 0; }
-  .mock-ring-bg { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 5; }
+  .mock-ring-bg { fill: none; stroke: var(--subtle-bg2); stroke-width: 5; }
   .mock-ring-fg { fill: none; stroke: var(--green); stroke-width: 5; stroke-linecap: round;
     stroke-dasharray: 327; stroke-dashoffset: 72;
     transition: stroke 0.8s, stroke-dashoffset 0.3s; }
@@ -217,7 +223,7 @@
     transition: color 0.15s, background 0.15s; border-radius: 4px;
     display: flex; align-items: center; justify-content: center;
   }
-  .digit-arrow:hover { color: var(--green); background: rgba(255,255,255,0.06); }
+  .digit-arrow:hover { color: var(--green); background: var(--highlight); }
   .digit-arrow.disabled { color: var(--dim); cursor: default; }
   .digit-arrow.disabled:hover { color: var(--dim); background: transparent; }
   .digit-expand-btn {
@@ -259,7 +265,7 @@
   .phone-mockup.state-orange .mock-course-title,
   .phone-mockup.state-orange .mock-message,
   .phone-mockup.state-orange .mock-end-time-label,
-  .phone-mockup.state-orange .mock-end-time-computed { color: #e67e22; }
+  .phone-mockup.state-orange .mock-end-time-computed { color: var(--orange); }
   .phone-mockup.state-orange .mock-ring-fg { stroke: #e67e22; }
 
   .phone-mockup.state-done .mock-digits,
@@ -277,8 +283,8 @@
   .phone-mockup.state-paused .mock-course-title,
   .phone-mockup.state-paused .mock-message,
   .phone-mockup.state-paused .mock-end-time-label,
-  .phone-mockup.state-paused .mock-end-time-computed { color: #888; }
-  .phone-mockup.state-paused .mock-ring-fg { stroke: #888; }
+  .phone-mockup.state-paused .mock-end-time-computed { color: var(--dim); }
+  .phone-mockup.state-paused .mock-ring-fg { stroke: var(--dim); }
 
   /* Duration popup overlay */
   .duration-popup-backdrop {
@@ -287,16 +293,16 @@
   }
   .duration-popup-backdrop.open { display: flex; }
   .duration-popup {
-    background: rgba(30, 30, 50, 0.75);
+    background: var(--glass-strong);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.35);
+    border: 1px solid var(--glass-border);
     border-radius: 16px; padding: 24px 28px 28px;
-    position: absolute; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    position: absolute; box-shadow: 0 8px 32px var(--shadow);
     max-width: 520px; pointer-events: auto; cursor: grab;
     max-height: 85vh; overflow-y: auto;
   }
   #durationPopup {
-    background: rgba(30, 30, 50, 0.5);
+    background: var(--glass);
     backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   }
   .dialog-close {
@@ -315,15 +321,15 @@
   /* Save-to-library multi-select overlay */
   .save-lib-backdrop {
     display: none; position: fixed; inset: 0; z-index: 2000;
-    background: rgba(0,0,0,0.4); justify-content: center; align-items: center;
+    background: var(--overlay); justify-content: center; align-items: center;
   }
   .save-lib-backdrop.open { display: flex; }
   .save-lib-box {
-    background: rgba(30, 30, 50, 0.75);
+    background: var(--glass-strong);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.35);
+    border: 1px solid var(--glass-border);
     border-radius: 16px; padding: 24px 28px 20px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 32px var(--shadow);
     max-width: 420px; width: 90vw; text-align: center;
     position: absolute;
     max-height: 85vh; overflow-y: auto;
@@ -348,7 +354,7 @@
     padding: 7px 10px; border-radius: 6px; cursor: pointer;
     transition: background 0.1s;
   }
-  .save-lib-item:hover { background: rgba(255,255,255,0.06); }
+  .save-lib-item:hover { background: var(--highlight); }
   .save-lib-item input[type="checkbox"] { accent-color: var(--green); cursor: pointer; flex-shrink: 0; }
   .save-lib-item-name {
     font-size: 0.85rem; color: var(--text); width: 110px; flex-shrink: 0;
@@ -360,21 +366,21 @@
   }
   .save-lib-buttons { display: flex; gap: 12px; justify-content: center; }
   .save-lib-none {
-    font-size: 0.8rem; color: #666; padding: 20px 0; text-align: center;
+    font-size: 0.8rem; color: var(--border-light); padding: 20px 0; text-align: center;
   }
 
   /* Custom confirm dialog */
   .confirm-backdrop {
     display: none; position: fixed; inset: 0; z-index: 2000;
-    background: rgba(0,0,0,0.4); justify-content: center; align-items: center;
+    background: var(--overlay); justify-content: center; align-items: center;
   }
   .confirm-backdrop.open { display: flex; }
   .confirm-box {
-    background: rgba(30, 30, 50, 0.5);
+    background: var(--glass);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.25);
+    border: 1px solid var(--glass-border);
     border-radius: 14px; padding: 24px 28px 20px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 32px var(--overlay);
     max-width: 360px; text-align: center;
     position: absolute; cursor: grab; user-select: none;
   }
@@ -391,20 +397,20 @@
   .confirm-btn-yes { background: var(--blue); color: #fff; }
   .confirm-btn-yes:hover { background: #2980b9; }
   .confirm-btn-no { background: transparent; color: var(--blue); }
-  .confirm-btn-no:hover { background: rgba(52,152,219,0.15); }
+  .confirm-btn-no:hover { background: var(--hover-blue); }
 
   /* Custom prompt dialog */
   .prompt-backdrop {
     display: none; position: fixed; inset: 0; z-index: 2000;
-    background: rgba(0,0,0,0.4); justify-content: center; align-items: center;
+    background: var(--overlay); justify-content: center; align-items: center;
   }
   .prompt-backdrop.open { display: flex; }
   .prompt-box {
-    background: rgba(30, 30, 50, 0.5);
+    background: var(--glass);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.25);
+    border: 1px solid var(--glass-border);
     border-radius: 14px; padding: 24px 28px 20px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 32px var(--overlay);
     max-width: 360px; text-align: center;
     position: absolute; cursor: grab; user-select: none;
   }
@@ -416,7 +422,7 @@
   .prompt-input {
     width: 100%; box-sizing: border-box; padding: 8px 12px;
     border: 1.5px solid var(--blue); border-radius: 6px;
-    background: rgba(255,255,255,0.08); color: var(--text);
+    background: var(--subtle-bg2); color: var(--text);
     font-size: 1rem; font-family: inherit; margin-bottom: 18px;
     outline: none; cursor: text; user-select: text;
   }
@@ -445,7 +451,7 @@
     display: flex; align-items: center; justify-content: center;
     box-sizing: border-box;
   }
-  .mock-ctx-btn:hover { background: rgba(52,152,219,0.15); }
+  .mock-ctx-btn:hover { background: var(--hover-blue); }
   .mock-ctx-go { font-size: 0.7rem; }
   .mock-ctx-go:hover:not(.disabled) { color: var(--green); border-color: var(--green); background: rgba(78,204,163,0.1); }
   .mock-ctx-go.disabled { opacity: 0.3; cursor: default; pointer-events: none; }
@@ -453,7 +459,7 @@
   .mock-ctx-save { border-color: var(--green); color: var(--green); }
   .mock-ctx-toggle { }
   .mock-ctx-toggle.is-on { border-color: var(--green); color: var(--green); }
-  .mock-ctx-toggle.is-off { border-color: #666; color: #666; }
+  .mock-ctx-toggle.is-off { border-color: var(--border-light); color: var(--border-light); }
 
   /* Tabs */
   .tab-bar {
@@ -487,7 +493,7 @@
   /* Fieldset-style grouping with legend line */
   .field-group {
     position: relative;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid var(--subtle-border);
     border-radius: 8px;
     padding: 14px 14px 10px;
     margin-bottom: 12px;
@@ -501,7 +507,7 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #666;
+    color: var(--border-light);
     line-height: 1;
   }
 
@@ -513,7 +519,7 @@
   .field-with-check:has(+ .checkbox-row) { margin-bottom: 0; }
   input[type=checkbox].custom-cb {
     -webkit-appearance: none; appearance: none;
-    width: 16px; height: 16px; border: 1px solid #666; border-radius: 3px;
+    width: 16px; height: 16px; border: 1px solid var(--border-light); border-radius: 3px;
     background: var(--bg); cursor: pointer; position: relative; flex-shrink: 0;
   }
   input[type=checkbox].custom-cb:checked::after {
@@ -527,9 +533,9 @@
   .field-with-check .field { margin-bottom: 0; }
 
   label.field { display: block; margin-bottom: 10px; }
-  label.field .lbl { font-size: 0.8rem; color: #aaa; margin-bottom: 3px; }
+  label.field .lbl { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 3px; }
   input[type=text], textarea {
-    width: 100%; padding: 9px 12px; border: 1px solid #666; border-radius: 8px;
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border-light); border-radius: 8px;
     background: var(--bg); color: var(--text); font-size: 0.95rem;
     height: 40px; box-sizing: border-box;
   }
@@ -548,7 +554,7 @@
     display: flex; flex-direction: row; align-items: center; width: 60px;
   }
   .spinner .spin-value {
-    flex: 1; height: 34px; border: 1px solid #333; border-right: none;
+    flex: 1; height: 34px; border: 1px solid var(--border); border-right: none;
     border-radius: 6px 0 0 6px;
     background: var(--bg); color: var(--text); font-size: 1.1rem;
     font-variant-numeric: tabular-nums; display: flex; align-items: center;
@@ -570,12 +576,12 @@
     display: flex; flex-direction: column; height: 34px;
   }
   .spin-btns button {
-    width: 20px; flex: 1; border: 1px solid #333; background: var(--card2);
+    width: 20px; flex: 1; border: 1px solid var(--border); background: var(--card2);
     color: var(--dim); font-size: 0.5rem; cursor: pointer; display: flex;
     align-items: center; justify-content: center; transition: all 0.15s;
     user-select: none; -webkit-user-select: none; padding: 0;
   }
-  .spin-btns button:hover { background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green); }
+  .spin-btns button:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
   .spin-btns button:first-child { border-radius: 0 6px 0 0; border-bottom: none; }
   .spin-btns button:last-child { border-radius: 0 0 6px 0; }
   .sync-arrows {
@@ -583,21 +589,21 @@
     flex: 0 0 auto !important; margin: 4px 0;
   }
   .spinner-field { display: flex; flex-direction: column; flex: 0 0 auto !important; }
-  .spinner-field > .lbl { font-size: 0.8rem; color: #aaa; margin-bottom: 3px; text-align: center; }
+  .spinner-field > .lbl { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 3px; text-align: center; }
   .spinner-field .ampm-btn {
-    width: 48px; height: 34px; border: 1px solid #333; border-radius: 6px;
+    width: 48px; height: 34px; border: 1px solid var(--border); border-radius: 6px;
     background: var(--bg); color: var(--text); font-size: 0.85rem; font-weight: 600;
     cursor: pointer; align-self: flex-end; transition: all 0.15s;
   }
-  .spinner-field .ampm-btn:hover { background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green); }
-  .dur-action-btn:hover { background: rgba(78,204,163,0.08) !important; color: var(--green) !important; border-color: var(--green) !important; }
+  .spinner-field .ampm-btn:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
+  .dur-action-btn:hover { background: var(--hover-green) !important; color: var(--green) !important; border-color: var(--green) !important; }
 
   .row { display: flex; gap: 10px; }
   .row > * { flex: 1; }
 
   .checkbox-row {
     display: flex; align-items: center; gap: 8px;
-    font-size: 0.9rem; margin-top: 4px; margin-bottom: 6px; color: #aaa;
+    font-size: 0.9rem; margin-top: 4px; margin-bottom: 6px; color: var(--text-muted);
   }
   .checkbox-row input[type=checkbox] { /* uses .custom-cb class */ }
 
@@ -606,14 +612,14 @@
     display: flex; gap: 6px; margin-top: 4px; margin-bottom: 18px; margin-left: 24px;
   }
   .field-actions button {
-    padding: 4px 12px; border: 1px solid #444; border-radius: 6px;
+    padding: 4px 12px; border: 1px solid var(--border-mid); border-radius: 6px;
     background: transparent; font-size: 0.75rem; cursor: pointer;
     transition: all 0.15s;
   }
   .field-actions .btn-field-load { color: var(--blue); border-color: var(--blue); }
-  .field-actions .btn-field-load:hover { background: rgba(52,152,219,0.15); }
+  .field-actions .btn-field-load:hover { background: var(--hover-blue); }
   .field-actions .btn-field-clear { color: var(--dim); }
-  .field-actions .btn-field-clear:hover { color: var(--text); border-color: #666; }
+  .field-actions .btn-field-clear:hover { color: var(--text); border-color: var(--border-light); }
   .field-actions:last-child { margin-bottom: 0; }
 
   /* Transport buttons */
@@ -627,10 +633,10 @@
   }
   .transport-btn.enabled { color: var(--blue); border-color: var(--blue); }
   .transport-btn.enabled svg { stroke: var(--blue); }
-  .transport-btn:not(.enabled) svg { stroke: #666; }
-  .transport-btn.enabled:hover { background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green); }
+  .transport-btn:not(.enabled) svg { stroke: var(--border-light); }
+  .transport-btn.enabled:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
   .transport-btn.enabled:hover svg { stroke: var(--green); }
-  .transport-btn:not(.enabled) { cursor: default; opacity: 0.7; color: #666; border-color: #666; }
+  .transport-btn:not(.enabled) { cursor: default; opacity: 0.7; color: var(--border-light); border-color: var(--border-light); }
   .transport-btn.tb-start { font-size: 1.0rem; }
   .transport-btn.tb-pause { font-size: 1.3rem; padding-bottom: 2px; }
   .transport-btn.tb-reset { font-size: 1.4rem; padding-top: 2px; }
@@ -641,7 +647,7 @@
     display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(5, 1fr); gap: 4px;
   }
   .quick-times button {
-    border-radius: 5px; border: 1px solid #444;
+    border-radius: 5px; border: 1px solid var(--border-mid);
     background: var(--card2); color: var(--dim); font-size: 0.8rem;
     font-weight: 600; cursor: pointer; transition: all 0.15s;
     display: flex; align-items: center; justify-content: center;
@@ -649,17 +655,17 @@
   }
   .quick-times button:hover {
     border-color: var(--green); color: var(--green);
-    background: rgba(78,204,163,0.08);
+    background: var(--hover-green);
   }
   .btn-field-add { color: var(--green) !important; border-color: var(--green) !important; }
-  .btn-field-add:hover { background: rgba(78,204,163,0.15) !important; }
+  .btn-field-add:hover { background: var(--hover-green-strong) !important; }
 
   /* Library grid — single scrollable panel */
   .lib-grid-wrap { max-height: 460px; overflow: auto; }
   .lib-grid { min-width: max-content; }
   .lib-grid-header {
     display: grid; gap: 0; padding: 0;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid var(--subtle-border);
     position: sticky; top: 0; z-index: 5; background: var(--bg);
     white-space: nowrap; height: 26px; align-items: center; box-sizing: border-box;
   }
@@ -675,8 +681,8 @@
   .lib-grid-header .sort-active { color: var(--green); }
   .lib-grid-header .sort-active::after { margin-left: 2px; }
   .btn-clear-sort {
-    border: 1px solid #444; border-radius: 4px; background: transparent;
-    color: #555; font-size: 0.6rem; padding: 1px 5px; cursor: pointer;
+    border: 1px solid var(--border-mid); border-radius: 4px; background: transparent;
+    color: var(--text-faint); font-size: 0.6rem; padding: 1px 5px; cursor: pointer;
     display: none; transition: all 0.15s; white-space: nowrap;
     align-self: center; justify-self: center;
   }
@@ -697,17 +703,17 @@
   }
   .lib-row {
     display: grid; gap: 0; align-items: center;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    border-bottom: 1px solid var(--subtle-bg);
     transition: background 0.15s;
     height: 29px; min-height: 29px; box-sizing: border-box;
   }
   .lib-row:last-child { border-bottom: none; }
-  .lib-row:hover { background: rgba(255,255,255,0.03); }
+  .lib-row:hover { background: var(--subtle-bg); }
   .lib-row > * { padding: 4px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   .lib-row-cb { width: 15px; height: 15px; accent-color: var(--green); cursor: pointer; margin: 0; padding: 4px 2px; }
   .lib-row.active { background: rgba(78,204,163,0.06); }
   .lib-drag-handle {
-    cursor: grab; color: #555; font-size: 0.9rem; text-align: center;
+    cursor: grab; color: var(--text-faint); font-size: 0.9rem; text-align: center;
     user-select: none; padding: 0 2px !important; line-height: 1;
     display: flex; align-items: center; justify-content: center;
   }
@@ -719,7 +725,7 @@
   .lib-row-name { font-weight: 600; font-size: 0.82rem; }
   .lib-row-mins { font-size: 0.78rem; color: var(--blue); text-align: right; }
   .lib-row-title, .lib-row-msg, .lib-row-etl { font-size: 0.78rem; color: var(--dim); }
-  .lib-row-title { color: #bbb; }
+  .lib-row-title { color: var(--text-sub); }
   .lib-row-opt { font-size: 0.72rem; color: var(--dim); text-align: center; }
   .lib-row-btn {
     padding: 0; border: 1px solid var(--blue); border-radius: 5px;
@@ -728,14 +734,14 @@
     text-align: center; width: 40px; height: 20px; box-sizing: border-box;
     display: inline-flex; align-items: center; justify-content: center;
   }
-  .lib-row-btn:hover { background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green); }
+  .lib-row-btn:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
   .lib-row-btn.btn-loaded {
     border-color: var(--green); color: var(--green);
   }
-  .lib-row-btn.btn-loaded:hover { background: rgba(78,204,163,0.15); }
+  .lib-row-btn.btn-loaded:hover { background: var(--hover-green-strong); }
   .lib-row-go { font-size: 0.55rem; }
   .btn-new-timer {
-    width: 100%; padding: 8px; border: 2px dashed #444; border-radius: 8px;
+    width: 100%; padding: 8px; border: 2px dashed var(--border-mid); border-radius: 8px;
     background: transparent; color: var(--dim); font-size: 0.85rem; cursor: pointer;
     margin-top: 6px;
   }
@@ -746,28 +752,28 @@
     flex-wrap: nowrap;
   }
   .lib-btn-sep {
-    width: 1px; height: 18px; background: rgba(255,255,255,0.1); margin: 0 2px; flex-shrink: 0;
+    width: 1px; height: 18px; background: var(--subtle-border); margin: 0 2px; flex-shrink: 0;
   }
   .lib-action-btn {
     display: inline-flex; align-items: center; gap: 4px;
-    padding: 4px 10px; border: 1px solid #666; border-radius: 5px;
-    background: transparent; color: #666; font-size: 0.75rem;
+    padding: 4px 10px; border: 1px solid var(--border-light); border-radius: 5px;
+    background: transparent; color: var(--border-light); font-size: 0.75rem;
     cursor: default; transition: all 0.15s; white-space: nowrap;
     opacity: 0.7;
   }
   .lib-action-btn svg { width: 14px; height: 14px; vertical-align: middle; }
-  .lib-action-btn:not(.enabled) svg { stroke: #666; }
+  .lib-action-btn:not(.enabled) svg { stroke: var(--border-light); }
   .lib-action-btn.enabled {
     color: var(--blue); border-color: var(--blue); cursor: pointer; opacity: 1;
   }
   .lib-action-btn.enabled svg { stroke: var(--blue); }
   .lib-action-btn.enabled:hover {
-    background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green);
+    background: var(--hover-green); color: var(--green); border-color: var(--green);
   }
   .lib-action-btn.enabled:hover svg { stroke: var(--green); }
   .lib-action-btn.btn-action-delete.enabled { color: var(--blue); border-color: var(--blue); }
   .lib-action-btn.btn-action-delete.enabled:hover {
-    background: rgba(231,76,60,0.08); color: var(--red); border-color: var(--red);
+    background: var(--hover-red); color: var(--red); border-color: var(--red);
   }
   .lib-action-btn.btn-action-delete.enabled:hover svg { stroke: var(--red); }
   .lib-select-all { width: 15px; height: 15px; accent-color: var(--green); cursor: pointer; margin: 0; }
@@ -781,14 +787,14 @@
     font-family: inherit; width: 100%; box-sizing: border-box;
     transition: border-color 0.15s; height: 22px; line-height: 1;
   }
-  input.admin-cell-input:hover { border-color: rgba(255,255,255,0.1); }
-  input.admin-cell-input:focus { border-color: var(--blue); outline: none; background: rgba(255,255,255,0.04); }
+  input.admin-cell-input:hover { border-color: var(--subtle-border); }
+  input.admin-cell-input:focus { border-color: var(--blue); outline: none; background: var(--subtle-bg); }
   .admin-save-btn, .admin-cancel-btn {
     padding: 3px 8px; border: 1px solid var(--blue); border-radius: 4px;
     background: transparent; color: var(--blue); font-size: 0.7rem;
     cursor: pointer; font-family: inherit; white-space: nowrap; transition: all 0.15s;
   }
-  .admin-save-btn:hover, .admin-cancel-btn:hover { background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green); }
+  .admin-save-btn:hover, .admin-cancel-btn:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
 
   /* Library grid editable cells */
   input.lib-cell-input, select.lib-cell-select {
@@ -797,8 +803,8 @@
     font-family: inherit; width: 100%; box-sizing: border-box;
     transition: border-color 0.15s; height: 22px; line-height: 1;
   }
-  input.lib-cell-input:hover, select.lib-cell-select:hover { border-color: rgba(255,255,255,0.1); }
-  input.lib-cell-input:focus, select.lib-cell-select:focus { border-color: var(--blue); outline: none; background: rgba(255,255,255,0.04); }
+  input.lib-cell-input:hover, select.lib-cell-select:hover { border-color: var(--subtle-border); }
+  input.lib-cell-input:focus, select.lib-cell-select:focus { border-color: var(--blue); outline: none; background: var(--subtle-bg); }
   input.lib-cell-input[type="number"] { text-align: right; -moz-appearance: textfield; }
   input.lib-cell-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
   .lib-cell-cb { width: 15px; height: 15px; accent-color: var(--blue); cursor: pointer; }
@@ -807,7 +813,7 @@
   .lib-action-btn.btn-action-cancel.enabled { color: var(--blue); border-color: var(--blue); cursor: pointer; opacity: 1; }
   .lib-action-btn.btn-action-cancel.enabled svg { stroke: var(--blue); }
   .lib-action-btn.btn-action-cancel.enabled:hover {
-    background: rgba(231,76,60,0.08); color: var(--red); border-color: var(--red);
+    background: var(--hover-red); color: var(--red); border-color: var(--red);
   }
   .lib-action-btn.btn-action-cancel.enabled:hover svg { stroke: var(--red); }
   /* Locked rows: dim and disable inputs when another row is being edited */
@@ -819,7 +825,7 @@
   /* Glass overlay: blocks everything outside grid during inline editing */
   #editOverlay {
     display: none; position: fixed; inset: 0; z-index: 500;
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--shadow);
   }
   /* Lift grid area above overlay during editing */
   body.inline-editing #timersView { position: relative; z-index: 501; }
@@ -838,36 +844,36 @@
   }
   .lib-search {
     width: 100%; padding: 2px 24px 2px 25px;
-    border: 1px solid #333; border-radius: 6px;
+    border: 1px solid var(--border); border-radius: 6px;
     background: var(--bg); color: var(--text); font-size: 0.8rem;
     font-family: inherit; height: 24px; box-sizing: border-box;
   }
   .lib-search-close {
     position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
     width: 16px; height: 16px; cursor: pointer; border: none; background: none;
-    color: #555; padding: 0; display: flex; align-items: center; justify-content: center;
+    color: var(--text-faint); padding: 0; display: flex; align-items: center; justify-content: center;
   }
   .lib-search-close:hover { color: var(--red); }
-  .lib-search::placeholder { color: #555; }
+  .lib-search::placeholder { color: var(--text-faint); }
   .lib-search:focus { outline: none; border-color: var(--blue); }
   .lib-orders-select {
-    padding: 6px 10px; border: 1px solid #333; border-radius: 6px;
+    padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px;
     background: var(--bg); color: var(--dim); font-size: 0.8rem;
     font-family: inherit; max-width: 160px;
   }
   .lib-orders-select:focus { outline: none; border-color: var(--blue); }
   .lib-toolbar-btn {
-    padding: 5px 10px; border: 1px solid #444; border-radius: 6px;
+    padding: 5px 10px; border: 1px solid var(--border-mid); border-radius: 6px;
     background: transparent; color: var(--dim); font-size: 0.75rem;
     cursor: pointer; font-family: inherit; white-space: nowrap;
     transition: all 0.15s;
   }
-  .lib-toolbar-btn:hover { background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green); }
-  .lib-toolbar-btn.btn-danger:hover { background: rgba(231,76,60,0.08); color: var(--red); border-color: var(--red); }
+  .lib-toolbar-btn:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
+  .lib-toolbar-btn.btn-danger:hover { background: var(--hover-red); color: var(--red); border-color: var(--red); }
 
   /* Library view toggle (Timers / Sequences) */
   .lib-view-toggle {
-    display: flex; gap: 0; margin-bottom: 12px; border: 1px solid #444; border-radius: 6px; overflow: hidden;
+    display: flex; gap: 0; margin-bottom: 12px; border: 1px solid var(--border-mid); border-radius: 6px; overflow: hidden;
   }
   .lib-view-btn {
     flex: 1; padding: 6px 0; border: none; background: transparent; color: var(--dim);
@@ -875,27 +881,27 @@
     font-family: inherit;
   }
   .lib-view-btn.active { background: var(--accent); color: var(--text); }
-  .lib-view-btn:hover:not(.active) { background: rgba(255,255,255,0.04); }
+  .lib-view-btn:hover:not(.active) { background: var(--subtle-bg); }
 
   /* Sequence list */
   .seq-list { display: flex; flex-direction: column; gap: 6px; }
   .seq-card {
-    padding: 10px 12px; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
-    background: rgba(255,255,255,0.02); transition: all 0.15s;
+    padding: 10px 12px; border: 1px solid var(--subtle-bg2); border-radius: 8px;
+    background: var(--subtle-bg); transition: all 0.15s;
   }
   .seq-card-play {
     color: var(--blue) !important; border-color: var(--blue) !important;
     font-size: 0.75rem !important; padding: 4px 10px !important; margin-right: 4px;
     transition: all 0.15s;
   }
-  .seq-card-play:hover { color: var(--green) !important; border-color: var(--green) !important; background: rgba(78,204,163,0.15) !important; }
+  .seq-card-play:hover { color: var(--green) !important; border-color: var(--green) !important; background: var(--hover-green-strong) !important; }
   .seq-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
   .seq-card-name { font-weight: 600; font-size: 0.85rem; }
   .seq-card-meta { font-size: 0.7rem; color: var(--dim); }
-  .seq-card-steps { font-size: 0.72rem; color: #888; }
+  .seq-card-steps { font-size: 0.72rem; color: var(--dim); }
   .seq-card-actions { display: flex; gap: 4px; }
   .seq-card-btn {
-    padding: 3px 8px; border: 1px solid #444; border-radius: 4px;
+    padding: 3px 8px; border: 1px solid var(--border-mid); border-radius: 4px;
     background: transparent; color: var(--dim); font-size: 0.7rem;
     cursor: pointer; transition: all 0.15s; font-family: inherit;
   }
@@ -907,15 +913,15 @@
   .seq-builder.visible { display: block; }
   .seq-builder-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
   .seq-builder-name {
-    flex: 1; padding: 6px 10px; border: 1px solid #444; border-radius: 6px;
+    flex: 1; padding: 6px 10px; border: 1px solid var(--border-mid); border-radius: 6px;
     background: var(--bg); color: var(--text); font-size: 0.85rem; font-family: inherit;
   }
   .seq-builder-name:focus { outline: none; border-color: var(--blue); }
   .seq-step-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; min-height: 40px; }
   .seq-step {
     display: flex; align-items: center; gap: 8px; padding: 6px 8px;
-    border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;
-    background: rgba(255,255,255,0.02); cursor: grab;
+    border: 1px solid var(--subtle-bg2); border-radius: 6px;
+    background: var(--subtle-bg); cursor: grab;
   }
   .seq-step.dragging { opacity: 0.4; }
   .seq-step.drag-over { border-top: 2px solid var(--green); }
@@ -923,48 +929,48 @@
   .seq-step-name { flex: 1; font-size: 0.8rem; font-weight: 500; }
   .seq-step-mins { font-size: 0.75rem; color: var(--blue); }
   .seq-step-remove {
-    width: 18px; height: 18px; border: 1px solid #444; border-radius: 3px;
-    background: transparent; color: #555; font-size: 0.65rem;
+    width: 18px; height: 18px; border: 1px solid var(--border-mid); border-radius: 3px;
+    background: transparent; color: var(--text-faint); font-size: 0.65rem;
     cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
   }
   .seq-step-remove:hover { color: var(--red); border-color: var(--red); }
   .seq-step-start-mode {
-    padding: 1px 6px; border: 1px solid #444; border-radius: 3px;
+    padding: 1px 6px; border: 1px solid var(--border-mid); border-radius: 3px;
     background: transparent; font-size: 0.6rem; cursor: pointer; font-family: inherit;
     min-width: 36px; text-align: center;
   }
   .seq-step-start-mode.auto { color: var(--green); border-color: rgba(46,204,113,0.4); }
   .seq-step-start-mode.manual { color: var(--yellow, #f1c40f); border-color: rgba(241,196,15,0.4); }
   .seq-add-timer {
-    width: 100%; padding: 6px; border: 1px dashed #444; border-radius: 6px;
+    width: 100%; padding: 6px; border: 1px dashed var(--border-mid); border-radius: 6px;
     background: transparent; color: var(--dim); font-size: 0.78rem;
     cursor: pointer; margin-bottom: 10px; font-family: inherit;
   }
   .seq-add-timer:hover { border-color: var(--green); color: var(--green); }
   .seq-timer-picker {
     display: none; max-height: 200px; overflow-y: auto;
-    border: 1px solid #444; border-radius: 6px; margin-bottom: 10px;
+    border: 1px solid var(--border-mid); border-radius: 6px; margin-bottom: 10px;
     background: var(--card);
   }
   .seq-timer-picker.visible { display: block; }
   .seq-timer-pick-item {
     padding: 6px 10px; cursor: pointer; font-size: 0.78rem;
-    border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.1s;
+    border-bottom: 1px solid var(--subtle-bg); transition: background 0.1s;
   }
   .seq-timer-pick-item:last-child { border-bottom: none; }
-  .seq-timer-pick-item:hover { background: rgba(78,204,163,0.08); }
+  .seq-timer-pick-item:hover { background: var(--hover-green); }
   .seq-builder-footer { display: flex; gap: 8px; align-items: center; }
   .seq-builder-footer button {
-    padding: 6px 14px; border: 1px solid #444; border-radius: 6px;
+    padding: 6px 14px; border: 1px solid var(--border-mid); border-radius: 6px;
     background: transparent; color: var(--dim); font-size: 0.8rem;
     cursor: pointer; font-family: inherit; transition: all 0.15s;
   }
   .seq-builder-footer button.btn-save { border-color: var(--green); color: var(--green); }
   .seq-builder-footer button.btn-save:hover:not(:disabled) { background: rgba(78,204,163,0.1); }
-  .seq-builder-footer button.btn-save:disabled { border-color: #333; color: #444; cursor: default; }
-  .seq-builder-footer button:hover { background: rgba(255,255,255,0.04); }
+  .seq-builder-footer button.btn-save:disabled { border-color: var(--border); color: var(--border-mid); cursor: default; }
+  .seq-builder-footer button:hover { background: var(--subtle-bg); }
   .seq-auto-advance { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-  .seq-auto-advance label { font-size: 0.8rem; color: #aaa; }
+  .seq-auto-advance label { font-size: 0.8rem; color: var(--text-muted); }
 
   /* Sequence progress badge (shown during playback) */
   .seq-progress-badge {
@@ -1019,22 +1025,22 @@
   }
   .students-summary-count.count-working { color: var(--blue); }
   .students-summary-count.count-done { color: var(--green); }
-  .students-summary-count.count-away { color: #e67e22; }
-  .students-summary-count.count-idle { color: #666; }
+  .students-summary-count.count-away { color: var(--orange); }
+  .students-summary-count.count-idle { color: var(--border-light); }
   .students-list {
     max-height: 400px; overflow-y: auto;
   }
   .student-row {
     display: flex; align-items: center; gap: 12px;
-    padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    padding: 8px 10px; border-bottom: 1px solid var(--subtle-bg);
     transition: background 0.15s;
   }
   .student-row:last-child { border-bottom: none; }
-  .student-row:hover { background: rgba(255,255,255,0.03); }
+  .student-row:hover { background: var(--subtle-bg); }
   .student-dot {
     width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
   }
-  .student-dot.dot-idle { background: #444; }
+  .student-dot.dot-idle { background: var(--border-mid); }
   .student-dot.dot-working { background: var(--blue); }
   .student-dot.dot-done { background: var(--green); }
   .student-dot.dot-away { background: #e67e22; }
@@ -1046,26 +1052,26 @@
     font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
     min-width: 70px; text-align: right;
   }
-  .student-state.state-idle { color: #555; }
+  .student-state.state-idle { color: var(--text-faint); }
   .student-state.state-working { color: var(--blue); }
   .student-state.state-done { color: var(--green); }
-  .student-state.state-away { color: #e67e22; }
+  .student-state.state-away { color: var(--orange); }
   .student-time {
-    font-size: 0.7rem; color: #555; min-width: 50px; text-align: right;
+    font-size: 0.7rem; color: var(--text-faint); min-width: 50px; text-align: right;
   }
   .students-empty {
-    font-size: 0.85rem; color: #555; text-align: center; padding: 24px 0;
+    font-size: 0.85rem; color: var(--text-faint); text-align: center; padding: 24px 0;
   }
   .students-toolbar {
     display: flex; gap: 10px; align-items: center; margin-bottom: 12px;
   }
   .students-toolbar button {
-    padding: 5px 12px; border: 1px solid #444; border-radius: 6px;
+    padding: 5px 12px; border: 1px solid var(--border-mid); border-radius: 6px;
     background: transparent; color: var(--dim); font-size: 0.75rem;
     cursor: pointer; font-family: inherit; transition: all 0.15s;
   }
   .students-toolbar button:hover {
-    background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green);
+    background: var(--hover-green); color: var(--green); border-color: var(--green);
   }
 
   /* Checkin toggle in students toolbar */
@@ -1075,7 +1081,7 @@
   .checkin-toggle-label { font-size: 0.75rem; color: var(--dim); }
   .checkin-toggle {
     position: relative; width: 38px; height: 20px; cursor: pointer;
-    -webkit-appearance: none; appearance: none; background: #444;
+    -webkit-appearance: none; appearance: none; background: var(--border-mid);
     border-radius: 10px; border: none; outline: none; transition: background 0.2s;
   }
   .checkin-toggle:checked { background: var(--green); }
@@ -1093,19 +1099,19 @@
     border-radius: 4px; cursor: pointer; white-space: nowrap;
     transition: all 0.15s; font-family: inherit;
   }
-  .obs-copy-btn:hover { background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green); }
+  .obs-copy-btn:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
 
   /* Mockup check-in footer */
   .mock-checkin-footer {
     display: none; /* hidden until toggle is on */
     width: 100%; padding: 4px 4px 2px;
-    border-top: 1px solid rgba(255,255,255,0.08);
+    border-top: 1px solid var(--subtle-bg2);
     flex-direction: column; align-items: center; gap: 2px;
     margin-top: auto; flex-shrink: 0;
   }
   .mock-checkin-footer.visible { display: flex; }
   .mock-checkin-name {
-    font-size: 0.55rem; color: #888; font-weight: 600;
+    font-size: 0.55rem; color: var(--dim); font-weight: 600;
   }
   .mock-checkin-buttons {
     display: flex; gap: 4px; width: 100%;
@@ -1114,10 +1120,10 @@
     flex: 1; padding: 3px 1px; border-radius: 4px; font-size: 0.45rem;
     font-weight: 700; text-align: center; border: 1px solid transparent;
   }
-  .mock-checkin-btn-working { background: rgba(52,152,219,0.15); color: var(--blue); border-color: var(--blue); }
-  .mock-checkin-btn-done { background: rgba(78,204,163,0.15); color: var(--green); border-color: var(--green); }
-  .mock-checkin-btn-away { background: rgba(230,126,34,0.15); color: #e67e22; border-color: #e67e22; }
-  .mock-checkin-btn-clear { background: rgba(255,255,255,0.05); color: #aaa; border-color: #888; }
+  .mock-checkin-btn-working { background: var(--hover-blue); color: var(--blue); border-color: var(--blue); }
+  .mock-checkin-btn-done { background: var(--hover-green-strong); color: var(--green); border-color: var(--green); }
+  .mock-checkin-btn-away { background: rgba(230,126,34,0.15); color: var(--orange); border-color: var(--orange); }
+  .mock-checkin-btn-clear { background: rgba(255,255,255,0.05); color: var(--text-muted); border-color: var(--dim); }
 
   /* Tab badge */
   .tab-badge {
@@ -1137,7 +1143,7 @@
     background: transparent; color: var(--blue); font-size: 0.78rem;
     cursor: pointer; font-family: inherit; transition: all 0.15s;
   }
-  .settings-btn:hover { background: rgba(78,204,163,0.08); color: var(--green); border-color: var(--green); }
+  .settings-btn:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
 
   /* QR section */
   .qr-section { text-align: center; }
@@ -1147,17 +1153,17 @@
   /* ── Login overlay ── */
   .login-overlay {
     position: fixed; inset: 0; z-index: 10000;
-    background: rgba(0,0,0,0.4);
+    background: var(--overlay);
     display: flex; justify-content: center; align-items: center;
   }
   .login-overlay.hidden { display: none; }
   .login-box {
-    background: rgba(30, 30, 50, 0.5);
+    background: var(--glass);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.25);
+    border: 1px solid var(--glass-border);
     border-radius: 14px; padding: 40px;
     width: 100%; max-width: 380px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    box-shadow: 0 8px 32px var(--overlay);
     cursor: grab;
   }
   .login-box:active { cursor: grabbing; }
@@ -1167,7 +1173,7 @@
   .login-box input[type="email"],
   .login-box input[type="password"] {
     width: 100%; padding: 10px 12px; border-radius: 6px;
-    border: 1.5px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: var(--text);
+    border: 1.5px solid rgba(255,255,255,0.2); background: var(--subtle-bg2); color: var(--text);
     font-size: 0.95rem; outline: none; cursor: text; user-select: text;
   }
   .login-box input:focus { border-color: var(--green); }
@@ -1190,11 +1196,39 @@
     font-size: 0.75rem; color: var(--dim);
   }
   .login-logout {
-    background: none; border: 1px solid #444; color: var(--dim);
+    background: none; border: 1px solid var(--border-mid); color: var(--dim);
     padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;
   }
   .login-logout:hover { border-color: var(--text); color: var(--text); }
 
+
+  /* Palette picker */
+  .palette-section { margin-bottom: 20px; }
+  .palette-section-title { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; }
+  .palette-category-label {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--dim); margin: 10px 0 6px; font-weight: 600;
+  }
+  .palette-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .palette-swatch {
+    width: 44px; height: 28px; border-radius: 6px; cursor: pointer;
+    border: 2px solid transparent; position: relative;
+    transition: border-color 0.15s, transform 0.1s;
+    overflow: hidden; display: flex;
+  }
+  .palette-swatch:hover { transform: scale(1.08); border-color: var(--dim); }
+  .palette-swatch.active { border-color: var(--green); box-shadow: 0 0 8px rgba(78,204,163,0.3); }
+  .palette-swatch-left { width: 50%; height: 100%; }
+  .palette-swatch-right { width: 50%; height: 100%; display: flex; flex-direction: column; }
+  .palette-swatch-accent { height: 50%; }
+  .palette-swatch-text { height: 50%; display: flex; align-items: center; justify-content: center; }
+  .palette-swatch-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .palette-swatch-name {
+    font-size: 0.6rem; color: var(--dim); text-align: center;
+    margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 48px;
+  }
+  .palette-item { display: flex; flex-direction: column; align-items: center; }
 </style>
 </head>
 <body>
@@ -1232,7 +1266,7 @@
         <div class="text-side-label">Preset Name</div>
         <input type="text" class="text-side-input" id="fieldName" placeholder="e.g. Break 15" autocomplete="off">
         <div class="text-side-hint">Library only — not shown to students.</div>
-        <hr style="border:none; border-top:1px solid #888; margin:8px 0;">
+        <hr style="border:none; border-top:1px solid var(--border-light); margin:8px 0;">
         <div class="transport-grid">
           <button class="transport-btn tb-start" onclick="doStart()" title="Push all and start">&#9654;&#xFE0E;</button>
           <button class="transport-btn tb-pause" onclick="doPause()" title="Pause">&#9208;&#xFE0E;</button>
@@ -1250,11 +1284,11 @@
             <button class="seq-stop-btn" onclick="stopSequence()" title="End sequence">End</button>
           </span>
         </div>
-        <hr style="border:none; border-top:1px solid #888; margin:8px 0;">
+        <hr style="border:none; border-top:1px solid var(--border-light); margin:8px 0;">
         <button class="btn-push-all" onclick="pushAllFields()" title="Pushes all checked fields">Push All</button>
         <button class="btn-pull-all" onclick="pullAllFields()" title="Load student-visible values into mockup">Pull All</button>
         <button class="btn-to-library" onclick="saveToLibrary()" title="Save mockup fields to library timers">to Library</button>
-        <hr style="border:none; border-top:1px solid #888; margin:8px 0;">
+        <hr style="border:none; border-top:1px solid var(--border-light); margin:8px 0;">
         <div class="connected-badge">
           <div class="connected-label">Phones Connected</div>
           <div class="connected-count" id="connectedCount">0</div>
@@ -1446,7 +1480,7 @@
       </div>
 
       <div style="margin-bottom:14px;">
-        <div style="font-size:0.8rem; color:#888; margin-bottom:8px; font-weight:600;">Background</div>
+        <div style="font-size:0.8rem; color:var(--dim); margin-bottom:8px; font-weight:600;">Background</div>
         <div class="checkbox-row" style="margin-bottom:6px;">
           <input type="radio" name="bgMode" id="fieldBgDefault" class="custom-cb" value="default" checked onchange="updateBgMode()">
           <label for="fieldBgDefault">Default</label>
@@ -1467,8 +1501,8 @@
       </div>
 
       <div style="display:flex; align-items:center; gap:8px; margin-top:18px;">
-        <label for="optGoToTab" style="font-size:0.85rem; color:#aaa;">After loading, go to tab:</label>
-        <select id="optGoToTab" style="padding:6px 10px; border:1px solid #666; border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
+        <label for="optGoToTab" style="font-size:0.85rem; color:var(--text-muted);">After loading, go to tab:</label>
+        <select id="optGoToTab" style="padding:6px 10px; border:1px solid var(--border-light); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
           <option value="library">Library</option>
           <option value="options">Options</option>
           <option value="students">Students</option>
@@ -1498,14 +1532,22 @@
 
         <div style="flex:1; min-width:0;">
 
+          <!-- Palette Picker -->
+          <div class="palette-section">
+            <label style="font-size:0.85rem; color:var(--text-muted);">Theme</label>
+            <div id="palettePicker" style="margin-top:8px; margin-left:103px;"></div>
+          </div>
+
+          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+
           <div style="margin-bottom:20px;">
-            <label style="font-size:0.85rem; color:#aaa;">Class Code</label>
+            <label style="font-size:0.85rem; color:var(--text-muted);">Class Code</label>
             <div style="display:flex; align-items:flex-start; gap:16px; margin-top:8px;">
               <div style="margin-left:103px; flex:1; min-width:0;">
                 <button class="settings-btn" onclick="generateNewCode()">Disconnect All Phones</button>
                 <div style="font-size:0.75rem; color:var(--dim); margin-top:4px;">Generates a new code and disconnects all current students.</div>
                 <div style="margin-top:8px;">
-                  <span style="font-size:0.8rem; color:#888;">Current code:</span>
+                  <span style="font-size:0.8rem; color:var(--dim);">Current code:</span>
                   <span id="classCodeDisplay" style="font-size:1.4rem; font-weight:800; letter-spacing:4px; color:var(--green); font-family:monospace; margin-left:6px;"></span>
                 </div>
               </div>
@@ -1513,16 +1555,16 @@
             </div>
           </div>
 
-          <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
 
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-            <label for="alarmSound" style="font-size:0.85rem; color:#aaa; white-space:nowrap; min-width:95px;">Alarm sound:</label>
-            <select id="alarmSound" style="flex:1; padding:6px 10px; border:1px solid #333; border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
+            <label for="alarmSound" style="font-size:0.85rem; color:var(--text-muted); white-space:nowrap; min-width:95px;">Alarm sound:</label>
+            <select id="alarmSound" style="flex:1; padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
               <option value="">— no sound —</option>
             </select>
             <button class="settings-btn" onclick="previewSound('alarmSound')">&#9654; Test</button>
             <button class="settings-btn" onclick="stopPreview()">&#9632; Stop</button>
-            <button class="settings-btn" onclick="deleteSelectedSound('alarmSound')" style="color:#e55;">&#10005;</button>
+            <button class="settings-btn" onclick="deleteSelectedSound('alarmSound')" style="color:var(--red);">&#10005;</button>
           </div>
           <div style="margin-left:103px;">
             <div class="checkbox-row" style="margin-bottom:8px;">
@@ -1537,29 +1579,29 @@
             </div>
           </div>
 
-          <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
 
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-            <label for="warningSound" style="font-size:0.85rem; color:#aaa; white-space:nowrap; min-width:95px;">Warning alert:</label>
-            <select id="warningSound" style="flex:1; padding:6px 10px; border:1px solid #333; border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
+            <label for="warningSound" style="font-size:0.85rem; color:var(--text-muted); white-space:nowrap; min-width:95px;">Warning alert:</label>
+            <select id="warningSound" style="flex:1; padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
               <option value="">— no sound —</option>
             </select>
             <button class="settings-btn" onclick="previewSound('warningSound')">&#9654; Test</button>
             <button class="settings-btn" onclick="stopPreview()">&#9632; Stop</button>
-            <button class="settings-btn" onclick="deleteSelectedSound('warningSound')" style="color:#e55;">&#10005;</button>
+            <button class="settings-btn" onclick="deleteSelectedSound('warningSound')" style="color:var(--red);">&#10005;</button>
           </div>
           <div style="margin-left:103px; display:flex; align-items:center; gap:8px;">
             <input type="checkbox" id="warningEnabled" class="custom-cb">
-            <label for="warningEnabled" style="font-size:0.85rem; color:#aaa;">Play warning</label>
-            <input type="number" id="warningMinutes" value="5" min="1" max="60" style="width:50px; padding:5px 8px; border:1px solid #333; border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem; text-align:center;">
-            <span style="font-size:0.85rem; color:#aaa;">min before end</span>
+            <label for="warningEnabled" style="font-size:0.85rem; color:var(--text-muted);">Play warning</label>
+            <input type="number" id="warningMinutes" value="5" min="1" max="60" style="width:50px; padding:5px 8px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem; text-align:center;">
+            <span style="font-size:0.85rem; color:var(--text-muted);">min before end</span>
           </div>
 
-          <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
 
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px;">
-            <label for="optStartTab" style="font-size:0.85rem; color:#aaa;">After starting, go to tab:</label>
-            <select id="optStartTab" style="padding:6px 10px; border:1px solid #666; border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
+            <label for="optStartTab" style="font-size:0.85rem; color:var(--text-muted);">After starting, go to tab:</label>
+            <select id="optStartTab" style="padding:6px 10px; border:1px solid var(--border-light); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
               <option value="library">Library</option>
               <option value="options">Options</option>
               <option value="students">Students</option>
@@ -1567,20 +1609,20 @@
             </select>
           </div>
 
-          <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
 
           <div style="margin-bottom:20px;">
             <div class="checkbox-row">
               <input type="checkbox" id="muteStudents" class="custom-cb">
-              <label for="muteStudents" style="font-size:0.85rem; color:#aaa;">Mute student updates</label>
+              <label for="muteStudents" style="font-size:0.85rem; color:var(--text-muted);">Mute student updates</label>
             </div>
             <div style="font-size:0.75rem; color:var(--dim); margin-top:4px; margin-left:103px;">When muted, timer changes only appear in the preview — not on student screens.</div>
           </div>
 
-          <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
 
           <div>
-            <label style="font-size:0.85rem; color:#aaa;">Library Backup</label>
+            <label style="font-size:0.85rem; color:var(--text-muted);">Library Backup</label>
             <div style="display:flex; gap:8px; margin-top:8px; margin-left:103px;">
               <button class="settings-btn" onclick="exportLibrary()">Export</button>
               <label class="settings-btn" style="cursor:pointer;">
@@ -1590,21 +1632,21 @@
             </div>
           </div>
 
-          <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
 
           <div>
-            <label style="font-size:0.85rem; color:#aaa;">Display URLs</label>
+            <label style="font-size:0.85rem; color:var(--text-muted);">Display URLs</label>
             <div style="display:flex; align-items:center; gap:8px; margin:10px 0;">
               <button class="obs-copy-btn" onclick="copyDisplayUrl()">Copy</button>
               <span style="font-size:0.75rem; color:var(--dim);">Student display screen (projected or second monitor)</span>
             </div>
           </div>
 
-          <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
 
           <div>
-            <label style="font-size:0.85rem; color:#aaa;">OBS Browser Source URLs</label>
-            <div style="font-size:0.7rem; color:#555; margin:4px 0 10px;">Click Copy to copy a URL. Paste into OBS as a Browser Source.</div>
+            <label style="font-size:0.85rem; color:var(--text-muted);">OBS Browser Source URLs</label>
+            <div style="font-size:0.7rem; color:var(--text-faint); margin:4px 0 10px;">Click Copy to copy a URL. Paste into OBS as a Browser Source.</div>
             <table style="border-collapse:collapse; font-size:0.75rem; margin-top:6px;">
               <thead>
                 <tr>
@@ -1686,18 +1728,18 @@
             </div>
           </div>
 
-          <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
 
           <div>
-            <label style="font-size:0.85rem; color:#aaa;">Account</label>
+            <label style="font-size:0.85rem; color:var(--text-muted);">Account</label>
             <div style="margin-top:8px; margin-left:103px;">
               <button class="settings-btn" onclick="showChangePassword()">Change Password</button>
             </div>
           </div>
 
-          <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
           <div>
-            <label style="font-size:0.85rem; color:#aaa;">About</label>
+            <label style="font-size:0.85rem; color:var(--text-muted);">About</label>
             <div style="margin-top:8px; margin-left:103px; font-size:0.8rem; color:var(--dim);">
               LiveTimer v1.0<br>
               &copy; 2025 Peter Avila. All rights reserved.
@@ -1706,7 +1748,7 @@
 
           <!-- Admin section: only visible if isAdmin account -->
           <div id="adminSection" style="display:none;">
-            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
+            <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
             <label style="font-size:0.85rem; color:#e74c3c;">Admin — Instructors</label>
             <div style="margin-top:8px;">
               <!-- Search + toolbar (mirrors Library tab pattern) -->
@@ -1739,7 +1781,7 @@
               <div id="adminStatus" style="font-size:0.75rem; margin-top:8px; min-height:1.2em;"></div>
             </div>
 
-            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
+            <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
             <label style="font-size:0.85rem; color:#e74c3c;">Admin — Default Sounds</label>
             <div style="font-size:0.75rem; color:var(--dim); margin-top:4px; margin-bottom:8px;">These sounds are copied to every new instructor account on creation.</div>
             <div id="defaultSoundsList" style="margin-bottom:8px;"></div>
@@ -1750,7 +1792,7 @@
               </label>
             </div>
 
-            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.15); margin:20px 0;">
+            <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
             <label style="font-size:0.85rem; color:#e74c3c;">Admin — Screenshot Mode</label>
             <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
               <label class="switch"><input type="checkbox" id="screenshotMode" onchange="toggleScreenshotMode()"><span class="slider"></span></label>
@@ -1868,6 +1910,248 @@
 </div>
 
 <script>
+
+// ── Palette System ──
+const PALETTES = [
+  // Dark
+  { id: 'midnight', name: 'Midnight', category: 'dark', colors: {
+    '--bg': '#1a1a2e', '--card': '#16213e', '--card2': '#1c2a4a',
+    '--accent': '#0f3460', '--text': '#e0e0e0', '--dim': '#888',
+    '--green': '#4ecca3', '--yellow': '#f0c24b', '--red': '#e74c3c', '--blue': '#3498db',
+    '--border': '#333', '--border-mid': '#444', '--border-light': '#666',
+    '--text-muted': '#aaa', '--text-faint': '#555', '--text-sub': '#bbb',
+    '--hover-green': 'rgba(78,204,163,0.08)', '--hover-green-strong': 'rgba(78,204,163,0.15)',
+    '--hover-blue': 'rgba(52,152,219,0.15)', '--hover-red': 'rgba(231,76,60,0.08)',
+    '--overlay': 'rgba(0,0,0,0.4)', '--glass': 'rgba(30,30,50,0.5)',
+    '--glass-border': 'rgba(255,255,255,0.25)', '--glass-strong': 'rgba(30,30,50,0.75)',
+    '--subtle-border': 'rgba(255,255,255,0.1)', '--subtle-bg': 'rgba(255,255,255,0.04)',
+    '--subtle-bg2': 'rgba(255,255,255,0.08)', '--highlight': 'rgba(255,255,255,0.06)',
+    '--shadow': 'rgba(0,0,0,0.3)', '--scrollbar-thumb': '#333', '--scrollbar-hover': '#444',
+    '--input-bg': '#1a1a2e', '--btn-text-on-accent': '#111',
+    '--orange': '#e67e22', '--blue-hover': '#2980b9', '--color-scheme': 'dark'
+  }},
+  { id: 'charcoal', name: 'Charcoal', category: 'dark', colors: {
+    '--bg': '#1e1e1e', '--card': '#2a2a2a', '--card2': '#333333',
+    '--accent': '#3a3a3a', '--text': '#e8e8e8', '--dim': '#909090',
+    '--green': '#66bb6a', '--yellow': '#ffca28', '--red': '#ef5350', '--blue': '#42a5f5',
+    '--border': '#3a3a3a', '--border-mid': '#4a4a4a', '--border-light': '#6a6a6a',
+    '--text-muted': '#aaa', '--text-faint': '#606060', '--text-sub': '#c0c0c0',
+    '--hover-green': 'rgba(102,187,106,0.08)', '--hover-green-strong': 'rgba(102,187,106,0.15)',
+    '--hover-blue': 'rgba(66,165,245,0.15)', '--hover-red': 'rgba(239,83,80,0.08)',
+    '--overlay': 'rgba(0,0,0,0.45)', '--glass': 'rgba(30,30,30,0.6)',
+    '--glass-border': 'rgba(255,255,255,0.2)', '--glass-strong': 'rgba(25,25,25,0.8)',
+    '--subtle-border': 'rgba(255,255,255,0.08)', '--subtle-bg': 'rgba(255,255,255,0.03)',
+    '--subtle-bg2': 'rgba(255,255,255,0.06)', '--highlight': 'rgba(255,255,255,0.05)',
+    '--shadow': 'rgba(0,0,0,0.35)', '--scrollbar-thumb': '#3a3a3a', '--scrollbar-hover': '#4a4a4a',
+    '--input-bg': '#1e1e1e', '--btn-text-on-accent': '#111',
+    '--orange': '#ffa726', '--blue-hover': '#1e88e5', '--color-scheme': 'dark'
+  }},
+  { id: 'nord', name: 'Nord', category: 'dark', colors: {
+    '--bg': '#2e3440', '--card': '#3b4252', '--card2': '#434c5e',
+    '--accent': '#4c566a', '--text': '#eceff4', '--dim': '#7b88a1',
+    '--green': '#a3be8c', '--yellow': '#ebcb8b', '--red': '#bf616a', '--blue': '#81a1c1',
+    '--border': '#4c566a', '--border-mid': '#5a6378', '--border-light': '#6b7894',
+    '--text-muted': '#9aa5b8', '--text-faint': '#5e6b82', '--text-sub': '#d8dee9',
+    '--hover-green': 'rgba(163,190,140,0.1)', '--hover-green-strong': 'rgba(163,190,140,0.18)',
+    '--hover-blue': 'rgba(129,161,193,0.15)', '--hover-red': 'rgba(191,97,106,0.1)',
+    '--overlay': 'rgba(0,0,0,0.4)', '--glass': 'rgba(46,52,64,0.7)',
+    '--glass-border': 'rgba(216,222,233,0.2)', '--glass-strong': 'rgba(46,52,64,0.85)',
+    '--subtle-border': 'rgba(216,222,233,0.08)', '--subtle-bg': 'rgba(216,222,233,0.03)',
+    '--subtle-bg2': 'rgba(216,222,233,0.06)', '--highlight': 'rgba(216,222,233,0.05)',
+    '--shadow': 'rgba(0,0,0,0.3)', '--scrollbar-thumb': '#4c566a', '--scrollbar-hover': '#5a6378',
+    '--input-bg': '#2e3440', '--btn-text-on-accent': '#2e3440',
+    '--orange': '#d08770', '--blue-hover': '#5e81ac', '--color-scheme': 'dark'
+  }},
+  { id: 'ocean', name: 'Ocean', category: 'dark', colors: {
+    '--bg': '#0a192f', '--card': '#112240', '--card2': '#1a3358',
+    '--accent': '#233e5e', '--text': '#ccd6f6', '--dim': '#6882a8',
+    '--green': '#64ffda', '--yellow': '#ffd700', '--red': '#ff6b6b', '--blue': '#57cbff',
+    '--border': '#1e3a5f', '--border-mid': '#2a4a6f', '--border-light': '#4a6a8f',
+    '--text-muted': '#8892b0', '--text-faint': '#4a5f82', '--text-sub': '#a8b2d1',
+    '--hover-green': 'rgba(100,255,218,0.06)', '--hover-green-strong': 'rgba(100,255,218,0.12)',
+    '--hover-blue': 'rgba(87,203,255,0.12)', '--hover-red': 'rgba(255,107,107,0.08)',
+    '--overlay': 'rgba(0,0,0,0.5)', '--glass': 'rgba(10,25,47,0.7)',
+    '--glass-border': 'rgba(100,255,218,0.15)', '--glass-strong': 'rgba(10,25,47,0.85)',
+    '--subtle-border': 'rgba(255,255,255,0.06)', '--subtle-bg': 'rgba(255,255,255,0.02)',
+    '--subtle-bg2': 'rgba(255,255,255,0.05)', '--highlight': 'rgba(255,255,255,0.04)',
+    '--shadow': 'rgba(0,0,0,0.4)', '--scrollbar-thumb': '#1e3a5f', '--scrollbar-hover': '#2a4a6f',
+    '--input-bg': '#0a192f', '--btn-text-on-accent': '#0a192f',
+    '--orange': '#ff9f43', '--blue-hover': '#3da8e0', '--color-scheme': 'dark'
+  }},
+  { id: 'ink', name: 'Ink', category: 'dark', colors: {
+    '--bg': '#181818', '--card': '#222222', '--card2': '#2c2c2c',
+    '--accent': '#353535', '--text': '#d8d8d8', '--dim': '#787878',
+    '--green': '#a0a0a0', '--yellow': '#c8c8c8', '--red': '#909090', '--blue': '#b0b0b0',
+    '--border': '#333', '--border-mid': '#444', '--border-light': '#5a5a5a',
+    '--text-muted': '#999', '--text-faint': '#555', '--text-sub': '#bbb',
+    '--hover-green': 'rgba(160,160,160,0.08)', '--hover-green-strong': 'rgba(160,160,160,0.15)',
+    '--hover-blue': 'rgba(176,176,176,0.12)', '--hover-red': 'rgba(144,144,144,0.08)',
+    '--overlay': 'rgba(0,0,0,0.5)', '--glass': 'rgba(24,24,24,0.7)',
+    '--glass-border': 'rgba(255,255,255,0.15)', '--glass-strong': 'rgba(18,18,18,0.85)',
+    '--subtle-border': 'rgba(255,255,255,0.08)', '--subtle-bg': 'rgba(255,255,255,0.03)',
+    '--subtle-bg2': 'rgba(255,255,255,0.06)', '--highlight': 'rgba(255,255,255,0.04)',
+    '--shadow': 'rgba(0,0,0,0.4)', '--scrollbar-thumb': '#333', '--scrollbar-hover': '#444',
+    '--input-bg': '#181818', '--btn-text-on-accent': '#181818',
+    '--orange': '#999', '--blue-hover': '#888', '--color-scheme': 'dark'
+  }},
+  // Medium
+  { id: 'slate', name: 'Slate', category: 'medium', colors: {
+    '--bg': '#3d4451', '--card': '#4a5568', '--card2': '#536275',
+    '--accent': '#5f7186', '--text': '#f0f0f0', '--dim': '#9aa5b4',
+    '--green': '#68d391', '--yellow': '#f6e05e', '--red': '#fc8181', '--blue': '#63b3ed',
+    '--border': '#5a6577', '--border-mid': '#6b7a8e', '--border-light': '#8a99ad',
+    '--text-muted': '#b8c4d0', '--text-faint': '#7a8a9c', '--text-sub': '#dce4ec',
+    '--hover-green': 'rgba(104,211,145,0.1)', '--hover-green-strong': 'rgba(104,211,145,0.18)',
+    '--hover-blue': 'rgba(99,179,237,0.15)', '--hover-red': 'rgba(252,129,129,0.1)',
+    '--overlay': 'rgba(0,0,0,0.35)', '--glass': 'rgba(61,68,81,0.7)',
+    '--glass-border': 'rgba(255,255,255,0.2)', '--glass-strong': 'rgba(50,56,67,0.85)',
+    '--subtle-border': 'rgba(255,255,255,0.1)', '--subtle-bg': 'rgba(255,255,255,0.04)',
+    '--subtle-bg2': 'rgba(255,255,255,0.07)', '--highlight': 'rgba(255,255,255,0.06)',
+    '--shadow': 'rgba(0,0,0,0.25)', '--scrollbar-thumb': '#5a6577', '--scrollbar-hover': '#6b7a8e',
+    '--input-bg': '#3d4451', '--btn-text-on-accent': '#1a1a2e',
+    '--orange': '#ed8936', '--blue-hover': '#4299e1', '--color-scheme': 'dark'
+  }},
+  // Light
+  { id: 'cloud', name: 'Cloud', category: 'light', colors: {
+    '--bg': '#f5f7fa', '--card': '#ffffff', '--card2': '#edf2f7',
+    '--accent': '#e2e8f0', '--text': '#2d3748', '--dim': '#718096',
+    '--green': '#38a169', '--yellow': '#d69e2e', '--red': '#e53e3e', '--blue': '#3182ce',
+    '--border': '#e2e8f0', '--border-mid': '#cbd5e0', '--border-light': '#a0aec0',
+    '--text-muted': '#4a5568', '--text-faint': '#a0aec0', '--text-sub': '#2d3748',
+    '--hover-green': 'rgba(56,161,105,0.08)', '--hover-green-strong': 'rgba(56,161,105,0.15)',
+    '--hover-blue': 'rgba(49,130,206,0.1)', '--hover-red': 'rgba(229,62,62,0.08)',
+    '--overlay': 'rgba(0,0,0,0.2)', '--glass': 'rgba(255,255,255,0.8)',
+    '--glass-border': 'rgba(0,0,0,0.1)', '--glass-strong': 'rgba(255,255,255,0.9)',
+    '--subtle-border': 'rgba(0,0,0,0.08)', '--subtle-bg': 'rgba(0,0,0,0.02)',
+    '--subtle-bg2': 'rgba(0,0,0,0.04)', '--highlight': 'rgba(0,0,0,0.03)',
+    '--shadow': 'rgba(0,0,0,0.1)', '--scrollbar-thumb': '#cbd5e0', '--scrollbar-hover': '#a0aec0',
+    '--input-bg': '#ffffff', '--btn-text-on-accent': '#fff',
+    '--orange': '#dd6b20', '--blue-hover': '#2c5282', '--color-scheme': 'light'
+  }},
+  { id: 'paper', name: 'Paper', category: 'light', colors: {
+    '--bg': '#faf8f5', '--card': '#ffffff', '--card2': '#f5f0eb',
+    '--accent': '#e8e0d8', '--text': '#3d3530', '--dim': '#8a7e72',
+    '--green': '#5a9e6f', '--yellow': '#c4952e', '--red': '#c94040', '--blue': '#4a7fb5',
+    '--border': '#e0d8d0', '--border-mid': '#ccc4ba', '--border-light': '#a89e94',
+    '--text-muted': '#5c5248', '--text-faint': '#a89e94', '--text-sub': '#3d3530',
+    '--hover-green': 'rgba(90,158,111,0.08)', '--hover-green-strong': 'rgba(90,158,111,0.15)',
+    '--hover-blue': 'rgba(74,127,181,0.1)', '--hover-red': 'rgba(201,64,64,0.08)',
+    '--overlay': 'rgba(0,0,0,0.15)', '--glass': 'rgba(250,248,245,0.85)',
+    '--glass-border': 'rgba(0,0,0,0.08)', '--glass-strong': 'rgba(250,248,245,0.92)',
+    '--subtle-border': 'rgba(0,0,0,0.06)', '--subtle-bg': 'rgba(0,0,0,0.02)',
+    '--subtle-bg2': 'rgba(0,0,0,0.04)', '--highlight': 'rgba(0,0,0,0.03)',
+    '--shadow': 'rgba(0,0,0,0.08)', '--scrollbar-thumb': '#ccc4ba', '--scrollbar-hover': '#a89e94',
+    '--input-bg': '#ffffff', '--btn-text-on-accent': '#fff',
+    '--orange': '#c87533', '--blue-hover': '#3a6a99', '--color-scheme': 'light'
+  }},
+  { id: 'mist', name: 'Mist', category: 'light', colors: {
+    '--bg': '#f0f0f0', '--card': '#fafafa', '--card2': '#e8e8e8',
+    '--accent': '#ddd', '--text': '#333', '--dim': '#777',
+    '--green': '#666', '--yellow': '#888', '--red': '#555', '--blue': '#666',
+    '--border': '#ddd', '--border-mid': '#ccc', '--border-light': '#aaa',
+    '--text-muted': '#555', '--text-faint': '#aaa', '--text-sub': '#444',
+    '--hover-green': 'rgba(100,100,100,0.06)', '--hover-green-strong': 'rgba(100,100,100,0.12)',
+    '--hover-blue': 'rgba(100,100,100,0.08)', '--hover-red': 'rgba(80,80,80,0.06)',
+    '--overlay': 'rgba(0,0,0,0.15)', '--glass': 'rgba(240,240,240,0.85)',
+    '--glass-border': 'rgba(0,0,0,0.1)', '--glass-strong': 'rgba(240,240,240,0.92)',
+    '--subtle-border': 'rgba(0,0,0,0.06)', '--subtle-bg': 'rgba(0,0,0,0.02)',
+    '--subtle-bg2': 'rgba(0,0,0,0.04)', '--highlight': 'rgba(0,0,0,0.03)',
+    '--shadow': 'rgba(0,0,0,0.08)', '--scrollbar-thumb': '#ccc', '--scrollbar-hover': '#aaa',
+    '--input-bg': '#fafafa', '--btn-text-on-accent': '#f0f0f0',
+    '--orange': '#777', '--blue-hover': '#555', '--color-scheme': 'light'
+  }},
+  // Loud
+  { id: 'synthwave', name: 'Synthwave', category: 'loud', colors: {
+    '--bg': '#1a0a2e', '--card': '#2d1b4e', '--card2': '#3a2560',
+    '--accent': '#4a3070', '--text': '#f0e6ff', '--dim': '#9b7abf',
+    '--green': '#00ffaa', '--yellow': '#ffe66d', '--red': '#ff4488', '--blue': '#00ccff',
+    '--border': '#4a3070', '--border-mid': '#5c3d88', '--border-light': '#7b58a8',
+    '--text-muted': '#c9a8e8', '--text-faint': '#6b4d8a', '--text-sub': '#dcc8f0',
+    '--hover-green': 'rgba(0,255,170,0.08)', '--hover-green-strong': 'rgba(0,255,170,0.15)',
+    '--hover-blue': 'rgba(0,204,255,0.12)', '--hover-red': 'rgba(255,68,136,0.08)',
+    '--overlay': 'rgba(0,0,0,0.5)', '--glass': 'rgba(26,10,46,0.7)',
+    '--glass-border': 'rgba(0,255,170,0.2)', '--glass-strong': 'rgba(20,8,38,0.85)',
+    '--subtle-border': 'rgba(255,255,255,0.08)', '--subtle-bg': 'rgba(255,255,255,0.03)',
+    '--subtle-bg2': 'rgba(255,255,255,0.06)', '--highlight': 'rgba(255,255,255,0.05)',
+    '--shadow': 'rgba(0,0,0,0.4)', '--scrollbar-thumb': '#4a3070', '--scrollbar-hover': '#5c3d88',
+    '--input-bg': '#1a0a2e', '--btn-text-on-accent': '#1a0a2e',
+    '--orange': '#ff8844', '--blue-hover': '#0099cc', '--color-scheme': 'dark'
+  }},
+  { id: 'sunset', name: 'Sunset Blaze', category: 'loud', colors: {
+    '--bg': '#1f0c0c', '--card': '#2d1414', '--card2': '#3a1c1c',
+    '--accent': '#4a2424', '--text': '#ffe8e0', '--dim': '#b07060',
+    '--green': '#ff6b35', '--yellow': '#ffc107', '--red': '#ff1744', '--blue': '#ff9100',
+    '--border': '#4a2424', '--border-mid': '#5c2e2e', '--border-light': '#804040',
+    '--text-muted': '#d09080', '--text-faint': '#6a3838', '--text-sub': '#f0c0b0',
+    '--hover-green': 'rgba(255,107,53,0.1)', '--hover-green-strong': 'rgba(255,107,53,0.18)',
+    '--hover-blue': 'rgba(255,145,0,0.12)', '--hover-red': 'rgba(255,23,68,0.1)',
+    '--overlay': 'rgba(0,0,0,0.45)', '--glass': 'rgba(31,12,12,0.7)',
+    '--glass-border': 'rgba(255,107,53,0.2)', '--glass-strong': 'rgba(25,10,10,0.85)',
+    '--subtle-border': 'rgba(255,255,255,0.08)', '--subtle-bg': 'rgba(255,255,255,0.03)',
+    '--subtle-bg2': 'rgba(255,255,255,0.06)', '--highlight': 'rgba(255,255,255,0.05)',
+    '--shadow': 'rgba(0,0,0,0.4)', '--scrollbar-thumb': '#4a2424', '--scrollbar-hover': '#5c2e2e',
+    '--input-bg': '#1f0c0c', '--btn-text-on-accent': '#1f0c0c',
+    '--orange': '#ff6b35', '--blue-hover': '#e67e00', '--color-scheme': 'dark'
+  }},
+  { id: 'neon', name: 'Neon Mint', category: 'loud', colors: {
+    '--bg': '#0a1a14', '--card': '#102820', '--card2': '#18352a',
+    '--accent': '#1e4035', '--text': '#e0fff5', '--dim': '#5a9b85',
+    '--green': '#00ff88', '--yellow': '#ccff00', '--red': '#ff3366', '--blue': '#00eeff',
+    '--border': '#1e4035', '--border-mid': '#2a5545', '--border-light': '#3d7a65',
+    '--text-muted': '#80ccb0', '--text-faint': '#3d7a65', '--text-sub': '#b0ffe0',
+    '--hover-green': 'rgba(0,255,136,0.06)', '--hover-green-strong': 'rgba(0,255,136,0.12)',
+    '--hover-blue': 'rgba(0,238,255,0.1)', '--hover-red': 'rgba(255,51,102,0.08)',
+    '--overlay': 'rgba(0,0,0,0.5)', '--glass': 'rgba(10,26,20,0.7)',
+    '--glass-border': 'rgba(0,255,136,0.2)', '--glass-strong': 'rgba(8,20,16,0.85)',
+    '--subtle-border': 'rgba(255,255,255,0.06)', '--subtle-bg': 'rgba(255,255,255,0.02)',
+    '--subtle-bg2': 'rgba(255,255,255,0.05)', '--highlight': 'rgba(255,255,255,0.04)',
+    '--shadow': 'rgba(0,0,0,0.4)', '--scrollbar-thumb': '#1e4035', '--scrollbar-hover': '#2a5545',
+    '--input-bg': '#0a1a14', '--btn-text-on-accent': '#0a1a14',
+    '--orange': '#ff8800', '--blue-hover': '#00bbcc', '--color-scheme': 'dark'
+  }}
+];
+
+function applyPalette(paletteId) {
+  const palette = PALETTES.find(p => p.id === paletteId);
+  if (!palette) return;
+  const root = document.documentElement;
+  for (const [prop, val] of Object.entries(palette.colors)) {
+    root.style.setProperty(prop, val);
+  }
+  // Update color-scheme for native inputs
+  root.style.colorScheme = palette.colors['--color-scheme'];
+  // Save to localStorage (instructor-scoped if available)
+  try {
+    const key = instructorKey ? 'livetimer-palette:' + instructorKey : 'livetimer-palette';
+    localStorage.setItem(key, paletteId);
+  } catch(e) {}
+  // Update picker active state
+  document.querySelectorAll('.palette-swatch').forEach(sw => {
+    sw.classList.toggle('active', sw.dataset.id === paletteId);
+  });
+}
+
+function loadSavedPalette() {
+  const key = instructorKey ? 'livetimer-palette:' + instructorKey : 'livetimer-palette';
+  const saved = localStorage.getItem(key);
+  if (saved && PALETTES.find(p => p.id === saved)) {
+    applyPalette(saved);
+  }
+}
+
+// Apply palette immediately from localStorage (before instructor key is known)
+(function() {
+  const fallback = localStorage.getItem('livetimer-palette');
+  if (fallback && PALETTES.find(p => p.id === fallback)) {
+    const root = document.documentElement;
+    const palette = PALETTES.find(p => p.id === fallback);
+    for (const [prop, val] of Object.entries(palette.colors)) {
+      root.style.setProperty(prop, val);
+    }
+    root.style.colorScheme = palette.colors['--color-scheme'];
+  }
+})();
+
 // ── Authentication ──
 let authToken = localStorage.getItem('livetimer-token');
 let apiKey = ''; // permanent API key for OBS/display URLs
@@ -2060,6 +2344,11 @@ async function startApp() {
   // Load alarm settings and custom sounds from server
   try { await fetchCustomSounds(); } catch(e) { console.error('fetchCustomSounds:', e); }
   try { await fetchAlarmSettings(); } catch(e) { console.error('fetchAlarmSettings:', e); }
+
+  // Load palette (scoped to instructor)
+  loadSavedPalette();
+  try { await loadPaletteFromServer(); } catch(e) { console.error('loadPalette:', e); }
+  buildPalettePicker();
 }
 
 // ── Change password ──
@@ -2819,8 +3108,8 @@ function saveToLibrary() {
   const empty = '<span style="color:#666;font-style:italic;">(empty)</span>';
 
   // Build field checkboxes with editable controls
-  const inputStyle = 'padding:2px 6px;border-radius:4px;border:1px solid #444;background:rgba(255,255,255,0.06);color:var(--text);font-size:0.78rem;font-family:inherit;flex:1;min-width:0;';
-  const selectStyle = 'padding:2px 4px;border-radius:4px;border:1px solid #444;background:#2a2a3e;color:var(--text);font-size:0.78rem;font-family:inherit;';
+  const inputStyle = 'padding:2px 6px;border-radius:4px;border:1px solid var(--border-mid);background:rgba(255,255,255,0.06);color:var(--text);font-size:0.78rem;font-family:inherit;flex:1;min-width:0;';
+  const selectStyle = 'padding:2px 4px;border-radius:4px;border:1px solid var(--border-mid);background:#2a2a3e;color:var(--text);font-size:0.78rem;font-family:inherit;';
   const cbStyle = 'accent-color:var(--green);';
   const currentHours = Math.floor(currentMins / 60);
   const currentMinsPart = currentMins % 60;
@@ -3527,10 +3816,10 @@ function renderDefaultSoundsList() {
   }
   container.innerHTML = defaultSoundsCache.map(s =>
     `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-      <span style="font-size:0.8rem; color:#aaa;">${s.name}</span>
+      <span style="font-size:0.8rem; color:var(--text-muted);">${s.name}</span>
       <button class="settings-btn" onclick="previewDefaultSound('${s.id}')" style="font-size:0.7rem; padding:2px 8px;">&#9654; Test</button>
       <button class="settings-btn" onclick="stopPreview()" style="font-size:0.7rem; padding:2px 8px;">&#9632; Stop</button>
-      <button class="settings-btn" onclick="deleteDefaultSound('${s.id}')" style="font-size:0.7rem; padding:2px 8px; color:#e55;">&#10005;</button>
+      <button class="settings-btn" onclick="deleteDefaultSound('${s.id}')" style="font-size:0.7rem; padding:2px 8px; color:var(--red);">&#10005;</button>
     </div>`
   ).join('');
 }
@@ -5629,11 +5918,11 @@ function renderStudentBoard() {
 
   summaryEl.innerHTML =
     `<span class="students-summary-item"><span class="students-summary-count count-working">${working}</span> working</span>` +
-    `<span class="students-summary-item" style="color:#555;">·</span>` +
+    `<span class="students-summary-item" style="color:var(--text-faint);">·</span>` +
     `<span class="students-summary-item"><span class="students-summary-count count-done">${done}</span> done</span>` +
-    `<span class="students-summary-item" style="color:#555;">·</span>` +
+    `<span class="students-summary-item" style="color:var(--text-faint);">·</span>` +
     `<span class="students-summary-item"><span class="students-summary-count count-away">${away}</span> away</span>` +
-    `<span class="students-summary-item" style="color:#555;">·</span>` +
+    `<span class="students-summary-item" style="color:var(--text-faint);">·</span>` +
     `<span class="students-summary-item"><span class="students-summary-count count-idle">${idle}</span> idle</span>`;
 
   // Sort: working first, then done, then away, then idle
@@ -6045,6 +6334,63 @@ function initSocketLate() {
   const el = document.getElementById(id);
   if (el) el.addEventListener('change', () => saveAlarmSettingsToServer());
 });
+
+// ── Build palette picker ──
+function buildPalettePicker() {
+  const container = document.getElementById('palettePicker');
+  if (!container) return;
+  const categories = ['dark', 'medium', 'light', 'loud'];
+  const categoryLabels = { dark: 'Dark', medium: 'Medium', light: 'Light', loud: 'Loud' };
+  const currentKey = instructorKey ? 'livetimer-palette:' + instructorKey : 'livetimer-palette';
+  const currentId = localStorage.getItem(currentKey) || 'midnight';
+  
+  let html = '';
+  for (const cat of categories) {
+    const palettes = PALETTES.filter(p => p.category === cat);
+    if (palettes.length === 0) continue;
+    html += '<div class="palette-category-label">' + categoryLabels[cat] + '</div>';
+    html += '<div class="palette-row">';
+    for (const p of palettes) {
+      const c = p.colors;
+      const isActive = p.id === currentId ? ' active' : '';
+      html += '<div class="palette-item">';
+      html += '<div class="palette-swatch' + isActive + '" data-id="' + p.id + '" title="' + p.name + '" onclick="applyPalette(\'' + p.id + '\'); savePaletteToServer(\'' + p.id + '\');">';
+      html += '<div class="palette-swatch-left" style="background:' + c['--bg'] + '"></div>';
+      html += '<div class="palette-swatch-right">';
+      html += '<div class="palette-swatch-accent" style="background:' + c['--card'] + '"></div>';
+      html += '<div class="palette-swatch-text" style="background:' + c['--card2'] + '">';
+      html += '<div class="palette-swatch-dot" style="background:' + c['--green'] + '"></div>';
+      html += '</div></div></div>';
+      html += '<div class="palette-swatch-name">' + p.name + '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function savePaletteToServer(paletteId) {
+  if (!authToken) return;
+  authFetch('/api/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ palette: paletteId })
+  }).catch(e => console.error('savePalette:', e));
+}
+
+async function loadPaletteFromServer() {
+  if (!authToken) return;
+  try {
+    const res = await authFetch('/api/settings');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.palette && PALETTES.find(p => p.id === data.palette)) {
+        applyPalette(data.palette);
+      }
+    }
+  } catch(e) { console.error('loadPalette:', e); }
+}
+
 </script>
 <div class="prompt-backdrop" id="promptBackdrop">
   <div class="prompt-box" style="position:relative;">
@@ -6099,28 +6445,28 @@ function initSocketLate() {
     <div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
       <div>
         <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Name *</label>
-        <input type="text" id="ntName" placeholder="Timer name" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid #444; background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
+        <input type="text" id="ntName" placeholder="Timer name" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid var(--border-mid); background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
       </div>
       <div>
         <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Duration *</label>
         <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
-          <input type="number" id="ntHours" min="0" max="23" value="0" style="width:50px; padding:6px; border-radius:6px; border:1px solid #444; background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.9rem; text-align:center;">
+          <input type="number" id="ntHours" min="0" max="23" value="0" style="width:50px; padding:6px; border-radius:6px; border:1px solid var(--border-mid); background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.9rem; text-align:center;">
           <span style="color:var(--dim); font-size:0.75rem;">hr</span>
-          <input type="number" id="ntMinutes" min="0" max="59" value="15" style="width:50px; padding:6px; border-radius:6px; border:1px solid #444; background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.9rem; text-align:center;">
+          <input type="number" id="ntMinutes" min="0" max="59" value="15" style="width:50px; padding:6px; border-radius:6px; border:1px solid var(--border-mid); background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.9rem; text-align:center;">
           <span style="color:var(--dim); font-size:0.75rem;">min</span>
         </div>
       </div>
       <div>
         <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Display Title</label>
-        <input type="text" id="ntLabel" placeholder="e.g. Break, Lab 1" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid #444; background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
+        <input type="text" id="ntLabel" placeholder="e.g. Break, Lab 1" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid var(--border-mid); background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
       </div>
       <div>
         <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">End Time Label</label>
-        <input type="text" id="ntEndTimeLabel" value="Class resumes at" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid #444; background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
+        <input type="text" id="ntEndTimeLabel" value="Class resumes at" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid var(--border-mid); background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
       </div>
       <div>
         <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Message</label>
-        <input type="text" id="ntMessage" placeholder="e.g. Enjoy your break!" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid #444; background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
+        <input type="text" id="ntMessage" placeholder="e.g. Enjoy your break!" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid var(--border-mid); background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
       </div>
       <div style="display:flex; gap:20px; flex-wrap:wrap;">
         <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--dim); cursor:pointer;">
@@ -6133,7 +6479,7 @@ function initSocketLate() {
       <div style="display:flex; gap:16px;">
         <div style="flex:1;">
           <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Background</label>
-          <select id="ntBgMode" style="width:100%; padding:6px; border-radius:6px; border:1px solid #444; background:#2a2a3e; color:var(--text); font-family:inherit; font-size:0.8rem;">
+          <select id="ntBgMode" style="width:100%; padding:6px; border-radius:6px; border:1px solid var(--border-mid); background:#2a2a3e; color:var(--text); font-family:inherit; font-size:0.8rem;">
             <option value="default" style="background:#2a2a3e; color:#e0e0e0;">Default</option>
             <option value="transparent" style="background:#2a2a3e; color:#e0e0e0;">Transparent</option>
             <option value="black" style="background:#2a2a3e; color:#e0e0e0;">Black</option>
@@ -6141,7 +6487,7 @@ function initSocketLate() {
         </div>
         <div style="flex:1;">
           <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">After Loading</label>
-          <select id="ntGoToTab" style="width:100%; padding:6px; border-radius:6px; border:1px solid #444; background:#2a2a3e; color:var(--text); font-family:inherit; font-size:0.8rem;">
+          <select id="ntGoToTab" style="width:100%; padding:6px; border-radius:6px; border:1px solid var(--border-mid); background:#2a2a3e; color:var(--text); font-family:inherit; font-size:0.8rem;">
             <option value="library" selected style="background:#2a2a3e; color:#e0e0e0;">Library</option>
             <option value="options" style="background:#2a2a3e; color:#e0e0e0;">Options</option>
             <option value="students" style="background:#2a2a3e; color:#e0e0e0;">Students</option>

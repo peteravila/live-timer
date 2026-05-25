@@ -759,6 +759,29 @@ app.post('/api/alarm-settings', requireAuth, async (req, res) => {
   res.json({ success: true });
 });
 
+// ── General settings REST endpoints (auth required) ─────────
+app.get('/api/settings', requireAuth, async (req, res) => {
+  if (!db) return res.json({});
+  try {
+    const doc = await db.collection('instructorSettings').findOne({ _id: req.instructorId });
+    res.json(doc ? doc.settings : {});
+  } catch (e) { res.json({}); }
+});
+
+app.post('/api/settings', requireAuth, async (req, res) => {
+  if (!db) return res.json({ success: false });
+  try {
+    const existing = await db.collection('instructorSettings').findOne({ _id: req.instructorId });
+    const merged = { ...(existing?.settings || {}), ...req.body };
+    await db.collection('instructorSettings').updateOne(
+      { _id: req.instructorId },
+      { $set: { settings: merged, updatedAt: new Date() } },
+      { upsert: true }
+    );
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ── Custom sounds REST endpoints (auth required) ───────────
 app.get('/api/custom-sounds', requireAuth, async (req, res) => {
   const sounds = await loadCustomSounds(req.instructorId);

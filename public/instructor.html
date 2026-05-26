@@ -1381,6 +1381,117 @@
     transition: color 0.12s;
   }
   .settings-cog:hover { color: var(--text); }
+  .help-btn {
+    background: none; border: 1.5px solid var(--dim); color: var(--dim); cursor: pointer;
+    width: 22px; height: 22px; border-radius: 50%; font-size: 0.75rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.12s, border-color 0.12s; padding: 0; line-height: 1;
+  }
+  .help-btn:hover { color: var(--text); border-color: var(--text); }
+
+  /* ── Help Overlay ── */
+  .help-overlay {
+    position: fixed; inset: 0; z-index: 2000;
+    background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    animation: settings-fade-in 0.15s ease-out;
+  }
+  .help-overlay.hidden { display: none; }
+  .help-panel {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+    width: 820px; max-width: 94vw; max-height: 90vh;
+    display: flex; flex-direction: column;
+    animation: settings-slide-in 0.2s ease-out;
+  }
+  .help-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .help-header h2 { font-size: 1.1rem; font-weight: 600; color: var(--text); margin: 0; }
+  .help-header-actions { display: flex; align-items: center; gap: 8px; }
+  .help-print-btn {
+    background: none; border: 1px solid var(--border); color: var(--dim); cursor: pointer;
+    padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; display: flex; align-items: center; gap: 4px;
+    transition: color 0.12s, border-color 0.12s;
+  }
+  .help-print-btn:hover { color: var(--text); border-color: var(--text); }
+  .help-close {
+    background: none; border: none; color: var(--dim); cursor: pointer;
+    padding: 4px; border-radius: 4px; display: flex; align-items: center;
+    transition: color 0.12s;
+  }
+  .help-close:hover { color: var(--text); }
+  .help-body { padding: 0 20px 20px; overflow-y: auto; flex: 1; }
+  .help-intro { padding: 16px 0 8px; color: var(--text-sub); font-size: 0.85rem; line-height: 1.6; }
+
+  /* Accordion */
+  .help-section { border-bottom: 1px solid var(--border); }
+  .help-section:last-child { border-bottom: none; }
+  .help-section-toggle {
+    width: 100%; background: none; border: none; color: var(--text);
+    padding: 14px 0; font-size: 0.92rem; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    text-align: left; transition: color 0.12s;
+  }
+  .help-section-toggle:hover { color: var(--green); }
+  .help-section-toggle .help-chevron {
+    transition: transform 0.2s; font-size: 0.7rem; color: var(--dim);
+  }
+  .help-section.open .help-section-toggle .help-chevron { transform: rotate(90deg); }
+  .help-section-content {
+    display: none; padding: 0 0 16px; color: var(--text-sub);
+    font-size: 0.82rem; line-height: 1.7;
+  }
+  .help-section.open .help-section-content { display: block; }
+  .help-section-content h4 {
+    color: var(--text); font-size: 0.85rem; font-weight: 600;
+    margin: 14px 0 6px; padding: 0;
+  }
+  .help-section-content h4:first-child { margin-top: 0; }
+  .help-section-content p { margin: 0 0 10px; }
+  .help-section-content ul { margin: 0 0 10px; padding-left: 20px; }
+  .help-section-content li { margin: 3px 0; }
+  .help-section-content .help-img-placeholder {
+    background: var(--subtle-bg); border: 1px dashed var(--border); border-radius: 8px;
+    padding: 20px; text-align: center; color: var(--dim); font-size: 0.78rem;
+    font-style: italic; margin: 10px 0;
+  }
+  .help-section-content kbd {
+    background: var(--subtle-bg); border: 1px solid var(--border); border-radius: 3px;
+    padding: 1px 5px; font-size: 0.78rem; font-family: monospace; color: var(--text);
+  }
+  .help-section-content .help-tip {
+    background: var(--subtle-bg); border-left: 3px solid var(--green);
+    padding: 8px 12px; border-radius: 0 6px 6px 0; margin: 10px 0;
+    font-size: 0.8rem;
+  }
+
+  /* Print styles */
+  @media print {
+    body * { visibility: hidden; }
+    .help-overlay, .help-overlay * { visibility: visible; }
+    .help-overlay {
+      position: absolute; inset: 0; background: #fff; backdrop-filter: none;
+    }
+    .help-panel {
+      width: 100%; max-width: 100%; max-height: none; box-shadow: none;
+      border: none; border-radius: 0; background: #fff;
+    }
+    .help-header { border-bottom: 2px solid #333; }
+    .help-header h2 { color: #000; }
+    .help-header-actions { display: none; }
+    .help-close { display: none; }
+    .help-body { overflow: visible; }
+    .help-section { border-bottom: 1px solid #ccc; }
+    .help-section-content { display: block !important; color: #333; }
+    .help-section-toggle { color: #000; }
+    .help-section-toggle .help-chevron { display: none; }
+    .help-section-content h4 { color: #000; }
+    .help-section-content .help-tip { border-left-color: #333; background: #f5f5f5; }
+    .help-section-content .help-img-placeholder { background: #f0f0f0; border-color: #ccc; color: #666; }
+    .help-intro { color: #333; }
+  }
 
   /* ── Settings Overlay ── */
   .settings-overlay {
@@ -2087,6 +2198,389 @@
   </div><!-- /settings-panel -->
 </div><!-- /settings-overlay -->
 
+<!-- Help Overlay -->
+<div class="help-overlay hidden" id="helpOverlay" onclick="if(event.target===this)closeHelp()">
+  <div class="help-panel">
+    <div class="help-header">
+      <h2>LiveTimer Help</h2>
+      <div class="help-header-actions">
+        <button class="help-print-btn" onclick="printHelp()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Print</button>
+        <button class="help-close" onclick="closeHelp()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+    <div class="help-body">
+
+      <div class="help-intro">
+        LiveTimer is a real-time classroom timer designed for virtual instruction. You set timers for breaks, labs, and activities &mdash; your students see a live countdown on their phones or screens. The timer follows the student: they scan a QR code and the countdown is on their phone, so they can walk away from their desk.
+      </div>
+
+      <!-- 1. Getting Started -->
+      <div class="help-section">
+        <button class="help-section-toggle" onclick="toggleHelpSection(this)">
+          <span>Getting Started</span><span class="help-chevron">&#9654;</span>
+        </button>
+        <div class="help-section-content">
+          <p>When you log in, you'll see two main areas side by side:</p>
+          <ul>
+            <li><strong>Left column</strong> &mdash; A phone mockup that mirrors exactly what your students see. This is your live preview and your main editing surface.</li>
+            <li><strong>Right column</strong> &mdash; Tabs for <strong>Timers</strong> (your timer library), <strong>Alarms</strong> (time-of-day alerts), and <strong>Students</strong> (connection info).</li>
+          </ul>
+          <div class="help-img-placeholder">[Screenshot: Full instructor view showing the phone mockup on the left and the Timers tab on the right]</div>
+
+          <h4>The Phone Mockup</h4>
+          <p>The phone mockup is not just a preview &mdash; it's an interactive editor. You can directly edit the text fields on it:</p>
+          <ul>
+            <li><strong>Course Title</strong> &mdash; Click the title area at the top of the mockup to type your course name (e.g., "CIS 101 &mdash; Intro to Computing"). This persists across timers.</li>
+            <li><strong>Label</strong> &mdash; Click below the countdown to set a label like "Break" or "Lab Time."</li>
+            <li><strong>End Time Label</strong> &mdash; Click the small text above the end time to customize it (e.g., "Back at" or "Due by").</li>
+            <li><strong>Message</strong> &mdash; Click the message area at the bottom of the mockup for any additional text students should see.</li>
+          </ul>
+          <p>After editing a field, click the <strong>Push</strong> button next to it (or press Enter) to send the change to all connected students.</p>
+          <div class="help-img-placeholder">[Screenshot: Phone mockup with callouts pointing to each editable field and Push buttons]</div>
+
+          <h4>Setting the Duration</h4>
+          <p>The clock digits on the mockup have spinner arrows on either side:</p>
+          <ul>
+            <li><strong>Left arrows</strong> (▲▼) &mdash; Adjust hours</li>
+            <li><strong>Right arrows</strong> (▲▼) &mdash; Adjust minutes</li>
+          </ul>
+          <p>Click an arrow once for a single increment, or <strong>hold it down</strong> to spin rapidly. Hours and minutes are independent &mdash; spinning minutes past 59 wraps to 0 without changing hours, and vice versa.</p>
+          <p>For more options, click the <strong>clock icon</strong> below the right spinner to open the <strong>Duration Popup</strong>. This gives you:</p>
+          <ul>
+            <li>Larger hour/minute spinners</li>
+            <li><strong>Quick-set buttons</strong> for common durations (5, 10, 15 minutes, etc.)</li>
+            <li><strong>Target Time mode</strong> &mdash; Set an end time (e.g., "10:30 AM") and the duration is calculated automatically</li>
+            <li><strong>Add button</strong> &mdash; When a timer is running, adds time to it instead of replacing the duration</li>
+          </ul>
+          <div class="help-img-placeholder">[Screenshot: Duration popup showing spinners, quick-set buttons, and Target Time mode]</div>
+
+          <h4>Transport Controls</h4>
+          <p>Below the phone mockup you'll find the transport buttons:</p>
+          <ul>
+            <li><strong>Play &#9654;</strong> &mdash; Start the timer. All connected students see the countdown begin.</li>
+            <li><strong>Pause &#10074;&#10074;</strong> &mdash; Pause the countdown. Students see it frozen.</li>
+            <li><strong>Stop &#9632;</strong> &mdash; Stop and reset the timer.</li>
+            <li><strong>Restore &#8635;</strong> &mdash; After stopping, restores the last timer with recalculated remaining time (useful if you accidentally stop a running timer).</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 2. Options (Left Panel) -->
+      <div class="help-section">
+        <button class="help-section-toggle" onclick="toggleHelpSection(this)">
+          <span>Options (Left Panel)</span><span class="help-chevron">&#9654;</span>
+        </button>
+        <div class="help-section-content">
+          <p>On the left side of the phone mockup, you'll find per-timer options. These settings are saved with each timer in the library:</p>
+
+          <h4>Show End Time</h4>
+          <p>When enabled, students see the actual clock time the timer will end (e.g., "Back at 10:45 AM") below the countdown. Helpful for breaks and labs so students know exactly when to return.</p>
+
+          <h4>Clock Only</h4>
+          <p>Hides everything except the countdown digits on projected displays and OBS browser sources. Phones always show the full view. Useful when you want a clean countdown on your classroom screen without labels or messages cluttering the display.</p>
+
+          <h4>Background</h4>
+          <p>Controls the background behavior on projected displays and OBS sources:</p>
+          <ul>
+            <li><strong>Default</strong> &mdash; Normal dark background</li>
+            <li><strong>Transparent</strong> &mdash; Background becomes transparent on OBS/display viewers, useful for overlaying the timer on top of other content</li>
+            <li><strong>Black</strong> &mdash; Solid black background</li>
+          </ul>
+          <p class="help-tip"><strong>Tip:</strong> Clock Only and Transparent/Black modes only affect projected displays and OBS sources. Students on their phones always see the full, normal view.</p>
+        </div>
+      </div>
+
+      <!-- 3. Timers Tab (Library) -->
+      <div class="help-section">
+        <button class="help-section-toggle" onclick="toggleHelpSection(this)">
+          <span>Timers Tab (Library)</span><span class="help-chevron">&#9654;</span>
+        </button>
+        <div class="help-section-content">
+          <p>The <strong>Timers</strong> tab is your timer library &mdash; a collection of saved timer presets you can load with one click. Think of it as a playlist for your class session.</p>
+          <div class="help-img-placeholder">[Screenshot: Timers tab showing the library grid with several timers and the toolbar]</div>
+
+          <h4>Creating Timers</h4>
+          <p>There are two ways to create a new timer:</p>
+          <ul>
+            <li><strong>Dialog mode</strong> (first toolbar button &mdash; page icon) &mdash; Opens a form where you fill in the name, duration, label, message, and options, then save. Best for creating a fully configured timer from scratch.</li>
+            <li><strong>Inline mode</strong> (second toolbar button &mdash; page-with-plus icon) &mdash; Adds a blank row directly in the grid. You type values into each cell and click the Save button on the toolbar. Best for quick additions when you know what you want.</li>
+          </ul>
+
+          <h4>The Library Grid</h4>
+          <p>Each row in the grid represents a saved timer with these columns:</p>
+          <ul>
+            <li><strong>Drag handle</strong> (⠿) &mdash; Drag to reorder timers in the list</li>
+            <li><strong>Checkbox</strong> &mdash; Select timers for batch operations</li>
+            <li><strong>Load</strong> &mdash; Loads this timer's settings onto the mockup (ready to start). Shows <strong>Loaded</strong> in bold when active.</li>
+            <li><strong>Play &#9654;</strong> &mdash; Loads the timer and immediately starts it in one click</li>
+            <li><strong>Name</strong> &mdash; A label for your reference (e.g., "15-Min Break")</li>
+            <li><strong>Duration</strong> &mdash; Time in minutes</li>
+            <li><strong>Display Title</strong> &mdash; The label students see below the countdown</li>
+            <li><strong>End Time Label</strong> &mdash; Text above the end time (e.g., "Back at")</li>
+            <li><strong>Message</strong> &mdash; Text displayed at the bottom of the student view</li>
+            <li><strong>Show End Time</strong> &mdash; Whether to display the end time</li>
+            <li><strong>Background Mode</strong> &mdash; Default, Transparent, or Black</li>
+            <li><strong>Clock Only</strong> &mdash; Display-only mode</li>
+            <li><strong>After Loading</strong> &mdash; Which tab to switch to after loading (Timers, Students, or Settings)</li>
+          </ul>
+
+          <h4>Editing Timers</h4>
+          <p>Click any cell in the grid to edit its value directly. Changed cells appear highlighted. Use the toolbar buttons:</p>
+          <ul>
+            <li><strong>Save</strong> (disk icon) &mdash; Saves all pending changes</li>
+            <li><strong>Cancel</strong> (X icon) &mdash; Reverts all unsaved changes</li>
+            <li><strong>Edit</strong> (pencil icon) &mdash; Opens the selected timer in the dialog editor</li>
+          </ul>
+
+          <h4>Batch Operations</h4>
+          <p>Use the checkboxes to select multiple timers, then:</p>
+          <ul>
+            <li><strong>Delete</strong> (trash icon) &mdash; Delete all selected timers</li>
+            <li><strong>Duplicate</strong> (copy icon) &mdash; Duplicate all selected timers</li>
+          </ul>
+          <p>The select-all checkbox in the header selects or deselects all timers at once.</p>
+
+          <h4>Sorting and Searching</h4>
+          <p>Click a column header to sort by that column. Click again to reverse the sort. The search button (magnifying glass) opens a search bar to filter timers by name.</p>
+
+          <h4>Column Resizing</h4>
+          <p>Drag the border between column headers to resize columns. Your column widths are saved automatically. Use the <strong>Reset Columns</strong> button (vertical lines icon) to restore default widths.</p>
+
+          <h4>Saved Orders</h4>
+          <p>When the search bar is open, you'll see a <strong>Saved Orders</strong> dropdown. You can save the current timer arrangement as a named order and switch between different arrangements. Useful if you teach multiple classes with the same timers in different sequences.</p>
+
+          <div class="help-img-placeholder">[Screenshot: Library grid toolbar showing all buttons with callouts]</div>
+        </div>
+      </div>
+
+      <!-- 4. Sequences -->
+      <div class="help-section">
+        <button class="help-section-toggle" onclick="toggleHelpSection(this)">
+          <span>Sequences</span><span class="help-chevron">&#9654;</span>
+        </button>
+        <div class="help-section-content">
+          <p>Sequences let you chain multiple timers together so they run one after another automatically. At the top of the Timers tab, toggle between <strong>Timers</strong> and <strong>Sequences</strong> views.</p>
+
+          <h4>Creating a Sequence</h4>
+          <ul>
+            <li>Switch to the Sequences view</li>
+            <li>Click <strong>+ New Sequence</strong></li>
+            <li>Give it a name (e.g., "Morning Block")</li>
+            <li>Add steps by selecting timers from your library</li>
+            <li>Reorder steps by dragging them</li>
+            <li>Save the sequence</li>
+          </ul>
+
+          <h4>Running a Sequence</h4>
+          <p>Click a sequence name to load it. The first timer starts, and when it finishes, the next one loads and starts automatically. Students experience a seamless transition between activities.</p>
+          <div class="help-img-placeholder">[Screenshot: Sequence builder showing a multi-step sequence]</div>
+        </div>
+      </div>
+
+      <!-- 5. Alarms -->
+      <div class="help-section">
+        <button class="help-section-toggle" onclick="toggleHelpSection(this)">
+          <span>Alarms</span><span class="help-chevron">&#9654;</span>
+        </button>
+        <div class="help-section-content">
+          <p>Alarms are time-of-day alerts that fire at a specific clock time (e.g., 10:30 AM). Unlike timers, which count down a duration, alarms trigger at an absolute time. They're perfect for class start/end times, mandatory break times, or any schedule-driven event.</p>
+          <div class="help-img-placeholder">[Screenshot: Alarms tab showing several alarms with different settings]</div>
+
+          <h4>Creating an Alarm</h4>
+          <p>In the <strong>Alarms</strong> tab, click the <strong>+ New Alarm</strong> button. A new alarm card appears with:</p>
+          <ul>
+            <li><strong>Name</strong> &mdash; A label for your reference (e.g., "Class Starts")</li>
+            <li><strong>Time</strong> &mdash; The clock time to fire (hour/minute spinners with AM/PM toggle)</li>
+            <li><strong>Sound</strong> &mdash; Choose from built-in sounds or upload a custom sound</li>
+            <li><strong>Flash</strong> checkbox &mdash; Whether the Alarms tab flashes to get your attention</li>
+            <li><strong>Repeat</strong> checkbox &mdash; Whether the sound repeats until you dismiss it</li>
+          </ul>
+          <p>You can also insert an alarm between existing ones using the <strong>+</strong> buttons that appear between alarm cards.</p>
+
+          <h4>Day-of-Week Scheduling</h4>
+          <p>Each alarm has day-of-week buttons (<strong>S M T W T F S</strong>) below the name. By default, all days are active. Click a day to toggle it off &mdash; the alarm will only fire on the days that are selected. At least one day must remain active.</p>
+          <p class="help-tip"><strong>Tip:</strong> If you teach a class only on Tuesdays and Thursdays, disable the other days so your alarms don't fire on the wrong days.</p>
+
+          <h4>Enabling and Disabling Alarms</h4>
+          <p>Each alarm has a <strong>toggle switch</strong> on the right side. When disabled, the toggle appears gray and the alarm won't fire. When enabled, the toggle shows in color.</p>
+
+          <h4>Master Alarm Toggle</h4>
+          <p>At the top of the Alarms tab, there's a master toggle switch. When turned off, <strong>no alarms will fire</strong> regardless of their individual settings. The master toggle uses a colored/gray indicator just like individual alarm toggles.</p>
+
+          <h4>When an Alarm Fires</h4>
+          <p>When an alarm reaches its time:</p>
+          <ul>
+            <li>The selected sound plays (and repeats if that option is checked)</li>
+            <li>The Alarms tab label flashes if Flash is enabled</li>
+            <li>The alarm card shows a <strong>Dismiss</strong> and <strong>Snooze</strong> button</li>
+            <li>Snooze delays the alarm by 5 minutes</li>
+          </ul>
+
+          <h4>Reordering Alarms</h4>
+          <p>Each alarm card has a <strong>drag handle</strong> (⠿) on the left. Click and drag it to reorder your alarms.</p>
+
+          <h4>Batch Operations</h4>
+          <p>Select multiple alarms using their checkboxes, then click the <strong>Delete</strong> button to remove them all at once.</p>
+
+          <div class="help-img-placeholder">[Screenshot: A single alarm card with callouts pointing to each control]</div>
+        </div>
+      </div>
+
+      <!-- 6. Alarm Sets -->
+      <div class="help-section">
+        <button class="help-section-toggle" onclick="toggleHelpSection(this)">
+          <span>Alarm Sets</span><span class="help-chevron">&#9654;</span>
+        </button>
+        <div class="help-section-content">
+          <p>If you teach multiple classes with different schedules, <strong>Alarm Sets</strong> let you maintain separate groups of alarms and switch between them instantly.</p>
+
+          <h4>How Alarm Sets Work</h4>
+          <p>Each alarm set is an independent collection of alarms. You start with a <strong>Default</strong> set. The currently active set is shown in the dropdown at the top of the Alarms tab, along with the count of alarms in each set.</p>
+          <div class="help-img-placeholder">[Screenshot: Alarm set dropdown showing multiple sets with alarm counts]</div>
+
+          <h4>Creating a New Set</h4>
+          <p>Click the <strong>New</strong> button next to the set dropdown. Enter a name (e.g., "MWF Schedule" or "Evening Class") and an empty set is created, ready for you to add alarms.</p>
+
+          <h4>Duplicating a Set</h4>
+          <p>Click the <strong>Dup</strong> button to create a copy of the current set. This is the fastest way to create a variation &mdash; duplicate, then tweak the times or remove alarms you don't need.</p>
+
+          <h4>Set Menu (&#8943;)</h4>
+          <p>Click the three-dot menu next to the set controls for more options:</p>
+          <ul>
+            <li><strong>Rename</strong> &mdash; Change the set's name</li>
+            <li><strong>Import From&hellip;</strong> &mdash; Copy individual alarms from another set into the current one. A picker lets you choose which alarms to import.</li>
+            <li><strong>Delete Set</strong> &mdash; Remove the set entirely (you can't delete the last remaining set)</li>
+          </ul>
+
+          <h4>Switching Sets</h4>
+          <p>Use the dropdown to switch between sets. Only the alarms in the active set will fire. Switching is instant &mdash; your alarms update immediately.</p>
+
+          <p class="help-tip"><strong>Tip:</strong> At the start of each class, switch to the appropriate alarm set. The master toggle and individual alarm toggles are per-set, so each class can have its own enabled/disabled configuration.</p>
+        </div>
+      </div>
+
+      <!-- 7. Connecting Students -->
+      <div class="help-section">
+        <button class="help-section-toggle" onclick="toggleHelpSection(this)">
+          <span>Connecting Students</span><span class="help-chevron">&#9654;</span>
+        </button>
+        <div class="help-section-content">
+          <p>Students connect to your timer by scanning a QR code or entering a class code. The <strong>Students</strong> tab shows connection information.</p>
+
+          <h4>QR Code</h4>
+          <p>In the Students tab (or in Settings), you'll find a QR code. Display it on your projector or share it in your Zoom chat. When students scan it, they go directly to your timer &mdash; no code entry needed because the URL includes the class code.</p>
+
+          <h4>Class Code</h4>
+          <p>Students who can't scan the QR code can go to your LiveTimer URL and enter the 4-character class code manually. The code is displayed in the Students tab.</p>
+
+          <h4>How Students See the Timer</h4>
+          <p>On their phones, students see the countdown with a colored progress ring that transitions through stages:</p>
+          <ul>
+            <li><strong>Green</strong> &mdash; Plenty of time remaining</li>
+            <li><strong>Yellow</strong> &mdash; Getting closer (about 35% or 10 minutes left, whichever is less)</li>
+            <li><strong>Orange</strong> &mdash; Almost done (about 15% or 3 minutes left, whichever is less)</li>
+            <li><strong>Red (pulsing)</strong> &mdash; Time's up!</li>
+          </ul>
+          <p>The student's phone updates in real time via a live connection. If their connection drops, it reconnects automatically.</p>
+
+          <h4>Large Screens &amp; Projectors</h4>
+          <p>On large screens (800px or wider), the code entry screen is skipped &mdash; the timer displays immediately. This is designed for projected displays in classrooms.</p>
+
+          <h4>Disconnect All Students</h4>
+          <p>In the Students tab, the <strong>Disconnect All Students</strong> button generates a new class code and disconnects every currently connected student. They'll need to re-scan or re-enter the new code. Useful between classes or if you need a fresh start.</p>
+
+          <div class="help-img-placeholder">[Screenshot: Students tab showing QR code, class code, and connected count]</div>
+        </div>
+      </div>
+
+      <!-- 8. OBS & Display Setup -->
+      <div class="help-section">
+        <button class="help-section-toggle" onclick="toggleHelpSection(this)">
+          <span>OBS &amp; Display Setup</span><span class="help-chevron">&#9654;</span>
+        </button>
+        <div class="help-section-content">
+          <p>LiveTimer is designed to work with <strong>OBS Studio</strong> for streaming and virtual classroom setups. You can add the timer as a browser source in OBS and overlay it on your scenes.</p>
+
+          <h4>Adding as an OBS Browser Source</h4>
+          <ul>
+            <li>In OBS, add a new <strong>Browser Source</strong></li>
+            <li>Set the URL to your LiveTimer URL with <kbd>?obs=true</kbd> at the end (e.g., <code>https://your-url/?obs=true</code>)</li>
+            <li>The <kbd>obs=true</kbd> parameter skips the code entry gate and identifies the source as a display viewer</li>
+            <li>Set the browser source dimensions to match your actual display size for crisp text</li>
+          </ul>
+
+          <h4>QR Code Display Page</h4>
+          <p>LiveTimer has a dedicated <strong>/qr-only</strong> page that shows just the QR code, class code, and connection instructions. Add this as a separate OBS browser source for scenes where you want students to connect.</p>
+
+          <h4>Tips for OBS</h4>
+          <ul>
+            <li>Enable <strong>"Refresh browser when scene becomes active"</strong> in each browser source's properties &mdash; this ensures the timer reloads after deployments</li>
+            <li>Use the <strong>Transparent</strong> background mode to overlay the timer on top of slides or camera feeds</li>
+            <li>Use <strong>Clock Only</strong> mode for a minimal countdown overlay</li>
+            <li>Both modes can be combined for a transparent, digits-only overlay</li>
+          </ul>
+
+          <div class="help-img-placeholder">[Screenshot: Example OBS scene with timer overlay on slides]</div>
+        </div>
+      </div>
+
+      <!-- 9. Settings -->
+      <div class="help-section">
+        <button class="help-section-toggle" onclick="toggleHelpSection(this)">
+          <span>Settings</span><span class="help-chevron">&#9654;</span>
+        </button>
+        <div class="help-section-content">
+          <p>Click the <strong>gear icon</strong> (⚙) in the top-right corner to open the Settings overlay.</p>
+
+          <h4>Color Palette</h4>
+          <p>Choose from 13 color themes across four categories: Dark, Medium, Light, and Loud. Your palette choice is saved and applied automatically on your next visit. The palette affects the instructor view only; students always see the standard dark theme.</p>
+
+          <h4>Warning &amp; Alarm Sounds</h4>
+          <p>Configure the sounds that play when a timer is about to end (warning) and when it has ended (alarm). You can select built-in sounds or upload custom audio files.</p>
+
+          <h4>After Starting Tab</h4>
+          <p>Choose which tab to switch to automatically when you start a timer. Options: Timers, Students, or Settings.</p>
+
+          <h4>Mute</h4>
+          <p>When muted, timer updates are only sent to the instructor view (and any preview connections), not to student devices. Useful for testing or setting up timers without disrupting students who are already connected.</p>
+
+          <h4>Library Backup</h4>
+          <p>Export your entire timer library to a JSON file for backup, or import a previously exported file. Your library is also automatically backed up in your browser's local storage.</p>
+
+          <h4>Mobile Access</h4>
+          <p>Access the instructor panel from your phone or tablet. Settings shows a QR code and access token for mobile login.</p>
+        </div>
+      </div>
+
+      <!-- 10. Line Breaks -->
+      <div class="help-section">
+        <button class="help-section-toggle" onclick="toggleHelpSection(this)">
+          <span>Tips &amp; Tricks</span><span class="help-chevron">&#9654;</span>
+        </button>
+        <div class="help-section-content">
+          <h4>Line Breaks in Text Fields</h4>
+          <p>Type <kbd>\n</kbd> (a literal backslash followed by the letter n) in any text field (Course Title, Label, Message) to create a line break. Students will see the text on multiple lines.</p>
+
+          <h4>Restore After Accidental Stop</h4>
+          <p>If you accidentally stop a running timer, click <strong>Restore</strong> (&#8635;) immediately. It recalculates remaining time from the original end time, so students won't lose progress.</p>
+
+          <h4>Keep-Alive</h4>
+          <p>LiveTimer pings the server every 5 minutes to prevent it from going to sleep. Keep the instructor tab open and active during your class session for uninterrupted service.</p>
+
+          <h4>Color Transitions</h4>
+          <p>The countdown uses smart color thresholds. Short timers use percentage-based transitions (35% for yellow, 15% for orange). Longer timers cap at fixed times (10 minutes for yellow, 3 minutes for orange) so a 2-hour timer doesn't turn yellow 40 minutes early.</p>
+
+          <h4>Quick Start</h4>
+          <p>The &#9654; button in the library grid loads <em>and</em> starts a timer in one click &mdash; no need to load first, then press play. It also pushes all fields (title, label, message) to students automatically.</p>
+
+          <p class="help-tip"><strong>Workflow suggestion:</strong> Before class, set your Course Title, switch to the right Alarm Set, and verify your timer library is in order. During class, use the library's Load or Play buttons to move between activities. Students just keep the timer open on their phones &mdash; it updates automatically.</p>
+        </div>
+      </div>
+
+    </div><!-- /help-body -->
+  </div><!-- /help-panel -->
+</div><!-- /help-overlay -->
+
 <!-- Duration Popup Overlay -->
 <div class="duration-popup-backdrop" id="durationPopupBackdrop">
   <div class="duration-popup" id="durationPopup">
@@ -2580,6 +3074,12 @@ async function startApp() {
     cog.onclick = openSettings;
     cog.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>';
     topbar.appendChild(cog);
+    const helpBtn = document.createElement('button');
+    helpBtn.className = 'help-btn';
+    helpBtn.title = 'Help';
+    helpBtn.onclick = openHelp;
+    helpBtn.textContent = '?';
+    topbar.appendChild(helpBtn);
     const btn = document.createElement('button');
     btn.className = 'login-logout';
     btn.textContent = 'Log out';
@@ -3068,7 +3568,29 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !document.getElementById('settingsOverlay').classList.contains('hidden')) {
     closeSettings();
   }
+  if (e.key === 'Escape' && !document.getElementById('helpOverlay').classList.contains('hidden')) {
+    closeHelp();
+  }
 });
+
+// ── Help overlay ──
+function openHelp() {
+  const overlay = document.getElementById('helpOverlay');
+  if (overlay) overlay.classList.remove('hidden');
+}
+function closeHelp() {
+  const overlay = document.getElementById('helpOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+function toggleHelpSection(btn) {
+  const section = btn.closest('.help-section');
+  if (section) section.classList.toggle('open');
+}
+function printHelp() {
+  // Expand all sections for print
+  document.querySelectorAll('.help-section').forEach(s => s.classList.add('open'));
+  window.print();
+}
 
 // ── Tab switching ──
 const TAB_NAMES = ['library', 'alarms', 'students'];

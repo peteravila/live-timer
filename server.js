@@ -1195,6 +1195,13 @@ io.on('connection', (socket) => {
           session = getSession(instructorId);
           joinRoom = 'students:' + instructorId;
         }
+      } else if (sessions.size === 1) {
+        // No code/token/apiKey but only one instructor exists — auto-route
+        // (covers large-screen display viewers opened without ?code= param)
+        const onlyId = sessions.keys().next().value;
+        instructorId = onlyId;
+        session = getSession(instructorId);
+        joinRoom = 'students:' + instructorId;
       }
       role = identifyRole;
       validated = true;

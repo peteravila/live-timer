@@ -165,12 +165,17 @@
     max-height: 60px; overflow-y: auto;
     margin-bottom: 1px;
   }
+  .mock-end-time-row {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    width: 100%;
+  }
   .mock-end-time-label {
     font-size: 0.8rem; color: var(--green); min-height: 1.1em;
     max-height: 1.4em; overflow: hidden;
   }
   .mock-end-time-computed {
     font-size: 0.8rem; color: var(--green); opacity: 0.6;
+    white-space: nowrap;
   }
   #mockCtxEndTimeLabel {
     top: 50%; transform: translateY(-62%);
@@ -244,7 +249,7 @@
   .phone-mockup.state-yellow { background: #332b00; }
   .phone-mockup.state-orange { background: #3b2010; }
   .phone-mockup.state-done { background: #4a0e0e; }
-  /* Display mode overrides on mockup */
+  /* Display mode overrides on mockup — only when timer is active */
   .phone-mockup.mock-bg-black.state-green,
   .phone-mockup.mock-bg-black.state-yellow,
   .phone-mockup.mock-bg-black.state-orange,
@@ -254,11 +259,9 @@
   .phone-mockup.mock-bg-transparent.state-yellow,
   .phone-mockup.mock-bg-transparent.state-orange,
   .phone-mockup.mock-bg-transparent.state-done,
-  .phone-mockup.mock-bg-transparent.state-paused,
-  .phone-mockup.mock-bg-transparent {
+  .phone-mockup.mock-bg-transparent.state-paused {
     background: repeating-conic-gradient(rgba(128,128,128,0.15) 0% 25%, transparent 0% 50%) 50% / 16px 16px;
   }
-  .phone-mockup.mock-bg-black { background: #000; }
   .phone-mockup.state-green .mock-digits,
   .phone-mockup.state-green .mock-label,
   .phone-mockup.state-green .mock-course-title,
@@ -1438,8 +1441,10 @@
 
         <!-- End Time Label + computed time -->
         <div class="mock-field-wrap">
-          <div class="mock-editable mock-end-time-label" contenteditable="true" data-placeholder="End Time Label" id="fieldEndTimeLabel">Class resumes at</div>
-          <div class="mock-end-time-computed" id="mockEndTimeComputed"></div>
+          <div class="mock-end-time-row">
+            <div class="mock-editable mock-end-time-label" contenteditable="true" data-placeholder="End Time Label" id="fieldEndTimeLabel">Class resumes at</div>
+            <div class="mock-end-time-computed" id="mockEndTimeComputed"></div>
+          </div>
           <div class="mock-ctx" id="mockCtxEndTimeLabel">
             <button class="mock-ctx-btn mock-ctx-go" onclick="pushFieldAndStart('fieldEndTimeLabel')" title="Push this field and start">&#9654;&#xFE0E;</button>
             <button class="mock-ctx-btn mock-ctx-push" onclick="loadEndTimeLabel()" title="Push this field to students">Push</button>
@@ -3749,9 +3754,14 @@ function updateMockupLive(s) {
     ringFg.style.strokeDashoffset = 0;
   }
 
-  // Update end time display
-  if (s.showEndTime && s.endTimeFormatted && (s.running || screenshotMode)) {
-    endTimeEl.textContent = s.endTimeFormatted;
+  // Update end time display — format client-side from epoch for correct timezone
+  if (s.showEndTime && s.endTime && (s.running || screenshotMode)) {
+    const d = new Date(s.endTime);
+    let h = d.getHours();
+    const m = String(d.getMinutes()).padStart(2, '0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    endTimeEl.textContent = h + ':' + m + ' ' + ampm;
   } else if (s.showEndTime && !s.running && s.remainingSeconds > 0 && s.remainingSeconds < s.totalSeconds) {
     endTimeEl.textContent = '(paused)';
   } else {

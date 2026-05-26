@@ -7238,3 +7238,714 @@ async function loadPaletteFromServer() {
 <div id="editOverlay"></div>
 </body>
 </html>
+            '<button class="alarm-spin-btn" data-aid="' + a.id + '" data-field="h" data-dir="-1">&#9660;</button>' +
+          '</div>' +
+          '<span class="alarm-time-colon">:</span>' +
+          '<div class="alarm-spin-col">' +
+            '<span class="alarm-spin-label">min</span>' +
+            '<button class="alarm-spin-btn" data-aid="' + a.id + '" data-field="m" data-dir="1">&#9650;</button>' +
+            '<span class="alarm-spin-val" id="alarmM_' + a.id + '">' + String(m).padStart(2,'0') + '</span>' +
+            '<button class="alarm-spin-btn" data-aid="' + a.id + '" data-field="m" data-dir="-1">&#9660;</button>' +
+          '</div>' +
+        '</div>' +
+        '<input type="text" class="alarm-label-input" value="' + esc(a.label || '') + '" ' +
+          'placeholder="Label (e.g. First Break)" ' +
+          'onchange="updateAlarmField(\'' + a.id + '\', \'label\', this.value)">' +
+        '<input type="checkbox" class="alarm-toggle" title="Enable/disable" ' +
+          (a.enabled ? 'checked' : '') + ' ' +
+          'onchange="updateAlarmField(\'' + a.id + '\', \'enabled\', this.checked)">' +
+        (isFiring ?
+          '<button class="alarm-btn btn-dismiss" onclick="dismissAlarm(\'' + a.id + '\')">Dismiss</button>' +
+          '<button class="alarm-btn btn-snooze" onclick="snoozeAlarm(\'' + a.id + '\')">+5m</button>'
+          : '') +
+        '<button class="alarm-btn btn-delete" onclick="removeAlarm(\'' + a.id + '\')" title="Delete">&#10005;</button>' +
+      '</div>' +
+      '<div class="alarm-card-bottom">' +
+        '<span class="alarm-detail-label">Sound:</span>' +
+        '<select class="alarm-sound-select" onchange="updateAlarmField(\'' + a.id + '\', \'sound\', this.value)">' +
+          soundOptions +
+        '</select>' +
+        '<label style="display:flex; align-items:center; gap:3px; font-size:0.7rem; color:var(--dim); cursor:pointer;">' +
+          '<input type="checkbox" ' + (a.visualAlert ? 'checked' : '') + ' style="margin:0;" ' +
+            'onchange="updateAlarmField(\'' + a.id + '\', \'visualAlert\', this.checked)"> Flash' +
+        '</label>' +
+        '<label style="display:flex; align-items:center; gap:3px; font-size:0.7rem; color:var(--dim); cursor:pointer;">' +
+          '<input type="checkbox" ' + (a.repeatAlert ? 'checked' : '') + ' style="margin:0;" ' +
+            'onchange="updateAlarmField(\'' + a.id + '\', \'repeatAlert\', this.checked)"> Repeat' +
+        '</label>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function buildAlarmSoundOptions(selectedVal) {
+  let html = '<option value="">— no sound —</option>';
+  customSoundsCache.forEach(s => {
+    const val = 'custom:' + s.id;
+    html += '<option value="' + val + '"' + (val === selectedVal ? ' selected' : '') + '>' + esc(s.name) + '</option>';
+  });
+  return html;
+}
+
+// ── Alarm checker (runs every 15s) ──
+function startAlarmChecker() {
+  if (alarmCheckInterval) clearInterval(alarmCheckInterval);
+  checkAlarms(); // immediate first check
+  alarmCheckInterval = setInterval(checkAlarms, 15000);
+}
+
+function checkAlarms() {
+  if (!alarmsMasterEnabled) return;
+  const now = new Date();
+  const nowH = now.getHours();
+  const nowM = now.getMinutes();
+  let needsRender = false;
+
+  // Reset fired state at midnight (new day)
+  if (nowH === 0 && nowM === 0) {
+    alarmsData.forEach(a => { a._fired = false; a._firing = false; });
+  }
+
+  alarmsData.forEach(a => {
+    if (!a.enabled || a._fired || a._firing) return;
+    // Check snooze
+    if (alarmSnoozed[a.id] && Date.now() < alarmSnoozed[a.id]) return;
+    if (alarmSnoozed[a.id] && Date.now() >= alarmSnoozed[a.id]) {
+      delete alarmSnoozed[a.id];
+      // Snooze expired — fire it now
+      fireAlarm(a);
+      needsRender = true;
+      return;
+    }
+    const [h, m] = (a.time || '00:00').split(':').map(Number);
+    if (nowH === h && nowM === m) {
+      fireAlarm(a);
+      needsRender = true;
+    }
+  });
+  if (needsRender) renderAlarmsList();
+}
+
+async function fireAlarm(alarm) {
+  alarm._firing = true;
+  // Play sound
+  if (alarm.sound && alarm.sound.startsWith('custom:')) {
+    const soundId = alarm.sound.split(':')[1];
+    const audio = await playCustomSound(soundId);
+    if (audio) alarmFiringAudios[alarm.id] = audio;
+    if (alarm.repeatAlert) {
+      alarmFiringTimers[alarm.id] = setInterval(async () => {
+        const a = await playCustomSound(soundId);
+        if (a) alarmFiringAudios[alarm.id] = a;
+      }, 3000);
+    }
+  }
+  // Visual alert — flash the tab and show notification
+  if (alarm.visualAlert) {
+    flashAlarmTab(alarm);
+  }
+  // Always stay in firing state until user clicks Dismiss
+  renderAlarmsList();
+}
+
+var alarmFlashInterval = null;
+function flashAlarmTab(alarm) {
+  // Flash the Alarms tab button
+  const tabBtns = document.querySelectorAll('.tab-bar .tab-btn');
+  const alarmsBtn = tabBtns[TAB_NAMES.indexOf('alarms')];
+  if (!alarmsBtn) return;
+  let flashOn = false;
+  if (alarmFlashInterval) clearInterval(alarmFlashInterval);
+  alarmFlashInterval = setInterval(() => {
+    flashOn = !flashOn;
+    alarmsBtn.style.background = flashOn ? 'var(--red)' : '';
+    alarmsBtn.style.color = flashOn ? '#fff' : '';
+  }, 500);
+  // Auto-stop flash after 30s or on dismiss
+  setTimeout(() => stopAlarmFlash(), 30000);
+}
+
+function stopAlarmFlash() {
+  if (alarmFlashInterval) { clearInterval(alarmFlashInterval); alarmFlashInterval = null; }
+  const tabBtns = document.querySelectorAll('.tab-bar .tab-btn');
+  const alarmsBtn = tabBtns[TAB_NAMES.indexOf('alarms')];
+  if (alarmsBtn) { alarmsBtn.style.background = ''; alarmsBtn.style.color = ''; }
+}
+
+function dismissAlarm(id) {
+  const alarm = alarmsData.find(a => a.id === id);
+  if (!alarm) return;
+  alarm._firing = false;
+  alarm._fired = true;
+  stopAlarmFiring(id);
+  stopAlarmFlash();
+  renderAlarmsList();
+}
+
+function snoozeAlarm(id) {
+  const alarm = alarmsData.find(a => a.id === id);
+  if (!alarm) return;
+  alarm._firing = false;
+  stopAlarmFiring(id);
+  stopAlarmFlash();
+  alarmSnoozed[id] = Date.now() + 5 * 60000; // 5 minutes
+  renderAlarmsList();
+}
+
+function stopAlarmFiring(id) {
+  if (alarmFiringTimers[id]) {
+    clearInterval(alarmFiringTimers[id]);
+    delete alarmFiringTimers[id];
+  }
+  if (alarmFiringAudios[id]) {
+    try { alarmFiringAudios[id].pause(); alarmFiringAudios[id].currentTime = 0; } catch(e) {}
+    delete alarmFiringAudios[id];
+  }
+  // Also stop any preview audio that playCustomSound may have set
+  stopPreview();
+}
+
+// ── Sequences ──
+var sequenceData = []; // loaded from server
+let editingSequenceId = null; // null = new, string = editing existing
+let seqBuilderSteps = []; // current builder step list [{timerId, name, minutes}]
+
+async function loadSequences() {
+  try {
+    const res = await authFetch('/api/sequences');
+    sequenceData = await res.json();
+  } catch (e) {
+    console.error('Failed to load sequences:', e);
+    sequenceData = [];
+  }
+}
+
+function renderSequenceList() {
+  const el = document.getElementById('sequenceList');
+  if (sequenceData.length === 0) {
+    el.innerHTML = '<div style="text-align:center; color:var(--dim); font-size:0.8rem; padding:20px;">No sequences yet. Create one to chain timers together.</div>';
+    return;
+  }
+  el.innerHTML = sequenceData.map(seq => {
+    const stepCount = (seq.steps || []).length;
+    const totalMins = (seq.steps || []).reduce((sum, step) => {
+      const lib = library.find(t => t.id === step.timerId);
+      return sum + (lib ? lib.minutes : 0);
+    }, 0);
+    const stepNames = (seq.steps || []).map(step => {
+      const lib = library.find(t => t.id === step.timerId);
+      return lib ? lib.name : '?';
+    }).join(' → ');
+    return `<div class="seq-card">
+      <div class="seq-card-header">
+        <button class="seq-card-btn seq-card-play" onclick="startSequence('${seq.id}')" title="Start this sequence">&#9654;&#xFE0E;</button>
+        <span class="seq-card-name">${esc(seq.name || 'Untitled')}</span>
+        <div class="seq-card-actions">
+          <button class="seq-card-btn" onclick="editSequence('${seq.id}')" title="Edit">Edit</button>
+          <button class="seq-card-btn btn-del" onclick="deleteSequence('${seq.id}')" title="Delete">✕</button>
+        </div>
+      </div>
+      <div class="seq-card-steps">${esc(stepNames)}</div>
+      <div class="seq-card-meta">${stepCount} timer${stepCount !== 1 ? 's' : ''} · ${Math.round(totalMins)} min total</div>
+    </div>`;
+  }).join('');
+}
+
+function newSequence() {
+  editingSequenceId = null;
+  seqBuilderSteps = [];
+  document.getElementById('seqName').value = '';
+  document.getElementById('seqAutoAdvance').checked = true;
+  showSeqBuilder();
+}
+
+function editSequence(id) {
+  const seq = sequenceData.find(s => s.id === id);
+  if (!seq) return;
+  editingSequenceId = id;
+  document.getElementById('seqName').value = seq.name || '';
+  seqBuilderSteps = (seq.steps || []).map(step => {
+    const lib = library.find(t => t.id === step.timerId);
+    return {
+      timerId: step.timerId,
+      name: lib ? lib.name : '(deleted)',
+      minutes: lib ? lib.minutes : 0,
+      autoStart: step.autoStart !== false,
+    };
+  });
+  showSeqBuilder();
+}
+
+function showSeqBuilder() {
+  document.getElementById('seqListView').style.display = 'none';
+  document.getElementById('seqBuilder').classList.add('visible');
+  renderSeqSteps();
+}
+
+function cancelSequenceEdit() {
+  document.getElementById('seqBuilder').classList.remove('visible');
+  document.getElementById('seqListView').style.display = 'block';
+  document.getElementById('seqTimerPicker').classList.remove('visible');
+}
+
+function updateSeqSaveBtn() {
+  const btn = document.getElementById('seqSaveBtn');
+  const hasName = document.getElementById('seqName').value.trim().length > 0;
+  const hasSteps = seqBuilderSteps.length > 0;
+  btn.disabled = !hasName || !hasSteps;
+}
+
+function renderSeqSteps() {
+  const el = document.getElementById('seqStepList');
+  if (seqBuilderSteps.length === 0) {
+    el.innerHTML = '<div style="text-align:center; color:var(--dim); font-size:0.75rem; padding:12px;">Add timers from your library to build a sequence.</div>';
+    updateSeqSaveBtn();
+    return;
+  }
+  el.innerHTML = seqBuilderSteps.map((step, i) => {
+    const isAuto = step.autoStart !== false;
+    return `
+    <div class="seq-step" draggable="true" data-seq-idx="${i}"
+         ondragstart="seqDragStart(event)" ondragover="seqDragOver(event)"
+         ondrop="seqDrop(event)" ondragend="seqDragEnd(event)">
+      <span class="seq-step-num">${i + 1}</span>
+      <span class="seq-step-name">${esc(step.name)}</span>
+      <span class="seq-step-mins">${step.minutes}m</span>
+      <button class="seq-step-start-mode ${isAuto ? 'auto' : 'manual'}" onclick="toggleSeqStepMode(${i})" title="${isAuto ? 'Auto-start: click to change to manual' : 'Manual start: click to change to auto'}">${isAuto ? '▶' : '⏸'}</button>
+      <button class="seq-step-remove" onclick="removeSeqStep(${i})" title="Remove">✕</button>
+    </div>`;
+  }).join('');
+  updateSeqSaveBtn();
+}
+
+function removeSeqStep(idx) {
+  seqBuilderSteps.splice(idx, 1);
+  renderSeqSteps();
+}
+
+function toggleSeqStepMode(idx) {
+  seqBuilderSteps[idx].autoStart = seqBuilderSteps[idx].autoStart === false ? true : false;
+  renderSeqSteps();
+}
+
+// Drag & drop for sequence steps
+let seqDragIdx = null;
+function seqDragStart(e) {
+  seqDragIdx = +e.currentTarget.dataset.seqIdx;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function seqDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+function seqDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const targetIdx = +e.currentTarget.dataset.seqIdx;
+  if (seqDragIdx === null || seqDragIdx === targetIdx) return;
+  const [moved] = seqBuilderSteps.splice(seqDragIdx, 1);
+  seqBuilderSteps.splice(targetIdx, 0, moved);
+  renderSeqSteps();
+}
+function seqDragEnd(e) {
+  seqDragIdx = null;
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.seq-step.drag-over').forEach(el => el.classList.remove('drag-over'));
+}
+
+function showSeqTimerPicker() {
+  const picker = document.getElementById('seqTimerPicker');
+  if (picker.classList.contains('visible')) {
+    picker.classList.remove('visible');
+    return;
+  }
+  picker.innerHTML = library.map(t => `
+    <div class="seq-timer-pick-item" onclick="addSeqTimer('${t.id}')">
+      <strong>${esc(t.name)}</strong> <span style="color:var(--blue); margin-left:6px;">${t.minutes}m</span>
+      <span style="color:var(--dim); margin-left:6px;">${esc(t.label || '')}</span>
+    </div>
+  `).join('');
+  picker.classList.add('visible');
+}
+
+function addSeqTimer(timerId) {
+  const lib = library.find(t => t.id === timerId);
+  if (!lib) return;
+  seqBuilderSteps.push({ timerId: lib.id, name: lib.name, minutes: lib.minutes, autoStart: true });
+  renderSeqSteps();
+  // Keep picker open for adding multiple
+}
+
+async function saveSequence() {
+  const name = document.getElementById('seqName').value.trim();
+  if (!name) {
+    document.getElementById('seqName').style.borderColor = 'var(--red)';
+    setTimeout(() => document.getElementById('seqName').style.borderColor = '', 1500);
+    return;
+  }
+  if (seqBuilderSteps.length === 0) return;
+  const seq = {
+    name,
+    steps: seqBuilderSteps.map(s => ({ timerId: s.timerId, autoStart: s.autoStart !== false })),
+  };
+  if (editingSequenceId) seq.id = editingSequenceId;
+  try {
+    const res = await authFetch('/api/sequences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(seq),
+    });
+    sequenceData = await res.json();
+  } catch (e) {
+    console.error('Failed to save sequence:', e);
+  }
+  cancelSequenceEdit();
+  renderSequenceList();
+}
+
+async function deleteSequence(id) {
+  const ok = await customConfirm('Delete this sequence?');
+  if (!ok) return;
+  try {
+    const res = await authFetch('/api/sequences/' + id, { method: 'DELETE' });
+    sequenceData = await res.json();
+  } catch (e) {
+    console.error('Failed to delete sequence:', e);
+  }
+  renderSequenceList();
+}
+
+function startSequence(id) {
+  socket.emit('start-sequence', { sequenceId: id });
+}
+
+function skipSequenceStep() {
+  socket.emit('skip-sequence-step');
+}
+
+function stopSequence() {
+  socket.emit('stop-sequence');
+}
+
+// Sequence state
+var activeSeqState = null;
+
+function updateSeqWaiting() {
+  const waitEl = document.getElementById('seqWaitingMsg');
+  const playBtn = document.querySelector('.tb-start');
+  if (activeSeqState && !timerIsRunning && timerRemaining > 0) {
+    waitEl.style.display = '';
+    playBtn.classList.add('seq-waiting-start');
+  } else {
+    waitEl.style.display = 'none';
+    playBtn.classList.remove('seq-waiting-start');
+  }
+}
+
+// Load sequences on page init
+loadSequences();
+
+// ── OBS URL copy ──
+function copyOBSUrl(extraParams) {
+  const credential = apiKey ? 'key=' + encodeURIComponent(apiKey) : 'token=' + encodeURIComponent(authToken);
+  const base = window.location.origin + '/?obs=true&' + credential;
+  const url = base + extraParams;
+  navigator.clipboard.writeText(url).then(() => {
+    // Find the button that was clicked (by matching the onclick param)
+    const btns = document.querySelectorAll('.obs-copy-btn');
+    btns.forEach(btn => {
+      if (btn.getAttribute('onclick') === `copyOBSUrl('${extraParams}')`) {
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy', 1500);
+      }
+    });
+  });
+}
+
+function copyDisplayUrl() {
+  const credential = apiKey ? 'key=' + encodeURIComponent(apiKey) : 'token=' + encodeURIComponent(authToken);
+  const url = window.location.origin + '/?' + credential;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.querySelector('button[onclick="copyDisplayUrl()"]');
+    if (btn) {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    }
+  });
+}
+
+function copyQROnlyUrl() {
+  const credential = apiKey ? 'key=' + encodeURIComponent(apiKey) : 'token=' + encodeURIComponent(authToken);
+  const url = window.location.origin + '/qr-only?' + credential;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.querySelector('button[onclick="copyQROnlyUrl()"]');
+    if (btn) {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    }
+  });
+}
+
+// ── Check-in toggle ──
+function toggleCheckin(enabled) {
+  socket.emit('set-checkin-enabled', enabled);
+}
+
+// Refresh relative timestamps every 30 seconds
+setInterval(() => {
+  if (studentList.length > 0) renderStudentBoard();
+}, 30000);
+
+function initSocketLate() {
+  socket.on('screenshot-mode', (on) => {
+    screenshotMode = on;
+    const cb = document.getElementById('screenshotMode');
+    if (cb) cb.checked = on;
+  });
+
+  socket.on('student-list', (list) => {
+    studentList = list;
+    renderStudentBoard();
+    updateStudentBadge();
+  });
+
+  socket.on('sequence-state', (state) => {
+    activeSeqState = state;
+    const badge = document.getElementById('seqProgressBadge');
+    if (!state) {
+      badge.classList.remove('visible');
+      document.getElementById('seqWaitingMsg').style.display = 'none';
+      document.querySelector('.tb-start').classList.remove('seq-waiting-start');
+      return;
+    }
+    badge.classList.add('visible');
+    document.getElementById('seqProgressName').textContent = state.name;
+    document.getElementById('seqProgressCount').textContent =
+      `${state.currentIndex + 1} of ${state.totalSteps}`;
+    updateSeqWaiting();
+  });
+
+  socket.on('checkin-enabled', (enabled) => {
+    document.getElementById('checkinToggle').checked = !!enabled;
+    document.getElementById('mockCheckinFooter').classList.toggle('visible', !!enabled);
+  });
+
+  socket.on('connect_error', (err) => {
+    if (err.message === 'Authentication required') {
+      logout();
+    }
+  });
+} // end initSocketLate
+
+// ── Auto-save alarm settings on any change ──
+['alarmSound', 'alarmLoop', 'warningSound', 'warningEnabled', 'warningMinutes', 'optStartTab'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', () => saveAlarmSettingsToServer());
+});
+
+// ── Build palette picker (collapsible, matches ToDoListApp style) ──
+let paletteExpanded = false;
+
+function getCurrentPaletteId() {
+  const key = instructorKey ? 'livetimer-palette:' + instructorKey : 'livetimer-palette';
+  return localStorage.getItem(key) || 'midnight';
+}
+
+function buildMiniSwatches(colors) {
+  const keys = ['--bg', '--card', '--text', '--green', '--blue', '--yellow', '--red'];
+  return '<div class="palette-mini-swatches">' +
+    keys.map(k => '<div class="palette-mini-swatch" style="background:' + colors[k] + '"></div>').join('') +
+    '</div>';
+}
+
+function buildPalettePicker() {
+  const container = document.getElementById('paletteSection');
+  if (!container) return;
+  const currentId = getCurrentPaletteId();
+  const current = PALETTES.find(p => p.id === currentId) || PALETTES[0];
+  const categories = ['dark', 'medium', 'light', 'loud'];
+  const categoryLabels = { dark: 'Dark', medium: 'Medium', light: 'Light', loud: 'Loud' };
+
+  // Toggle button
+  let html = '<button class="palette-toggle" onclick="togglePalettePicker()">';
+  html += '<span class="palette-toggle-label">THEME</span>';
+  html += '<div class="palette-toggle-preview">';
+  html += buildMiniSwatches(current.colors);
+  html += '<span class="palette-toggle-name">' + current.name + '</span>';
+  html += '</div>';
+  html += '<svg class="palette-chevron' + (paletteExpanded ? ' open' : '') + '" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,5 7,9 11,5"/></svg>';
+  html += '</button>';
+
+  // Expanded picker
+  if (paletteExpanded) {
+    html += '<div class="palette-picker">';
+    for (const cat of categories) {
+      const palettes = PALETTES.filter(p => p.category === cat);
+      if (palettes.length === 0) continue;
+      html += '<div class="palette-pick-category">';
+      html += '<span class="palette-pick-cat-label">' + categoryLabels[cat] + '</span>';
+      for (const p of palettes) {
+        const isActive = p.id === currentId;
+        html += '<button class="palette-pick-row' + (isActive ? ' active' : '') + '" onclick="selectPalette(\'' + p.id + '\')">';
+        html += buildMiniSwatches(p.colors);
+        html += '<span class="palette-pick-name">' + p.name + '</span>';
+        html += '<span class="palette-pick-desc">' + (p.description || '') + '</span>';
+        if (isActive) html += '<span class="palette-pick-check">&#10003;</span>';
+        html += '</button>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+function togglePalettePicker() {
+  paletteExpanded = !paletteExpanded;
+  buildPalettePicker();
+}
+
+function selectPalette(paletteId) {
+  applyPalette(paletteId);
+  savePaletteToServer(paletteId);
+  buildPalettePicker(); // re-render to update active state and toggle preview
+}
+
+function savePaletteToServer(paletteId) {
+  if (!authToken) return;
+  authFetch('/api/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ palette: paletteId })
+  }).catch(e => console.error('savePalette:', e));
+}
+
+async function loadPaletteFromServer() {
+  if (!authToken) return;
+  try {
+    const res = await authFetch('/api/settings');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.palette && PALETTES.find(p => p.id === data.palette)) {
+        applyPalette(data.palette);
+      }
+    }
+  } catch(e) { console.error('loadPalette:', e); }
+}
+
+</script>
+<div class="prompt-backdrop" id="promptBackdrop">
+  <div class="prompt-box" style="position:relative;">
+    <button class="dialog-close" id="promptClose">&#10005;</button>
+    <div class="prompt-label" id="promptLabel"></div>
+    <input type="text" class="prompt-input" id="promptInput" autocomplete="off">
+    <div class="prompt-buttons">
+      <button class="confirm-btn confirm-btn-yes" id="promptOk">OK</button>
+      <button class="confirm-btn confirm-btn-no" id="promptCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+<div class="save-lib-backdrop" id="toLibraryBackdrop">
+  <div class="save-lib-box" style="max-width:480px; text-align:left;">
+    <button class="dialog-close" id="toLibClose">&#10005;</button>
+    <div class="save-lib-title" id="toLibTitle">to Library</div>
+    <div id="toLibMode" style="display:flex;gap:16px;margin-bottom:14px;">
+      <label style="font-size:0.82rem;cursor:pointer;color:var(--dim);"><input type="radio" name="toLibMode" value="update" checked onchange="toggleToLibMode()" style="accent-color:var(--green);"> Update Selected</label>
+      <label style="font-size:0.82rem;cursor:pointer;color:var(--dim);"><input type="radio" name="toLibMode" value="create" onchange="toggleToLibMode()" style="accent-color:var(--green);"> Create New</label>
+    </div>
+    <div id="toLibNewName" style="display:none;margin-bottom:14px;">
+      <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--blue);margin-bottom:6px;font-weight:600;">Timer Name</div>
+      <input type="text" id="toLibNameInput" class="lib-search" placeholder="Enter timer name..." style="padding-left:10px;width:100%;box-sizing:border-box;">
+    </div>
+    <div id="toLibFields" style="margin-bottom:14px;"></div>
+    <div id="toLibTimerSection">
+      <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--blue);margin:10px 0 6px;font-weight:600;">Timers</div>
+      <input type="text" class="lib-search" id="toLibSearch" placeholder="Filter timers..." oninput="filterToLib()" style="padding-left:10px;width:100%;box-sizing:border-box;margin-bottom:4px;">
+      <label class="save-lib-item" style="padding:4px 10px;margin-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.06);"><input type="checkbox" id="toLibSelectAll" onchange="toggleToLibSelectAll(this)" style="accent-color:var(--green);"> <span style="font-size:0.82rem;color:var(--dim);">All</span></label>
+      <div class="save-lib-list" id="toLibList"></div>
+    </div>
+    <div class="save-lib-buttons" style="margin-top:14px;">
+      <button class="confirm-btn confirm-btn-yes" id="toLibApply">Apply</button>
+      <button class="confirm-btn confirm-btn-no" id="toLibCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+<div class="confirm-backdrop" id="confirmBackdrop">
+  <div class="confirm-box" style="position:relative;">
+    <button class="dialog-close" id="confirmClose">&#10005;</button>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-buttons" id="confirmButtons">
+      <button class="confirm-btn confirm-btn-yes" id="confirmYes">Yes</button>
+      <button class="confirm-btn confirm-btn-no" id="confirmNo">Cancel</button>
+    </div>
+  </div>
+</div>
+<div class="duration-popup-backdrop" id="newTimerBackdrop">
+  <div class="duration-popup" id="newTimerPopup" style="max-width:380px; cursor:default;">
+    <button class="duration-popup-close" onclick="closeNewTimerDialog()">&#10005;</button>
+    <div class="duration-popup-title">New Timer</div>
+    <div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
+      <div>
+        <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Name *</label>
+        <input type="text" id="ntName" placeholder="Timer name" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid var(--border-mid); background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
+      </div>
+      <div>
+        <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Duration *</label>
+        <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+          <input type="number" id="ntHours" min="0" max="23" value="0" style="width:50px; padding:6px; border-radius:6px; border:1px solid var(--border-mid); background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.9rem; text-align:center;">
+          <span style="color:var(--dim); font-size:0.75rem;">hr</span>
+          <input type="number" id="ntMinutes" min="0" max="59" value="15" style="width:50px; padding:6px; border-radius:6px; border:1px solid var(--border-mid); background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.9rem; text-align:center;">
+          <span style="color:var(--dim); font-size:0.75rem;">min</span>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Display Title</label>
+        <input type="text" id="ntLabel" placeholder="e.g. Break, Lab 1" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid var(--border-mid); background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
+      </div>
+      <div>
+        <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">End Time Label</label>
+        <input type="text" id="ntEndTimeLabel" value="Class resumes at" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid var(--border-mid); background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
+      </div>
+      <div>
+        <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Message</label>
+        <input type="text" id="ntMessage" placeholder="e.g. Enjoy your break!" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid var(--border-mid); background:rgba(255,255,255,0.06); color:var(--text); font-family:inherit; font-size:0.85rem;">
+      </div>
+      <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--dim); cursor:pointer;">
+          <input type="checkbox" id="ntShowEndTime" checked style="accent-color:var(--green);"> Show End Time
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--dim); cursor:pointer;">
+          <input type="checkbox" id="ntClockOnly" style="accent-color:var(--green);"> Clock Only
+        </label>
+      </div>
+      <div style="display:flex; gap:16px;">
+        <div style="flex:1;">
+          <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Background</label>
+          <select id="ntBgMode" style="width:100%; padding:6px; border-radius:6px; border:1px solid var(--border-mid); background:#2a2a3e; color:var(--text); font-family:inherit; font-size:0.8rem;">
+            <option value="default" style="background:#2a2a3e; color:#e0e0e0;">Default</option>
+            <option value="transparent" style="background:#2a2a3e; color:#e0e0e0;">Transparent</option>
+            <option value="black" style="background:#2a2a3e; color:#e0e0e0;">Black</option>
+          </select>
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">After Loading</label>
+          <select id="ntGoToTab" style="width:100%; padding:6px; border-radius:6px; border:1px solid var(--border-mid); background:#2a2a3e; color:var(--text); font-family:inherit; font-size:0.8rem;">
+            <option value="library" selected style="background:#2a2a3e; color:#e0e0e0;">Library</option>
+            <option value="students" style="background:#2a2a3e; color:#e0e0e0;">Students</option>
+            <option value="settings" style="background:#2a2a3e; color:#e0e0e0;">Settings</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex; gap:12px; justify-content:center; margin-top:4px;">
+        <button class="confirm-btn confirm-btn-yes" id="ntSubmitBtn" onclick="submitNewTimerDialog()">Create</button>
+        <button class="confirm-btn confirm-btn-no" onclick="closeNewTimerDialog()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Glass overlay for inline editing modal behavior -->
+<div id="editOverlay"></div>
+</body>
+</html>

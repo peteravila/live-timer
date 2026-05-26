@@ -115,7 +115,7 @@
   .phone-mockup {
     width: 250px; flex-shrink: 0;
     height: 450px; /* ~1:1.8 — realistic usable viewport after browser chrome */
-    background: #1a1a2e;
+    background: var(--bg);
     border-radius: 22px;
     border: 3px solid var(--border);
     padding: 20px 12px 8px;
@@ -144,23 +144,23 @@
   }
   .mock-editable::-webkit-scrollbar { display: none; }
   .mock-editable { scrollbar-width: none; }
-  .mock-editable:hover { border-color: rgba(255,255,255,0.15); }
+  .mock-editable:hover { border-color: var(--border); }
   .mock-editable:focus { border-color: var(--blue); background: rgba(52,152,219,0.08); }
   .mock-editable.field-dirty { border-color: var(--yellow); border-style: dotted; }
   .mock-editable:empty::before {
     content: attr(data-placeholder);
-    color: rgba(255,255,255,0.2); font-style: italic;
+    color: var(--text-faint); font-style: italic;
   }
 
   /* Match student.html field styles — scaled to 64% of phone (250/390) */
   .mock-course-title {
     font-size: 1.4rem; font-weight: 700;
-    color: rgba(255,255,255,0.85); line-height: 1.15;
+    color: var(--text); line-height: 1.15;
     white-space: pre-line; min-height: 1.2em;
     max-height: 40px; overflow-y: auto;
   }
   .mock-label {
-    font-size: 1.6rem; font-weight: 700; color: #e0e0e0;
+    font-size: 1.6rem; font-weight: 700; color: var(--text);
     opacity: 0.95; white-space: pre-line; min-height: 1.1em;
     max-height: 60px; overflow-y: auto;
     margin-bottom: 1px;
@@ -239,33 +239,48 @@
     visibility: hidden;
   }
 
-  /* Live mockup color states — mirror student.html */
+  /* Live mockup color states — always use Midnight palette colors */
   .phone-mockup.state-green { background: #0d3b2e; }
   .phone-mockup.state-yellow { background: #332b00; }
   .phone-mockup.state-orange { background: #3b2010; }
   .phone-mockup.state-done { background: #4a0e0e; }
+  /* Display mode overrides on mockup */
+  .phone-mockup.mock-bg-black.state-green,
+  .phone-mockup.mock-bg-black.state-yellow,
+  .phone-mockup.mock-bg-black.state-orange,
+  .phone-mockup.mock-bg-black.state-done,
+  .phone-mockup.mock-bg-black.state-paused { background: #000; }
+  .phone-mockup.mock-bg-transparent.state-green,
+  .phone-mockup.mock-bg-transparent.state-yellow,
+  .phone-mockup.mock-bg-transparent.state-orange,
+  .phone-mockup.mock-bg-transparent.state-done,
+  .phone-mockup.mock-bg-transparent.state-paused,
+  .phone-mockup.mock-bg-transparent {
+    background: repeating-conic-gradient(rgba(128,128,128,0.15) 0% 25%, transparent 0% 50%) 50% / 16px 16px;
+  }
+  .phone-mockup.mock-bg-black { background: #000; }
   .phone-mockup.state-green .mock-digits,
   .phone-mockup.state-green .mock-label,
   .phone-mockup.state-green .mock-course-title,
   .phone-mockup.state-green .mock-message,
   .phone-mockup.state-green .mock-end-time-label,
   .phone-mockup.state-green .mock-end-time-computed,
-  .phone-mockup.state-green .mock-ring-fg { color: var(--green); stroke: var(--green); }
+  .phone-mockup.state-green .mock-ring-fg { color: #4ecca3; stroke: #4ecca3; }
 
   .phone-mockup.state-yellow .mock-digits,
   .phone-mockup.state-yellow .mock-label,
   .phone-mockup.state-yellow .mock-course-title,
   .phone-mockup.state-yellow .mock-message,
   .phone-mockup.state-yellow .mock-end-time-label,
-  .phone-mockup.state-yellow .mock-end-time-computed { color: var(--yellow); }
-  .phone-mockup.state-yellow .mock-ring-fg { stroke: var(--yellow); }
+  .phone-mockup.state-yellow .mock-end-time-computed { color: #f0c24b; }
+  .phone-mockup.state-yellow .mock-ring-fg { stroke: #f0c24b; }
 
   .phone-mockup.state-orange .mock-digits,
   .phone-mockup.state-orange .mock-label,
   .phone-mockup.state-orange .mock-course-title,
   .phone-mockup.state-orange .mock-message,
   .phone-mockup.state-orange .mock-end-time-label,
-  .phone-mockup.state-orange .mock-end-time-computed { color: var(--orange); }
+  .phone-mockup.state-orange .mock-end-time-computed { color: #e67e22; }
   .phone-mockup.state-orange .mock-ring-fg { stroke: #e67e22; }
 
   .phone-mockup.state-done .mock-digits,
@@ -273,8 +288,8 @@
   .phone-mockup.state-done .mock-course-title,
   .phone-mockup.state-done .mock-message,
   .phone-mockup.state-done .mock-end-time-label,
-  .phone-mockup.state-done .mock-end-time-computed { color: var(--red); }
-  .phone-mockup.state-done .mock-ring-fg { stroke: var(--red); }
+  .phone-mockup.state-done .mock-end-time-computed { color: #e74c3c; }
+  .phone-mockup.state-done .mock-ring-fg { stroke: #e74c3c; }
 
   .phone-mockup.state-done .mock-digits { animation: pulse 1s infinite; }
 
@@ -283,8 +298,8 @@
   .phone-mockup.state-paused .mock-course-title,
   .phone-mockup.state-paused .mock-message,
   .phone-mockup.state-paused .mock-end-time-label,
-  .phone-mockup.state-paused .mock-end-time-computed { color: var(--dim); }
-  .phone-mockup.state-paused .mock-ring-fg { stroke: var(--dim); }
+  .phone-mockup.state-paused .mock-end-time-computed { color: #888; }
+  .phone-mockup.state-paused .mock-ring-fg { stroke: #888; }
 
   /* Duration popup overlay */
   .duration-popup-backdrop {
@@ -521,6 +536,9 @@
     -webkit-appearance: none; appearance: none;
     width: 16px; height: 16px; border: 1px solid var(--border-light); border-radius: 3px;
     background: var(--bg); cursor: pointer; position: relative; flex-shrink: 0;
+  }
+  input[type=checkbox].custom-cb:checked {
+    background: var(--green); border-color: var(--green);
   }
   input[type=checkbox].custom-cb:checked::after {
     content: '✓'; position: absolute; top: -1px; left: 2px;
@@ -1120,9 +1138,9 @@
     flex: 1; padding: 3px 1px; border-radius: 4px; font-size: 0.45rem;
     font-weight: 700; text-align: center; border: 1px solid transparent;
   }
-  .mock-checkin-btn-working { background: var(--hover-blue); color: var(--blue); border-color: var(--blue); }
-  .mock-checkin-btn-done { background: var(--hover-green-strong); color: var(--green); border-color: var(--green); }
-  .mock-checkin-btn-away { background: rgba(230,126,34,0.15); color: var(--orange); border-color: var(--orange); }
+  .mock-checkin-btn-working { background: rgba(52,152,219,0.15); color: #3498db; border-color: #3498db; }
+  .mock-checkin-btn-done { background: rgba(78,204,163,0.15); color: #4ecca3; border-color: #4ecca3; }
+  .mock-checkin-btn-away { background: rgba(230,126,34,0.15); color: #e67e22; border-color: #e67e22; }
   .mock-checkin-btn-clear { background: rgba(255,255,255,0.05); color: var(--text-muted); border-color: var(--dim); }
 
   /* Tab badge */
@@ -1200,35 +1218,99 @@
     padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;
   }
   .login-logout:hover { border-color: var(--text); color: var(--text); }
+  .settings-cog {
+    background: none; border: none; color: var(--dim); cursor: pointer;
+    padding: 4px; border-radius: 4px; display: flex; align-items: center;
+    transition: color 0.12s;
+  }
+  .settings-cog:hover { color: var(--text); }
 
+  /* ── Settings Overlay ── */
+  .settings-overlay {
+    position: fixed; inset: 0; z-index: 2000;
+    background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    animation: settings-fade-in 0.15s ease-out;
+  }
+  .settings-overlay.hidden { display: none; }
+  @keyframes settings-fade-in { from { opacity: 0; } to { opacity: 1; } }
+  .settings-panel {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+    width: 600px; max-width: 92vw; max-height: 85vh;
+    display: flex; flex-direction: column;
+    animation: settings-slide-in 0.2s ease-out;
+  }
+  @keyframes settings-slide-in {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .settings-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .settings-header h2 { font-size: 1.1rem; font-weight: 600; color: var(--text); margin: 0; }
+  .settings-close {
+    background: none; border: none; color: var(--dim); cursor: pointer;
+    padding: 4px; border-radius: 4px; display: flex; align-items: center;
+    transition: color 0.12s;
+  }
+  .settings-close:hover { color: var(--text); }
+  .settings-body { padding: 16px 20px 20px; overflow-y: auto; flex: 1; }
 
-  /* Palette picker */
+  /* Palette picker — collapsible toggle row */
   .palette-section { margin-bottom: 20px; }
-  .palette-section-title { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; }
-  .palette-category-label {
-    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px;
-    color: var(--dim); margin: 10px 0 6px; font-weight: 600;
+  .palette-toggle {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; cursor: pointer; color: var(--text);
+    font-family: inherit; transition: border-color 0.15s, background 0.15s;
   }
-  .palette-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .palette-swatch {
-    width: 44px; height: 28px; border-radius: 6px; cursor: pointer;
-    border: 2px solid transparent; position: relative;
-    transition: border-color 0.15s, transform 0.1s;
-    overflow: hidden; display: flex;
+  .palette-toggle:hover { border-color: var(--blue); background: var(--subtle-bg); }
+  .palette-toggle-label {
+    font-size: 0.82rem; font-weight: 600; color: var(--dim);
+    text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0;
   }
-  .palette-swatch:hover { transform: scale(1.08); border-color: var(--dim); }
-  .palette-swatch.active { border-color: var(--green); box-shadow: 0 0 8px rgba(78,204,163,0.3); }
-  .palette-swatch-left { width: 50%; height: 100%; }
-  .palette-swatch-right { width: 50%; height: 100%; display: flex; flex-direction: column; }
-  .palette-swatch-accent { height: 50%; }
-  .palette-swatch-text { height: 50%; display: flex; align-items: center; justify-content: center; }
-  .palette-swatch-dot { width: 6px; height: 6px; border-radius: 50%; }
-  .palette-swatch-name {
-    font-size: 0.6rem; color: var(--dim); text-align: center;
-    margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    max-width: 48px;
+  .palette-toggle-preview { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+  .palette-toggle-name { font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
+  .palette-chevron {
+    flex-shrink: 0; color: var(--dim); transition: transform 0.2s;
   }
-  .palette-item { display: flex; flex-direction: column; align-items: center; }
+  .palette-chevron.open { transform: rotate(180deg); }
+
+  /* Mini swatches — shared by toggle row and picker rows */
+  .palette-mini-swatches { display: flex; gap: 2px; flex-shrink: 0; }
+  .palette-mini-swatch {
+    width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border);
+  }
+
+  /* Expanded picker area */
+  .palette-picker {
+    margin-top: 8px; border: 1px solid var(--border); border-radius: 8px;
+    max-height: 260px; overflow-y: auto; background: var(--card2);
+  }
+  .palette-pick-category:not(:last-child) { border-bottom: 1px solid var(--border); }
+  .palette-pick-cat-label {
+    display: block; font-size: 0.68rem; font-weight: 600; color: var(--dim);
+    text-transform: uppercase; letter-spacing: 0.08em; padding: 8px 12px 4px;
+  }
+  .palette-pick-row {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 7px 12px; background: none; border: none;
+    border-left: 3px solid transparent; cursor: pointer;
+    color: var(--text); font-family: inherit; text-align: left;
+    transition: background 0.12s;
+  }
+  .palette-pick-row:hover { background: var(--highlight); }
+  .palette-pick-row.active {
+    border-left-color: var(--green); background: var(--hover-green);
+  }
+  .palette-pick-name { font-size: 0.82rem; font-weight: 600; flex-shrink: 0; }
+  .palette-pick-desc {
+    font-size: 0.72rem; color: var(--dim); flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .palette-pick-check { color: var(--green); font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -1403,7 +1485,6 @@
       <button class="tab-btn active" onclick="switchTab('library')">Library</button>
       <button class="tab-btn" onclick="switchTab('options')">Options</button>
       <button class="tab-btn" onclick="switchTab('students')">Students<span class="tab-badge badge-empty" id="studentsBadge"></span></button>
-      <button class="tab-btn" onclick="switchTab('settings')">Clockworks</button>
     </div>
 
     <!-- Tab: Library -->
@@ -1506,7 +1587,7 @@
           <option value="library">Library</option>
           <option value="options">Options</option>
           <option value="students">Students</option>
-          <option value="settings">Clockworks</option>
+          <option value="settings">Settings</option>
         </select>
       </div>
     </div>
@@ -1526,19 +1607,29 @@
       </div>
     </div>
 
-    <!-- Tab: Settings -->
-    <div class="tab-content" id="tab-settings">
-      <div style="display:flex; gap:24px;">
+    <!-- (Settings content moved to overlay below) -->
 
-        <div style="flex:1; min-width:0;">
+  </div><!-- /col-right -->
+
+</div><!-- /main-layout -->
+
+</div><!-- /page-wrap -->
+
+<!-- Settings Overlay -->
+<div class="settings-overlay hidden" id="settingsOverlay" onclick="if(event.target===this)closeSettings()">
+  <div class="settings-panel" onclick="event.stopPropagation()">
+    <div class="settings-header">
+      <h2>Settings</h2>
+      <button class="settings-close" onclick="closeSettings()" title="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="settings-body">
 
           <!-- Palette Picker -->
-          <div class="palette-section">
-            <label style="font-size:0.85rem; color:var(--text-muted);">Theme</label>
-            <div id="palettePicker" style="margin-top:8px; margin-left:103px;"></div>
-          </div>
+          <div class="palette-section" id="paletteSection"></div>
 
-          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div style="margin-bottom:20px;">
             <label style="font-size:0.85rem; color:var(--text-muted);">Class Code</label>
@@ -1555,15 +1646,14 @@
             </div>
           </div>
 
-          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
             <label for="alarmSound" style="font-size:0.85rem; color:var(--text-muted); white-space:nowrap; min-width:95px;">Alarm sound:</label>
             <select id="alarmSound" style="flex:1; padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
               <option value="">— no sound —</option>
             </select>
-            <button class="settings-btn" onclick="previewSound('alarmSound')">&#9654; Test</button>
-            <button class="settings-btn" onclick="stopPreview()">&#9632; Stop</button>
+            <button class="settings-btn" id="alarmTestBtn" onclick="toggleSoundPreview('alarmSound')">&#9654; Test</button>
             <button class="settings-btn" onclick="deleteSelectedSound('alarmSound')" style="color:var(--red);">&#10005;</button>
           </div>
           <div style="margin-left:103px;">
@@ -1579,15 +1669,14 @@
             </div>
           </div>
 
-          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
             <label for="warningSound" style="font-size:0.85rem; color:var(--text-muted); white-space:nowrap; min-width:95px;">Warning alert:</label>
             <select id="warningSound" style="flex:1; padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
               <option value="">— no sound —</option>
             </select>
-            <button class="settings-btn" onclick="previewSound('warningSound')">&#9654; Test</button>
-            <button class="settings-btn" onclick="stopPreview()">&#9632; Stop</button>
+            <button class="settings-btn" id="warningTestBtn" onclick="toggleSoundPreview('warningSound')">&#9654; Test</button>
             <button class="settings-btn" onclick="deleteSelectedSound('warningSound')" style="color:var(--red);">&#10005;</button>
           </div>
           <div style="margin-left:103px; display:flex; align-items:center; gap:8px;">
@@ -1597,7 +1686,7 @@
             <span style="font-size:0.85rem; color:var(--text-muted);">min before end</span>
           </div>
 
-          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px;">
             <label for="optStartTab" style="font-size:0.85rem; color:var(--text-muted);">After starting, go to tab:</label>
@@ -1605,11 +1694,11 @@
               <option value="library">Library</option>
               <option value="options">Options</option>
               <option value="students">Students</option>
-              <option value="settings">Clockworks</option>
+              <option value="settings">Settings</option>
             </select>
           </div>
 
-          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div style="margin-bottom:20px;">
             <div class="checkbox-row">
@@ -1619,7 +1708,7 @@
             <div style="font-size:0.75rem; color:var(--dim); margin-top:4px; margin-left:103px;">When muted, timer changes only appear in the preview — not on student screens.</div>
           </div>
 
-          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
             <label style="font-size:0.85rem; color:var(--text-muted);">Library Backup</label>
@@ -1632,7 +1721,7 @@
             </div>
           </div>
 
-          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
             <label style="font-size:0.85rem; color:var(--text-muted);">Display URLs</label>
@@ -1642,7 +1731,7 @@
             </div>
           </div>
 
-          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
             <label style="font-size:0.85rem; color:var(--text-muted);">OBS Browser Source URLs</label>
@@ -1728,7 +1817,7 @@
             </div>
           </div>
 
-          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
             <label style="font-size:0.85rem; color:var(--text-muted);">Account</label>
@@ -1737,7 +1826,7 @@
             </div>
           </div>
 
-          <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
           <div>
             <label style="font-size:0.85rem; color:var(--text-muted);">About</label>
             <div style="margin-top:8px; margin-left:103px; font-size:0.8rem; color:var(--dim);">
@@ -1748,7 +1837,7 @@
 
           <!-- Admin section: only visible if isAdmin account -->
           <div id="adminSection" style="display:none;">
-            <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+            <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
             <label style="font-size:0.85rem; color:#e74c3c;">Admin — Instructors</label>
             <div style="margin-top:8px;">
               <!-- Search + toolbar (mirrors Library tab pattern) -->
@@ -1781,7 +1870,7 @@
               <div id="adminStatus" style="font-size:0.75rem; margin-top:8px; min-height:1.2em;"></div>
             </div>
 
-            <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+            <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
             <label style="font-size:0.85rem; color:#e74c3c;">Admin — Default Sounds</label>
             <div style="font-size:0.75rem; color:var(--dim); margin-top:4px; margin-bottom:8px;">These sounds are copied to every new instructor account on creation.</div>
             <div id="defaultSoundsList" style="margin-bottom:8px;"></div>
@@ -1792,7 +1881,7 @@
               </label>
             </div>
 
-            <hr style="border:none; border-top:1px solid var(--subtle-border); margin:20px 0;">
+            <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
             <label style="font-size:0.85rem; color:#e74c3c;">Admin — Screenshot Mode</label>
             <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
               <label class="switch"><input type="checkbox" id="screenshotMode" onchange="toggleScreenshotMode()"><span class="slider"></span></label>
@@ -1800,15 +1889,9 @@
             </div>
           </div>
 
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /col-right -->
-
-</div><!-- /main-layout -->
-
-</div><!-- /page-wrap -->
+    </div><!-- /settings-body -->
+  </div><!-- /settings-panel -->
+</div><!-- /settings-overlay -->
 
 <!-- Duration Popup Overlay -->
 <div class="duration-popup-backdrop" id="durationPopupBackdrop">
@@ -1915,7 +1998,7 @@
 // ── Palette System ──
 const PALETTES = [
   // Dark
-  { id: 'midnight', name: 'Midnight', category: 'dark', colors: {
+  { id: 'midnight', name: 'Midnight', description: 'Deep navy — the original', category: 'dark', colors: {
     '--bg': '#1a1a2e', '--card': '#16213e', '--card2': '#1c2a4a',
     '--accent': '#0f3460', '--text': '#e0e0e0', '--dim': '#888',
     '--green': '#4ecca3', '--yellow': '#f0c24b', '--red': '#e74c3c', '--blue': '#3498db',
@@ -1931,7 +2014,7 @@ const PALETTES = [
     '--input-bg': '#1a1a2e', '--btn-text-on-accent': '#111',
     '--orange': '#e67e22', '--blue-hover': '#2980b9', '--color-scheme': 'dark'
   }},
-  { id: 'charcoal', name: 'Charcoal', category: 'dark', colors: {
+  { id: 'charcoal', name: 'Charcoal', description: 'Neutral dark gray', category: 'dark', colors: {
     '--bg': '#1e1e1e', '--card': '#2a2a2a', '--card2': '#333333',
     '--accent': '#3a3a3a', '--text': '#e8e8e8', '--dim': '#909090',
     '--green': '#66bb6a', '--yellow': '#ffca28', '--red': '#ef5350', '--blue': '#42a5f5',
@@ -1947,7 +2030,7 @@ const PALETTES = [
     '--input-bg': '#1e1e1e', '--btn-text-on-accent': '#111',
     '--orange': '#ffa726', '--blue-hover': '#1e88e5', '--color-scheme': 'dark'
   }},
-  { id: 'nord', name: 'Nord', category: 'dark', colors: {
+  { id: 'nord', name: 'Nord', description: 'Arctic, cool blue-gray', category: 'dark', colors: {
     '--bg': '#2e3440', '--card': '#3b4252', '--card2': '#434c5e',
     '--accent': '#4c566a', '--text': '#eceff4', '--dim': '#7b88a1',
     '--green': '#a3be8c', '--yellow': '#ebcb8b', '--red': '#bf616a', '--blue': '#81a1c1',
@@ -1963,7 +2046,7 @@ const PALETTES = [
     '--input-bg': '#2e3440', '--btn-text-on-accent': '#2e3440',
     '--orange': '#d08770', '--blue-hover': '#5e81ac', '--color-scheme': 'dark'
   }},
-  { id: 'ocean', name: 'Ocean', category: 'dark', colors: {
+  { id: 'ocean', name: 'Ocean', description: 'Deep sea teals and cyans', category: 'dark', colors: {
     '--bg': '#0a192f', '--card': '#112240', '--card2': '#1a3358',
     '--accent': '#233e5e', '--text': '#ccd6f6', '--dim': '#6882a8',
     '--green': '#64ffda', '--yellow': '#ffd700', '--red': '#ff6b6b', '--blue': '#57cbff',
@@ -1979,7 +2062,7 @@ const PALETTES = [
     '--input-bg': '#0a192f', '--btn-text-on-accent': '#0a192f',
     '--orange': '#ff9f43', '--blue-hover': '#3da8e0', '--color-scheme': 'dark'
   }},
-  { id: 'ink', name: 'Ink', category: 'dark', colors: {
+  { id: 'ink', name: 'Ink', description: 'Minimalist black & white', category: 'dark', colors: {
     '--bg': '#181818', '--card': '#222222', '--card2': '#2c2c2c',
     '--accent': '#353535', '--text': '#d8d8d8', '--dim': '#787878',
     '--green': '#a0a0a0', '--yellow': '#c8c8c8', '--red': '#909090', '--blue': '#b0b0b0',
@@ -1996,7 +2079,7 @@ const PALETTES = [
     '--orange': '#999', '--blue-hover': '#888', '--color-scheme': 'dark'
   }},
   // Medium
-  { id: 'slate', name: 'Slate', category: 'medium', colors: {
+  { id: 'slate', name: 'Slate', description: 'Medium blue-gray', category: 'medium', colors: {
     '--bg': '#3d4451', '--card': '#4a5568', '--card2': '#536275',
     '--accent': '#5f7186', '--text': '#f0f0f0', '--dim': '#9aa5b4',
     '--green': '#68d391', '--yellow': '#f6e05e', '--red': '#fc8181', '--blue': '#63b3ed',
@@ -2013,7 +2096,7 @@ const PALETTES = [
     '--orange': '#ed8936', '--blue-hover': '#4299e1', '--color-scheme': 'dark'
   }},
   // Light
-  { id: 'cloud', name: 'Cloud', category: 'light', colors: {
+  { id: 'cloud', name: 'Cloud', description: 'Light and airy', category: 'light', colors: {
     '--bg': '#f5f7fa', '--card': '#ffffff', '--card2': '#edf2f7',
     '--accent': '#e2e8f0', '--text': '#2d3748', '--dim': '#718096',
     '--green': '#38a169', '--yellow': '#d69e2e', '--red': '#e53e3e', '--blue': '#3182ce',
@@ -2029,7 +2112,7 @@ const PALETTES = [
     '--input-bg': '#ffffff', '--btn-text-on-accent': '#fff',
     '--orange': '#dd6b20', '--blue-hover': '#2c5282', '--color-scheme': 'light'
   }},
-  { id: 'paper', name: 'Paper', category: 'light', colors: {
+  { id: 'paper', name: 'Paper', description: 'Clean and minimal', category: 'light', colors: {
     '--bg': '#faf8f5', '--card': '#ffffff', '--card2': '#f5f0eb',
     '--accent': '#e8e0d8', '--text': '#3d3530', '--dim': '#8a7e72',
     '--green': '#5a9e6f', '--yellow': '#c4952e', '--red': '#c94040', '--blue': '#4a7fb5',
@@ -2045,7 +2128,7 @@ const PALETTES = [
     '--input-bg': '#ffffff', '--btn-text-on-accent': '#fff',
     '--orange': '#c87533', '--blue-hover': '#3a6a99', '--color-scheme': 'light'
   }},
-  { id: 'mist', name: 'Mist', category: 'light', colors: {
+  { id: 'mist', name: 'Mist', description: 'Whisper-quiet — all gray', category: 'light', colors: {
     '--bg': '#f0f0f0', '--card': '#fafafa', '--card2': '#e8e8e8',
     '--accent': '#ddd', '--text': '#333', '--dim': '#777',
     '--green': '#666', '--yellow': '#888', '--red': '#555', '--blue': '#666',
@@ -2062,7 +2145,7 @@ const PALETTES = [
     '--orange': '#777', '--blue-hover': '#555', '--color-scheme': 'light'
   }},
   // Loud
-  { id: 'synthwave', name: 'Synthwave', category: 'loud', colors: {
+  { id: 'synthwave', name: 'Synthwave', description: 'Retro purple, cyan & pink', category: 'loud', colors: {
     '--bg': '#1a0a2e', '--card': '#2d1b4e', '--card2': '#3a2560',
     '--accent': '#4a3070', '--text': '#f0e6ff', '--dim': '#9b7abf',
     '--green': '#00ffaa', '--yellow': '#ffe66d', '--red': '#ff4488', '--blue': '#00ccff',
@@ -2078,7 +2161,7 @@ const PALETTES = [
     '--input-bg': '#1a0a2e', '--btn-text-on-accent': '#1a0a2e',
     '--orange': '#ff8844', '--blue-hover': '#0099cc', '--color-scheme': 'dark'
   }},
-  { id: 'sunset', name: 'Sunset Blaze', category: 'loud', colors: {
+  { id: 'sunset', name: 'Sunset Blaze', description: 'Warm pinks and golds', category: 'loud', colors: {
     '--bg': '#1f0c0c', '--card': '#2d1414', '--card2': '#3a1c1c',
     '--accent': '#4a2424', '--text': '#ffe8e0', '--dim': '#b07060',
     '--green': '#ff6b35', '--yellow': '#ffc107', '--red': '#ff1744', '--blue': '#ff9100',
@@ -2094,7 +2177,7 @@ const PALETTES = [
     '--input-bg': '#1f0c0c', '--btn-text-on-accent': '#1f0c0c',
     '--orange': '#ff6b35', '--blue-hover': '#e67e00', '--color-scheme': 'dark'
   }},
-  { id: 'neon', name: 'Neon Mint', category: 'loud', colors: {
+  { id: 'neon', name: 'Neon Mint', description: 'Electric greens and teals', category: 'loud', colors: {
     '--bg': '#0a1a14', '--card': '#102820', '--card2': '#18352a',
     '--accent': '#1e4035', '--text': '#e0fff5', '--dim': '#5a9b85',
     '--green': '#00ff88', '--yellow': '#ccff00', '--red': '#ff3366', '--blue': '#00eeff',
@@ -2292,10 +2375,16 @@ function logout() {
 
 async function startApp() {
   loginOverlay.classList.add('hidden');
-  // Add topbar (greeting + logout)
+  // Add topbar (greeting + cog + logout)
   if (!document.querySelector('.login-topbar')) {
     const topbar = document.createElement('div');
     topbar.className = 'login-topbar';
+    const cog = document.createElement('button');
+    cog.className = 'settings-cog';
+    cog.title = 'Settings';
+    cog.onclick = openSettings;
+    cog.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>';
+    topbar.appendChild(cog);
     const btn = document.createElement('button');
     btn.className = 'login-logout';
     btn.textContent = 'Log out';
@@ -2770,9 +2859,26 @@ let timerRemaining = 0;
 let lastTimerData = null;
 let justLoadedId = null;  // suppress dirty check right after loadAndStart
 
+// ── Settings overlay ──
+function openSettings() {
+  const overlay = document.getElementById('settingsOverlay');
+  if (overlay) overlay.classList.remove('hidden');
+}
+function closeSettings() {
+  const overlay = document.getElementById('settingsOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !document.getElementById('settingsOverlay').classList.contains('hidden')) {
+    closeSettings();
+  }
+});
+
 // ── Tab switching ──
-const TAB_NAMES = ['library', 'options', 'students', 'settings'];
+const TAB_NAMES = ['library', 'options', 'students'];
 function switchTab(name) {
+  // 'settings' now opens the overlay instead of a tab
+  if (name === 'settings') { openSettings(); return; }
   // Map legacy tab names to valid tabs
   if (!TAB_NAMES.includes(name)) name = 'library';
   const scrollY = window.scrollY;
@@ -3036,15 +3142,24 @@ function getDisplayModePayload() {
   };
 }
 function updateBgMode() {
+  syncMockupBgMode();
   socket.emit('update-display-modes', getDisplayModePayload());
 }
 function updateDisplayModes() {
   socket.emit('update-display-modes', getDisplayModePayload());
 }
+function syncMockupBgMode() {
+  const mockup = document.getElementById('phoneMockup');
+  const bg = getBgMode();
+  mockup.classList.remove('mock-bg-black', 'mock-bg-transparent');
+  if (bg === 'black') mockup.classList.add('mock-bg-black');
+  else if (bg === 'transparent') mockup.classList.add('mock-bg-transparent');
+}
 function setBgModeFromFlags(transparent, blackBg) {
   document.getElementById('fieldBgDefault').checked = !transparent && !blackBg;
   document.getElementById('fieldBgTransparent').checked = !!transparent;
   document.getElementById('fieldBgBlack').checked = !!blackBg;
+  syncMockupBgMode();
 }
 
 function pushAllFields() {
@@ -3105,7 +3220,7 @@ function saveToLibrary() {
   const currentModes = getDisplayModePayload();
   const currentGoToTab = document.getElementById('optGoToTab').value;
   const bgPreview = currentModes.transparent ? 'Transparent' : currentModes.blackBg ? 'Black' : 'Default';
-  const tabNames = { library: 'Library', options: 'Options', students: 'Students', settings: 'Clockworks' };
+  const tabNames = { library: 'Library', options: 'Options', students: 'Students', settings: 'Settings' };
   const empty = '<span style="color:#666;font-style:italic;">(empty)</span>';
 
   // Build field checkboxes with editable controls
@@ -3815,14 +3930,41 @@ function renderDefaultSoundsList() {
     container.innerHTML = '<div style="font-size:0.8rem; color:#666; font-style:italic;">No default sounds configured.</div>';
     return;
   }
-  container.innerHTML = defaultSoundsCache.map(s =>
-    `<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-      <span style="font-size:0.8rem; color:var(--text-muted);">${s.name}</span>
-      <button class="settings-btn" onclick="previewDefaultSound('${s.id}')" style="font-size:0.7rem; padding:2px 8px;">&#9654; Test</button>
-      <button class="settings-btn" onclick="stopPreview()" style="font-size:0.7rem; padding:2px 8px;">&#9632; Stop</button>
-      <button class="settings-btn" onclick="deleteDefaultSound('${s.id}')" style="font-size:0.7rem; padding:2px 8px; color:var(--red);">&#10005;</button>
-    </div>`
-  ).join('');
+  container.innerHTML = '<table style="border-collapse:collapse;">' +
+    defaultSoundsCache.map(s =>
+      `<tr>
+        <td style="padding:4px 0; font-size:0.8rem; color:var(--text-muted); text-align:left;">${s.name}</td>
+        <td style="padding:4px 0 4px 12px; text-align:center;">
+          <button class="settings-btn" id="defSndBtn-${s.id}" onclick="toggleDefaultSoundPreview('${s.id}')" style="font-size:0.7rem; padding:2px 8px; min-width:56px;">&#9654; Test</button>
+        </td>
+        <td style="padding:4px 0 4px 4px; text-align:center;">
+          <button class="settings-btn" onclick="deleteDefaultSound('${s.id}')" style="font-size:0.7rem; padding:2px 8px; color:var(--red);">&#10005;</button>
+        </td>
+      </tr>`
+    ).join('') + '</table>';
+}
+
+function toggleDefaultSoundPreview(soundId) {
+  const btn = document.getElementById('defSndBtn-' + soundId);
+  // If this sound is currently playing, stop it
+  if (currentPreviewAudio && currentPreviewAudio._defSndId === soundId) {
+    stopPreview();
+    if (btn) btn.innerHTML = '&#9654; Test';
+    return;
+  }
+  // Stop any other preview first and reset all buttons
+  stopPreview();
+  document.querySelectorAll('[id^="defSndBtn-"]').forEach(b => b.innerHTML = '&#9654; Test');
+  // Start playing
+  if (btn) btn.innerHTML = '&#9632; Stop';
+  previewDefaultSound(soundId).then(() => {
+    if (currentPreviewAudio) {
+      currentPreviewAudio._defSndId = soundId;
+      currentPreviewAudio.addEventListener('ended', () => {
+        if (btn) btn.innerHTML = '&#9654; Test';
+      });
+    }
+  });
 }
 
 async function previewDefaultSound(soundId) {
@@ -4573,7 +4715,7 @@ function renderLibrary() {
         <option value="library" ${goTo === 'library' ? 'selected' : ''}>Library</option>
         <option value="options" ${goTo === 'options' ? 'selected' : ''}>Options</option>
         <option value="students" ${goTo === 'students' ? 'selected' : ''}>Students</option>
-        <option value="settings" ${goTo === 'settings' ? 'selected' : ''}>Clockworks</option>
+        <option value="settings" ${goTo === 'settings' ? 'selected' : ''}>Settings</option>
       </select>
     </div>`;
   });
@@ -4885,7 +5027,7 @@ function newBlankRow() {
         <option value="library" selected>Library</option>
         <option value="options">Options</option>
         <option value="students">Students</option>
-        <option value="settings">Clockworks</option>
+        <option value="settings">Settings</option>
       </select>
     </div>`;
 
@@ -5631,6 +5773,32 @@ function previewSound(selectId) {
   playCustomSound(val.split(':')[1]);
 }
 
+async function toggleSoundPreview(selectId) {
+  const btnId = selectId === 'alarmSound' ? 'alarmTestBtn' : 'warningTestBtn';
+  const btn = document.getElementById(btnId);
+  // If currently playing this sound, stop it
+  if (currentPreviewAudio && currentPreviewAudio._previewSelectId === selectId) {
+    stopPreview();
+    if (btn) btn.innerHTML = '&#9654; Test';
+    return;
+  }
+  // Stop any other preview and reset both buttons
+  stopPreview();
+  document.getElementById('alarmTestBtn').innerHTML = '&#9654; Test';
+  document.getElementById('warningTestBtn').innerHTML = '&#9654; Test';
+  // Start preview
+  const val = document.getElementById(selectId).value;
+  if (!val || !val.startsWith('custom:')) return;
+  if (btn) btn.innerHTML = '&#9632; Stop';
+  const audio = await playCustomSound(val.split(':')[1]);
+  if (audio) {
+    audio._previewSelectId = selectId;
+    audio.addEventListener('ended', () => {
+      if (btn) btn.innerHTML = '&#9654; Test';
+    });
+  }
+}
+
 // ── Warning alert ──
 let warningFired = false;
 
@@ -5848,10 +6016,13 @@ function updateButtonStates() {
                           getField('fieldEndTimeLabel') !== 'Class resumes at';
   clearBtn.classList.toggle('enabled', hasLabel || hasMessage || hasDuration || hasName || hasEndTimeLabel);
 
-  // Digit spinners: disabled when timer is running or paused
+  // Digit spinners: hidden when timer is running or paused
   const spinnerActive = !running && !paused;
   document.querySelectorAll('.ds-btn').forEach(btn => {
     btn.classList.toggle('disabled', !spinnerActive);
+  });
+  document.querySelectorAll('.digit-spinner').forEach(el => {
+    el.style.visibility = spinnerActive ? '' : 'hidden';
   });
 
   // Field play buttons: disabled when no duration set and not paused
@@ -6336,38 +6507,73 @@ function initSocketLate() {
   if (el) el.addEventListener('change', () => saveAlarmSettingsToServer());
 });
 
-// ── Build palette picker ──
+// ── Build palette picker (collapsible, matches ToDoListApp style) ──
+let paletteExpanded = false;
+
+function getCurrentPaletteId() {
+  const key = instructorKey ? 'livetimer-palette:' + instructorKey : 'livetimer-palette';
+  return localStorage.getItem(key) || 'midnight';
+}
+
+function buildMiniSwatches(colors) {
+  const keys = ['--bg', '--card', '--text', '--green', '--blue', '--yellow', '--red'];
+  return '<div class="palette-mini-swatches">' +
+    keys.map(k => '<div class="palette-mini-swatch" style="background:' + colors[k] + '"></div>').join('') +
+    '</div>';
+}
+
 function buildPalettePicker() {
-  const container = document.getElementById('palettePicker');
+  const container = document.getElementById('paletteSection');
   if (!container) return;
+  const currentId = getCurrentPaletteId();
+  const current = PALETTES.find(p => p.id === currentId) || PALETTES[0];
   const categories = ['dark', 'medium', 'light', 'loud'];
   const categoryLabels = { dark: 'Dark', medium: 'Medium', light: 'Light', loud: 'Loud' };
-  const currentKey = instructorKey ? 'livetimer-palette:' + instructorKey : 'livetimer-palette';
-  const currentId = localStorage.getItem(currentKey) || 'midnight';
-  
-  let html = '';
-  for (const cat of categories) {
-    const palettes = PALETTES.filter(p => p.category === cat);
-    if (palettes.length === 0) continue;
-    html += '<div class="palette-category-label">' + categoryLabels[cat] + '</div>';
-    html += '<div class="palette-row">';
-    for (const p of palettes) {
-      const c = p.colors;
-      const isActive = p.id === currentId ? ' active' : '';
-      html += '<div class="palette-item">';
-      html += '<div class="palette-swatch' + isActive + '" data-id="' + p.id + '" title="' + p.name + '" onclick="applyPalette(\'' + p.id + '\'); savePaletteToServer(\'' + p.id + '\');">';
-      html += '<div class="palette-swatch-left" style="background:' + c['--bg'] + '"></div>';
-      html += '<div class="palette-swatch-right">';
-      html += '<div class="palette-swatch-accent" style="background:' + c['--card'] + '"></div>';
-      html += '<div class="palette-swatch-text" style="background:' + c['--card2'] + '">';
-      html += '<div class="palette-swatch-dot" style="background:' + c['--green'] + '"></div>';
-      html += '</div></div></div>';
-      html += '<div class="palette-swatch-name">' + p.name + '</div>';
+
+  // Toggle button
+  let html = '<button class="palette-toggle" onclick="togglePalettePicker()">';
+  html += '<span class="palette-toggle-label">Theme</span>';
+  html += '<div class="palette-toggle-preview">';
+  html += buildMiniSwatches(current.colors);
+  html += '<span class="palette-toggle-name">' + current.name + '</span>';
+  html += '</div>';
+  html += '<svg class="palette-chevron' + (paletteExpanded ? ' open' : '') + '" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,5 7,9 11,5"/></svg>';
+  html += '</button>';
+
+  // Expanded picker
+  if (paletteExpanded) {
+    html += '<div class="palette-picker">';
+    for (const cat of categories) {
+      const palettes = PALETTES.filter(p => p.category === cat);
+      if (palettes.length === 0) continue;
+      html += '<div class="palette-pick-category">';
+      html += '<span class="palette-pick-cat-label">' + categoryLabels[cat] + '</span>';
+      for (const p of palettes) {
+        const isActive = p.id === currentId;
+        html += '<button class="palette-pick-row' + (isActive ? ' active' : '') + '" onclick="selectPalette(\'' + p.id + '\')">';
+        html += buildMiniSwatches(p.colors);
+        html += '<span class="palette-pick-name">' + p.name + '</span>';
+        html += '<span class="palette-pick-desc">' + (p.description || '') + '</span>';
+        if (isActive) html += '<span class="palette-pick-check">&#10003;</span>';
+        html += '</button>';
+      }
       html += '</div>';
     }
     html += '</div>';
   }
+
   container.innerHTML = html;
+}
+
+function togglePalettePicker() {
+  paletteExpanded = !paletteExpanded;
+  buildPalettePicker();
+}
+
+function selectPalette(paletteId) {
+  applyPalette(paletteId);
+  savePaletteToServer(paletteId);
+  buildPalettePicker(); // re-render to update active state and toggle preview
 }
 
 function savePaletteToServer(paletteId) {
@@ -6492,7 +6698,7 @@ async function loadPaletteFromServer() {
             <option value="library" selected style="background:#2a2a3e; color:#e0e0e0;">Library</option>
             <option value="options" style="background:#2a2a3e; color:#e0e0e0;">Options</option>
             <option value="students" style="background:#2a2a3e; color:#e0e0e0;">Students</option>
-            <option value="settings" style="background:#2a2a3e; color:#e0e0e0;">Clockworks</option>
+            <option value="settings" style="background:#2a2a3e; color:#e0e0e0;">Settings</option>
           </select>
         </div>
       </div>

@@ -1045,10 +1045,10 @@
   .students-summary-count {
     font-size: 1.4rem; font-weight: 700; margin-right: 4px;
   }
-  .students-summary-count.count-working { color: var(--blue); }
-  .students-summary-count.count-done { color: var(--green); }
-  .students-summary-count.count-away { color: var(--orange); }
-  .students-summary-count.count-idle { color: var(--border-light); }
+  .students-summary-count.count-working { color: #3498db; }
+  .students-summary-count.count-done { color: #4ecca3; }
+  .students-summary-count.count-away { color: #e67e22; }
+  .students-summary-count.count-idle { color: #666; }
   .students-list {
     max-height: 400px; overflow-y: auto;
   }
@@ -1062,9 +1062,9 @@
   .student-dot {
     width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
   }
-  .student-dot.dot-idle { background: var(--border-mid); }
-  .student-dot.dot-working { background: var(--blue); }
-  .student-dot.dot-done { background: var(--green); }
+  .student-dot.dot-idle { background: #444; }
+  .student-dot.dot-working { background: #3498db; }
+  .student-dot.dot-done { background: #4ecca3; }
   .student-dot.dot-away { background: #e67e22; }
   .student-name {
     font-size: 0.9rem; color: var(--text); flex: 1; min-width: 0;
@@ -1074,10 +1074,10 @@
     font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
     min-width: 70px; text-align: right;
   }
-  .student-state.state-idle { color: var(--text-faint); }
-  .student-state.state-working { color: var(--blue); }
-  .student-state.state-done { color: var(--green); }
-  .student-state.state-away { color: var(--orange); }
+  .student-state.state-idle { color: #888; }
+  .student-state.state-working { color: #3498db; }
+  .student-state.state-done { color: #4ecca3; }
+  .student-state.state-away { color: #e67e22; }
   .student-time {
     font-size: 0.7rem; color: var(--text-faint); min-width: 50px; text-align: right;
   }
@@ -1261,6 +1261,7 @@
   }
   .settings-close:hover { color: var(--text); }
   .settings-body { padding: 16px 20px 20px; overflow-y: auto; flex: 1; }
+  .settings-label { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
 
   /* Palette picker — collapsible toggle row */
   .palette-section { margin-bottom: 20px; }
@@ -1638,7 +1639,7 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div style="margin-bottom:20px;">
-            <label style="font-size:0.85rem; color:var(--text-muted);">Class Code</label>
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">Class Code</label>
             <div style="display:flex; align-items:flex-start; gap:16px; margin-top:8px;">
               <div style="margin-left:103px; flex:1; min-width:0;">
                 <button class="settings-btn" onclick="generateNewCode()">Disconnect All Phones</button>
@@ -1655,7 +1656,7 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-            <label for="alarmSound" style="font-size:0.85rem; color:var(--text-muted); white-space:nowrap; min-width:95px;">Alarm sound:</label>
+            <label class="settings-label" for="alarmSound" style="font-size:0.85rem; color:var(--text-muted); white-space:nowrap; min-width:95px;">Alarm sound:</label>
             <select id="alarmSound" style="flex:1; padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
               <option value="">— no sound —</option>
             </select>
@@ -1678,7 +1679,7 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-            <label for="warningSound" style="font-size:0.85rem; color:var(--text-muted); white-space:nowrap; min-width:95px;">Warning alert:</label>
+            <label class="settings-label" for="warningSound" style="font-size:0.85rem; color:var(--text-muted); white-space:nowrap; min-width:95px;">Warning alert:</label>
             <select id="warningSound" style="flex:1; padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
               <option value="">— no sound —</option>
             </select>
@@ -1695,7 +1696,7 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px;">
-            <label for="optStartTab" style="font-size:0.85rem; color:var(--text-muted);">After starting, go to tab:</label>
+            <label class="settings-label" for="optStartTab" style="font-size:0.85rem; color:var(--text-muted);">After starting, go to tab:</label>
             <select id="optStartTab" style="padding:6px 10px; border:1px solid var(--border-light); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
               <option value="library">Library</option>
               <option value="options">Options</option>
@@ -1717,7 +1718,7 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
-            <label style="font-size:0.85rem; color:var(--text-muted);">Library Backup</label>
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">Library Backup</label>
             <div style="display:flex; gap:8px; margin-top:8px; margin-left:103px;">
               <button class="settings-btn" onclick="exportLibrary()">Export</button>
               <label class="settings-btn" style="cursor:pointer;">
@@ -1730,7 +1731,7 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
-            <label style="font-size:0.85rem; color:var(--text-muted);">Display URLs</label>
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">Display URLs</label>
             <div style="display:flex; align-items:center; gap:8px; margin:10px 0;">
               <button class="obs-copy-btn" onclick="copyDisplayUrl()">Copy</button>
               <span style="font-size:0.75rem; color:var(--dim);">Student display screen (projected or second monitor)</span>
@@ -1740,7 +1741,7 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
-            <label style="font-size:0.85rem; color:var(--text-muted);">OBS Browser Source URLs</label>
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">OBS Browser Source URLs</label>
             <div style="font-size:0.7rem; color:var(--text-faint); margin:4px 0 10px;">Click Copy to copy a URL. Paste into OBS as a Browser Source.</div>
             <table style="border-collapse:collapse; font-size:0.75rem; margin-top:6px;">
               <thead>
@@ -1826,7 +1827,7 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
-            <label style="font-size:0.85rem; color:var(--text-muted);">Account</label>
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">Account</label>
             <div style="margin-top:8px; margin-left:103px;">
               <button class="settings-btn" onclick="showChangePassword()">Change Password</button>
             </div>
@@ -1834,7 +1835,7 @@
 
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
           <div>
-            <label style="font-size:0.85rem; color:var(--text-muted);">About</label>
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">About</label>
             <div style="margin-top:8px; margin-left:103px; font-size:0.8rem; color:var(--dim);">
               LiveTimer v1.0<br>
               &copy; 2025 Peter Avila. All rights reserved.
@@ -1844,7 +1845,7 @@
           <!-- Admin section: only visible if isAdmin account -->
           <div id="adminSection" style="display:none;">
             <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
-            <label style="font-size:0.85rem; color:#e74c3c;">Admin — Instructors</label>
+            <label class="settings-label" style="font-size:0.85rem; color:#e74c3c;">Admin — Instructors</label>
             <div style="margin-top:8px;">
               <!-- Search + toolbar (mirrors Library tab pattern) -->
               <div class="lib-toolbar" id="adminSearchBar" style="display:none;">
@@ -1877,7 +1878,7 @@
             </div>
 
             <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
-            <label style="font-size:0.85rem; color:#e74c3c;">Admin — Default Sounds</label>
+            <label class="settings-label" style="font-size:0.85rem; color:#e74c3c;">Admin — Default Sounds</label>
             <div style="font-size:0.75rem; color:var(--dim); margin-top:4px; margin-bottom:8px;">These sounds are copied to every new instructor account on creation.</div>
             <div id="defaultSoundsList" style="margin-bottom:8px;"></div>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
@@ -1888,7 +1889,7 @@
             </div>
 
             <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
-            <label style="font-size:0.85rem; color:#e74c3c;">Admin — Screenshot Mode</label>
+            <label class="settings-label" style="font-size:0.85rem; color:#e74c3c;">Admin — Screenshot Mode</label>
             <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
               <label class="switch"><input type="checkbox" id="screenshotMode" onchange="toggleScreenshotMode()"><span class="slider"></span></label>
               <span style="font-size:0.8rem; color:var(--dim);">Paused timers look like they're running (for taking screenshots)</span>

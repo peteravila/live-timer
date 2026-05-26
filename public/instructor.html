@@ -1120,7 +1120,7 @@
     background: var(--subtle-bg); transition: all 0.15s;
   }
   .alarm-row.alarm-disabled { opacity: 0.45; }
-  .alarm-row.alarm-fired { border-color: var(--green); background: rgba(78, 204, 163, 0.08); }
+  .alarm-row.alarm-fired { border-color: var(--green); background: var(--hover-green); }
   .alarm-row.alarm-firing {
     border-color: var(--red);
     animation: alarm-pulse 0.8s ease-in-out infinite alternate;
@@ -1176,7 +1176,7 @@
   .alarm-toggle::after {
     content: ''; position: absolute; top: 2px; left: 2px;
     width: 13px; height: 13px; border-radius: 50%;
-    background: #fff; transition: transform 0.2s;
+    background: var(--btn-text-on-accent); transition: transform 0.2s;
   }
   .alarm-toggle:checked::after { transform: translateX(15px); }
   .alarm-btn {
@@ -1190,7 +1190,7 @@
   }
   .alarm-btn.btn-dismiss:hover { background: var(--hover-green); }
   .alarm-btn.btn-snooze { color: var(--yellow); border-color: var(--yellow); }
-  .alarm-btn.btn-snooze:hover { background: rgba(241, 196, 15, 0.1); }
+  .alarm-btn.btn-snooze:hover { background: var(--hover-green); }
   .alarm-btn.btn-delete { color: var(--red); border-color: transparent; }
   .alarm-btn.btn-delete:hover { background: var(--hover-red); border-color: var(--red); }
   .alarm-detail-row {
@@ -1208,7 +1208,7 @@
     background: var(--subtle-bg); transition: all 0.15s;
   }
   .alarm-card.alarm-disabled { opacity: 0.45; }
-  .alarm-card.alarm-fired { border-color: var(--green); background: rgba(78, 204, 163, 0.08); }
+  .alarm-card.alarm-fired { border-color: var(--green); background: var(--hover-green); }
   .alarm-card.alarm-firing {
     border-color: var(--red);
     animation: alarm-pulse 0.8s ease-in-out infinite alternate;
@@ -1228,7 +1228,7 @@
   .toggle-slider::after {
     content: ''; position: absolute; top: 2px; left: 2px;
     width: 15px; height: 15px; border-radius: 50%;
-    background: #fff; transition: transform 0.2s;
+    background: var(--btn-text-on-accent); transition: transform 0.2s;
   }
   .toggle-switch input:checked + .toggle-slider { background: var(--green); }
   .toggle-switch input:checked + .toggle-slider::after { transform: translateX(17px); }
@@ -1707,7 +1707,7 @@
 
     <!-- Tab: Alarms (scheduled daily alarms) -->
     <div class="tab-content" id="tab-alarms">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
         <div style="display:flex; align-items:center; gap:8px;">
           <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--dim);">Scheduled Alarms</span>
           <label class="toggle-switch" title="Master on/off for all alarms">
@@ -1716,9 +1716,15 @@
           </label>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
-          <button class="lib-toolbar-btn" id="alarmDeleteBtn" onclick="batchDeleteAlarms()" title="Delete selected alarms" style="font-size:0.8rem; padding:2px 8px; display:none; color:var(--red,#e74c3c);">Delete</button>
+          <button class="lib-toolbar-btn" id="alarmDeleteBtn" onclick="batchDeleteAlarms()" title="Delete selected alarms" style="font-size:0.8rem; padding:2px 8px; display:none; color:var(--red);">Delete</button>
           <button class="lib-toolbar-btn" onclick="addAlarm()" title="Add new alarm" style="font-size:1.1rem; padding:2px 8px;">+</button>
         </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
+        <select id="alarmSetSelect" onchange="switchAlarmSet(this.value)" style="flex:1; padding:4px 8px; border-radius:6px; border:1px solid var(--border-mid); background:var(--input-bg); color:var(--text); font-family:inherit; font-size:0.8rem;"></select>
+        <button class="lib-toolbar-btn" onclick="createAlarmSet()" title="New set" style="font-size:0.75rem; padding:2px 8px;">New</button>
+        <button class="lib-toolbar-btn" onclick="duplicateAlarmSet()" title="Duplicate this set" style="font-size:0.75rem; padding:2px 8px;">Dup</button>
+        <button class="lib-toolbar-btn" onclick="showAlarmSetMenu(event)" title="More set options" style="font-size:0.9rem; padding:2px 8px;">&hellip;</button>
       </div>
       <div id="alarmsList" class="alarms-list">
         <div class="alarms-empty">No alarms yet. Click + to add one.</div>
@@ -2589,7 +2595,7 @@ async function startApp() {
   // Load alarm settings, custom sounds, and scheduled alarms from server
   try { await fetchCustomSounds(); } catch(e) { console.error('fetchCustomSounds:', e); }
   try { await fetchAlarmSettings(); } catch(e) { console.error('fetchAlarmSettings:', e); }
-  try { await fetchAlarms(); renderAlarmsList(); startAlarmChecker(); } catch(e) { console.error('fetchAlarms:', e); }
+  try { await fetchAlarmSets(); renderAlarmSetSelect(); renderAlarmsList(); startAlarmChecker(); } catch(e) { console.error('fetchAlarmSets:', e); }
 
   // Load palette (scoped to instructor)
   loadSavedPalette();
@@ -6330,66 +6336,73 @@ function switchLibView(view) {
 }
 
 // ── Scheduled Alarms ──
-var alarmsData = []; // { id, time:'HH:MM', label, sound, visualAlert, repeatAlert, enabled }
+var alarmSetsData = []; // Array of { id, name, alarms: [...] }
+var activeAlarmSetId = null;
+var alarmsData = []; // Points to active set's alarms array
 var alarmsMasterEnabled = true;
 var alarmCheckInterval = null;
 var alarmFiringTimers = {}; // id -> intervalId for repeat-alert sounds
 var alarmFiringAudios = {}; // id -> currently playing Audio object
 var alarmSnoozed = {}; // id -> snooze expiry timestamp
+var alarmSetsSaveTimer = null;
 
-// Preserve transient _fired/_firing state when server replaces alarmsData
-function mergeAlarmsFromServer(serverAlarms) {
-  const transient = {};
-  alarmsData.forEach(a => {
-    if (a._fired || a._firing) transient[a.id] = { _fired: a._fired, _firing: a._firing };
-  });
-  serverAlarms.forEach(a => {
-    if (transient[a.id]) {
-      a._fired = transient[a.id]._fired;
-      a._firing = transient[a.id]._firing;
+function getActiveAlarmSet() {
+  return alarmSetsData.find(s => s.id === activeAlarmSetId);
+}
+
+function syncAlarmsRef() {
+  const set = getActiveAlarmSet();
+  alarmsData = set ? set.alarms : [];
+}
+
+async function fetchAlarmSets() {
+  try {
+    const resp = await authFetch('/api/alarm-sets');
+    if (resp.ok) {
+      const data = await resp.json();
+      alarmSetsData = data.sets || [];
+      activeAlarmSetId = data.activeSetId || (alarmSetsData[0] && alarmSetsData[0].id) || 'default';
+      if (!alarmSetsData.length) {
+        alarmSetsData = [{ id: 'default', name: 'Default', alarms: [] }];
+        activeAlarmSetId = 'default';
+      }
+      syncAlarmsRef();
     }
-  });
-  alarmsData = serverAlarms;
+  } catch(e) { console.error('fetchAlarmSets:', e); }
 }
 
-async function fetchAlarms() {
-  try {
-    const resp = await authFetch('/api/alarms');
-    if (resp.ok) mergeAlarmsFromServer(await resp.json());
-  } catch(e) { console.error('fetchAlarms:', e); }
+function saveAlarmSetsNow() {
+  // Strip transient state from all alarms before saving
+  const cleanSets = alarmSetsData.map(s => ({
+    id: s.id, name: s.name,
+    alarms: s.alarms.map(a => {
+      const c = { ...a };
+      delete c._fired; delete c._firing; delete c._saveTimer;
+      return c;
+    })
+  }));
+  authFetch('/api/alarm-sets', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ activeSetId: activeAlarmSetId, sets: cleanSets })
+  }).catch(e => console.error('saveAlarmSets:', e));
 }
 
-async function saveAlarm(alarm) {
-  // Strip transient client-side state before saving
-  const toSave = { ...alarm };
-  delete toSave._fired;
-  delete toSave._firing;
-  try {
-    const resp = await authFetch('/api/alarms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(toSave),
-    });
-    if (resp.ok) mergeAlarmsFromServer(await resp.json());
-  } catch(e) { console.error('saveAlarm:', e); }
-}
-
-async function deleteAlarmById(id) {
-  stopAlarmFiring(id);
-  try {
-    const resp = await authFetch('/api/alarms/' + id, { method: 'DELETE' });
-    if (resp.ok) mergeAlarmsFromServer(await resp.json());
-  } catch(e) { console.error('deleteAlarm:', e); }
+function saveAlarmSets() {
+  clearTimeout(alarmSetsSaveTimer);
+  alarmSetsSaveTimer = setTimeout(saveAlarmSetsNow, 400);
 }
 
 function addAlarm() {
-  // Default: next hour, empty label, use current alarm sound, visual+repeat on, enabled
+  const set = getActiveAlarmSet();
+  if (!set) return;
   const now = new Date();
   const nextHour = new Date(now.getTime() + 60 * 60000);
   const hh = String(nextHour.getHours()).padStart(2, '0');
   const mm = String(nextHour.getMinutes()).padStart(2, '0');
   const defaultSound = document.getElementById('alarmSound') ? document.getElementById('alarmSound').value : '';
   const alarm = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     time: hh + ':' + mm,
     label: '',
     sound: defaultSound,
@@ -6397,13 +6410,21 @@ function addAlarm() {
     repeatAlert: true,
     enabled: true,
   };
-  saveAlarm(alarm).then(() => renderAlarmsList());
+  set.alarms.push(alarm);
+  syncAlarmsRef();
+  saveAlarmSets();
+  renderAlarmsList();
 }
 
 async function removeAlarm(id) {
   if (!await customConfirm('Delete this alarm?')) return;
   stopAlarmFiring(id);
-  await deleteAlarmById(id);
+  const set = getActiveAlarmSet();
+  if (set) {
+    set.alarms = set.alarms.filter(a => a.id !== id);
+    syncAlarmsRef();
+  }
+  saveAlarmSets();
   renderAlarmsList();
 }
 
@@ -6422,14 +6443,13 @@ async function batchDeleteAlarms() {
   const msg = ids.length === 1 ? 'Delete this alarm?' : 'Delete ' + ids.length + ' alarms?';
   if (!await customConfirm(msg)) return;
   ids.forEach(id => stopAlarmFiring(id));
-  try {
-    const resp = await authFetch('/api/alarms/batch-delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids }),
-    });
-    if (resp.ok) mergeAlarmsFromServer(await resp.json());
-  } catch(e) { console.error('batchDeleteAlarms:', e); }
+  const set = getActiveAlarmSet();
+  if (set) {
+    const removeSet = new Set(ids);
+    set.alarms = set.alarms.filter(a => !removeSet.has(a.id));
+    syncAlarmsRef();
+  }
+  saveAlarmSets();
   renderAlarmsList();
 }
 
@@ -6452,8 +6472,7 @@ function updateAlarmField(id, field, value) {
     stopAlarmFiring(id);
     stopAlarmFlash();
   }
-  saveAlarm(alarm); // fire-and-forget
-  // Re-render on visual state changes
+  saveAlarmSets();
   if (field === 'enabled' || field === 'time') renderAlarmsList();
 }
 
@@ -6478,7 +6497,7 @@ function spinAlarmField(alarmId, field, dir) {
   updateAlarmTimeDisplay(alarmId, h, m);
   // Debounce save
   clearTimeout(alarm._saveTimer);
-  alarm._saveTimer = setTimeout(() => saveAlarm(alarm), 500);
+  alarm._saveTimer = setTimeout(() => saveAlarmSets(), 500);
 }
 
 function updateAlarmTimeDisplay(alarmId, h, m) {
@@ -6500,7 +6519,7 @@ function toggleAlarmAmPm(alarmId) {
   alarm._firing = false;
   stopAlarmFiring(alarmId);
   updateAlarmTimeDisplay(alarmId, h, m);
-  saveAlarm(alarm);
+  saveAlarmSets();
 }
 
 // Hold-to-repeat for alarm spinner buttons (event delegation)
@@ -6529,6 +6548,211 @@ document.addEventListener('touchstart', (e) => {
 document.addEventListener('mouseup', stopAlarmSpin);
 document.addEventListener('touchend', stopAlarmSpin);
 document.addEventListener('touchcancel', stopAlarmSpin);
+
+// ── Alarm Set Management ──────────────────────────────────
+function renderAlarmSetSelect() {
+  const sel = document.getElementById('alarmSetSelect');
+  if (!sel) return;
+  sel.innerHTML = alarmSetsData.map(s =>
+    '<option value="' + s.id + '"' + (s.id === activeAlarmSetId ? ' selected' : '') + '>' + esc(s.name) + ' (' + s.alarms.length + ')</option>'
+  ).join('');
+}
+
+function switchAlarmSet(setId) {
+  // Stop any firing alarms in current set
+  alarmsData.forEach(a => {
+    if (a._firing) { a._firing = false; a._fired = true; stopAlarmFiring(a.id); }
+  });
+  stopAlarmFlash();
+  activeAlarmSetId = setId;
+  syncAlarmsRef();
+  saveAlarmSets();
+  renderAlarmsList();
+  updateAlarmDeleteBtn();
+}
+
+async function createAlarmSet() {
+  const name = await customPrompt('New set name:');
+  if (!name || !name.trim()) return;
+  const newSet = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name: name.trim(),
+    alarms: []
+  };
+  alarmSetsData.push(newSet);
+  activeAlarmSetId = newSet.id;
+  syncAlarmsRef();
+  saveAlarmSets();
+  renderAlarmSetSelect();
+  renderAlarmsList();
+}
+
+async function duplicateAlarmSet() {
+  const src = getActiveAlarmSet();
+  if (!src) return;
+  const name = await customPrompt('Name for the duplicate:');
+  if (!name || !name.trim()) return;
+  const newSet = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name: name.trim(),
+    alarms: src.alarms.map(a => {
+      const copy = { ...a };
+      copy.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + Math.random().toString(36).slice(2, 4);
+      delete copy._fired; delete copy._firing; delete copy._saveTimer;
+      return copy;
+    })
+  };
+  alarmSetsData.push(newSet);
+  activeAlarmSetId = newSet.id;
+  syncAlarmsRef();
+  saveAlarmSets();
+  renderAlarmSetSelect();
+  renderAlarmsList();
+}
+
+async function renameAlarmSet() {
+  const set = getActiveAlarmSet();
+  if (!set) return;
+  const name = await customPrompt('Rename set:');
+  if (!name || !name.trim()) return;
+  set.name = name.trim();
+  saveAlarmSets();
+  renderAlarmSetSelect();
+}
+
+async function deleteAlarmSet() {
+  if (alarmSetsData.length <= 1) {
+    await customAlert('Cannot delete the only set.');
+    return;
+  }
+  const set = getActiveAlarmSet();
+  if (!set) return;
+  if (!await customConfirm('Delete set "' + set.name + '" and all its alarms?')) return;
+  // Stop any firing alarms
+  set.alarms.forEach(a => { stopAlarmFiring(a.id); });
+  stopAlarmFlash();
+  alarmSetsData = alarmSetsData.filter(s => s.id !== set.id);
+  activeAlarmSetId = alarmSetsData[0].id;
+  syncAlarmsRef();
+  saveAlarmSets();
+  renderAlarmSetSelect();
+  renderAlarmsList();
+}
+
+async function importFromAlarmSet() {
+  if (alarmSetsData.length < 2) {
+    await customAlert('No other sets to import from.');
+    return;
+  }
+  const currentSet = getActiveAlarmSet();
+  if (!currentSet) return;
+  const otherSets = alarmSetsData.filter(s => s.id !== activeAlarmSetId);
+  // Build import dialog HTML
+  let html = '<div style="text-align:left;">';
+  html += '<div style="margin-bottom:8px;"><label style="font-size:0.75rem; color:var(--dim); text-transform:uppercase;">Import from:</label>';
+  html += '<select id="importSourceSet" onchange="renderImportAlarmPicker()" style="width:100%; margin-top:4px; padding:4px 8px; border-radius:6px; border:1px solid var(--border-mid); background:var(--input-bg); color:var(--text); font-family:inherit; font-size:0.8rem;">';
+  otherSets.forEach(s => {
+    html += '<option value="' + s.id + '">' + esc(s.name) + ' (' + s.alarms.length + ')</option>';
+  });
+  html += '</select></div>';
+  html += '<div id="importAlarmPicker" style="max-height:200px; overflow-y:auto; margin-bottom:8px;"></div>';
+  html += '</div>';
+  // Show in a custom dialog
+  const overlay = document.createElement('div');
+  overlay.className = 'confirm-overlay';
+  overlay.innerHTML = '<div class="confirm-dialog" style="max-width:400px;">' +
+    '<div class="confirm-msg">' + html + '</div>' +
+    '<div class="confirm-btns">' +
+      '<button class="confirm-btn confirm-btn-yes" id="importConfirmBtn">Import Selected</button>' +
+      '<button class="confirm-btn confirm-btn-no" id="importCancelBtn">Cancel</button>' +
+    '</div></div>';
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('show'));
+  // Render picker for first source
+  renderImportAlarmPicker();
+  return new Promise(resolve => {
+    overlay.querySelector('#importConfirmBtn').onclick = () => {
+      const checks = overlay.querySelectorAll('.import-alarm-cb:checked');
+      const sourceSetId = overlay.querySelector('#importSourceSet').value;
+      const sourceSet = alarmSetsData.find(s => s.id === sourceSetId);
+      if (sourceSet && checks.length > 0) {
+        const selectedIds = new Set(Array.from(checks).map(cb => cb.value));
+        sourceSet.alarms.forEach(a => {
+          if (selectedIds.has(a.id)) {
+            const copy = { ...a };
+            copy.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + Math.random().toString(36).slice(2, 4);
+            delete copy._fired; delete copy._firing; delete copy._saveTimer;
+            currentSet.alarms.push(copy);
+          }
+        });
+        syncAlarmsRef();
+        saveAlarmSets();
+        renderAlarmSetSelect();
+        renderAlarmsList();
+      }
+      overlay.classList.remove('show');
+      setTimeout(() => overlay.remove(), 200);
+      resolve();
+    };
+    overlay.querySelector('#importCancelBtn').onclick = () => {
+      overlay.classList.remove('show');
+      setTimeout(() => overlay.remove(), 200);
+      resolve();
+    };
+  });
+}
+
+function renderImportAlarmPicker() {
+  const picker = document.getElementById('importAlarmPicker');
+  const sourceSelect = document.getElementById('importSourceSet');
+  if (!picker || !sourceSelect) return;
+  const sourceSet = alarmSetsData.find(s => s.id === sourceSelect.value);
+  if (!sourceSet || sourceSet.alarms.length === 0) {
+    picker.innerHTML = '<div style="font-size:0.8rem; color:var(--dim); padding:8px 0;">No alarms in this set.</div>';
+    return;
+  }
+  picker.innerHTML = sourceSet.alarms.map(a => {
+    const [h, m] = (a.time || '00:00').split(':').map(Number);
+    const dispH = ((h % 12) || 12);
+    const ap = h >= 12 ? 'PM' : 'AM';
+    const timeStr = dispH + ':' + String(m).padStart(2, '0') + ' ' + ap;
+    return '<label style="display:flex; align-items:center; gap:6px; padding:4px 0; font-size:0.8rem; color:var(--text); cursor:pointer;">' +
+      '<input type="checkbox" class="import-alarm-cb" value="' + a.id + '" checked style="accent-color:var(--green);">' +
+      '<span style="font-variant-numeric:tabular-nums; min-width:70px;">' + timeStr + '</span>' +
+      '<span style="color:var(--dim);">' + esc(a.label || '(no label)') + '</span>' +
+    '</label>';
+  }).join('');
+}
+
+// ⋯ menu for alarm set options
+var alarmSetMenuEl = null;
+function showAlarmSetMenu(e) {
+  e.stopPropagation();
+  hideAlarmSetMenu();
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  const menu = document.createElement('div');
+  menu.className = 'alarm-set-menu';
+  menu.style.cssText = 'position:fixed; z-index:9999; background:var(--glass-strong); border:1px solid var(--border-mid); border-radius:8px; padding:4px 0; min-width:160px; backdrop-filter:blur(8px); box-shadow:0 4px 16px var(--shadow);';
+  const items = [
+    { label: 'Rename Set', action: 'renameAlarmSet()' },
+    { label: 'Import From…', action: 'importFromAlarmSet()' },
+    { label: 'Delete Set', action: 'deleteAlarmSet()', color: 'var(--red)' },
+  ];
+  menu.innerHTML = items.map(it =>
+    '<div onclick="hideAlarmSetMenu();' + it.action + '" style="padding:6px 14px; font-size:0.8rem; cursor:pointer; color:' + (it.color || 'var(--text)') + '; transition:background 0.15s;" onmouseenter="this.style.background=\'var(--hover-green)\'" onmouseleave="this.style.background=\'\'">' + it.label + '</div>'
+  ).join('');
+  // Position below the button
+  menu.style.top = rect.bottom + 4 + 'px';
+  menu.style.right = (window.innerWidth - rect.right) + 'px';
+  document.body.appendChild(menu);
+  alarmSetMenuEl = menu;
+  setTimeout(() => document.addEventListener('click', hideAlarmSetMenu, { once: true }), 0);
+}
+
+function hideAlarmSetMenu() {
+  if (alarmSetMenuEl) { alarmSetMenuEl.remove(); alarmSetMenuEl = null; }
+}
 
 function toggleAlarmsMaster(on) {
   alarmsMasterEnabled = on;
@@ -6610,11 +6834,11 @@ function renderAlarmsList() {
           soundOptions +
         '</select>' +
         '<label style="display:flex; align-items:center; gap:3px; font-size:0.7rem; color:var(--dim); cursor:pointer;">' +
-          '<input type="checkbox" ' + (a.visualAlert ? 'checked' : '') + ' style="margin:0;" ' +
+          '<input type="checkbox" ' + (a.visualAlert ? 'checked' : '') + ' style="margin:0; accent-color:var(--green);" ' +
             'onchange="updateAlarmField(\'' + a.id + '\', \'visualAlert\', this.checked)"> Flash' +
         '</label>' +
         '<label style="display:flex; align-items:center; gap:3px; font-size:0.7rem; color:var(--dim); cursor:pointer;">' +
-          '<input type="checkbox" ' + (a.repeatAlert ? 'checked' : '') + ' style="margin:0;" ' +
+          '<input type="checkbox" ' + (a.repeatAlert ? 'checked' : '') + ' style="margin:0; accent-color:var(--green);" ' +
             'onchange="updateAlarmField(\'' + a.id + '\', \'repeatAlert\', this.checked)"> Repeat' +
         '</label>' +
       '</div>' +
@@ -6703,7 +6927,7 @@ function flashAlarmTab(alarm) {
   alarmFlashInterval = setInterval(() => {
     flashOn = !flashOn;
     alarmsBtn.style.background = flashOn ? 'var(--red)' : '';
-    alarmsBtn.style.color = flashOn ? '#fff' : '';
+    alarmsBtn.style.color = flashOn ? 'var(--btn-text-on-accent)' : '';
   }, 500);
   // Auto-stop flash after 30s or on dismiss
   setTimeout(() => stopAlarmFlash(), 30000);

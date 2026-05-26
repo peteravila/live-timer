@@ -172,7 +172,8 @@ function createSession(instructorId) {
     library: [],
     savedOrders: [],
     sequences: [],
-    alarms: [],
+    alarmSets: [{ id: 'default', name: 'Default', alarms: [] }],
+    activeAlarmSetId: 'default',
     timerState: { ...DEFAULT_TIMER_STATE },
     lastTimer: null,
     classCode: null,
@@ -296,28 +297,37 @@ async function saveSequences(instructorId, seqs) {
   }
 }
 
-async function loadAlarms(instructorId) {
+async function loadAlarmSets(instructorId) {
   if (db) {
     try {
-      const doc = await db.collection('alarms').findOne({ _id: instructorId });
-      if (doc && doc.alarms) return doc.alarms;
+      // Try new alarmSets collection first
+      const doc = await db.collection('alarmSets').findOne({ _id: instructorId });
+      if (doc && doc.sets) return { activeSetId: doc.activeSetId || 'default', sets: doc.sets };
+      // Migrate from old alarms collection
+      const oldDoc = await db.collection('alarms').findOne({ _id: instructorId });
+      if (oldDoc && oldDoc.alarms && oldDoc.alarms.length > 0) {
+        const migrated = { activeSetId: 'default', sets: [{ id: 'default', name: 'Default', alarms: oldDoc.alarms }] };
+        await saveAlarmSets(instructorId, migrated);
+        console.log('  Migrated', oldDoc.alarms.length, 'alarms to default set for', instructorId);
+        return migrated;
+      }
     } catch (e) {
-      console.error('  MongoDB loadAlarms failed:', e.message);
+      console.error('  MongoDB loadAlarmSets failed:', e.message);
     }
   }
-  return [];
+  return { activeSetId: 'default', sets: [{ id: 'default', name: 'Default', alarms: [] }] };
 }
 
-async function saveAlarms(instructorId, alarms) {
+async function saveAlarmSets(instructorId, data) {
   if (db) {
     try {
-      await db.collection('alarms').updateOne(
+      await db.collection('alarmSets').updateOne(
         { _id: instructorId },
-        { $set: { alarms, updatedAt: new Date() } },
+        { $set: { activeSetId: data.activeSetId, sets: data.sets, updatedAt: new Date() } },
         { upsert: true }
       );
     } catch (e) {
-      console.error('  MongoDB saveAlarms failed:', e.message);
+      console.error('  MongoDB saveAlarmSets failed:', e.message);
     }
   }
 }
@@ -456,7 +466,9 @@ async function initSession(instructorId) {
   s.library = await loadLibrary(instructorId);
   s.savedOrders = await loadSavedOrders(instructorId);
   s.sequences = await loadSequences(instructorId);
-  s.alarms = await loadAlarms(instructorId);
+  const alarmData = await loadAlarmSets(instructorId);
+  s.alarmSets = alarmData.sets;
+  s.activeAlarmSetId = alarmData.activeSetId;
 
   // Load or generate class code
   const existingCode = await loadClassCode(instructorId);
@@ -776,49 +788,19 @@ app.delete('/api/sequences/:id', requireAuth, async (req, res) => {
 });
 
 // ── Scheduled alarms REST endpoints (auth required) ────────
-app.get('/api/alarms', requireAuth, (req, res) => {
+// ── Alarm sets REST endpoints (auth required) ────────────
+app.get('/api/alarm-sets', requireAuth, (req, res) => {
   const s = getSession(req.instructorId);
-  res.json(s.alarms);
+  res.json({ activeSetId: s.activeAlarmSetId, sets: s.alarmSets });
 });
 
-app.post('/api/alarms', requireAuth, async (req, res) => {
+app.put('/api/alarm-sets', requireAuth, async (req, res) => {
   const s = getSession(req.instructorId);
-  const alarm = req.body;
-  alarm.id = alarm.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  const idx = s.alarms.findIndex(a => a.id === alarm.id);
-  if (idx >= 0) s.alarms[idx] = alarm;
-  else s.alarms.push(alarm);
-  await saveAlarms(req.instructorId, s.alarms);
-  res.json(s.alarms);
-});
-
-app.delete('/api/alarms/:id', requireAuth, async (req, res) => {
-  const s = getSession(req.instructorId);
-  s.alarms = s.alarms.filter(a => a.id !== req.params.id);
-  await saveAlarms(req.instructorId, s.alarms);
-  res.json(s.alarms);
-});
-
-app.post('/api/alarms/batch-delete', requireAuth, async (req, res) => {
-  const s = getSession(req.instructorId);
-  const { ids } = req.body;
-  if (Array.isArray(ids) && ids.length) {
-    const removeSet = new Set(ids);
-    s.alarms = s.alarms.filter(a => !removeSet.has(a.id));
-    await saveAlarms(req.instructorId, s.alarms);
-  }
-  res.json(s.alarms);
-});
-
-app.put('/api/alarms/reorder', requireAuth, async (req, res) => {
-  const s = getSession(req.instructorId);
-  const { ids } = req.body;
-  if (Array.isArray(ids)) {
-    const map = Object.fromEntries(s.alarms.map(a => [a.id, a]));
-    s.alarms = ids.map(id => map[id]).filter(Boolean);
-    await saveAlarms(req.instructorId, s.alarms);
-  }
-  res.json(s.alarms);
+  const { activeSetId, sets } = req.body;
+  if (activeSetId !== undefined) s.activeAlarmSetId = activeSetId;
+  if (Array.isArray(sets)) s.alarmSets = sets;
+  await saveAlarmSets(req.instructorId, { activeSetId: s.activeAlarmSetId, sets: s.alarmSets });
+  res.json({ activeSetId: s.activeAlarmSetId, sets: s.alarmSets });
 });
 
 // ── Alarm settings REST endpoints (auth required) ──────────

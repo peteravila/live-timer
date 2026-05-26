@@ -172,6 +172,7 @@ function createSession(instructorId) {
     library: [],
     savedOrders: [],
     sequences: [],
+    alarms: [],
     timerState: { ...DEFAULT_TIMER_STATE },
     lastTimer: null,
     classCode: null,
@@ -291,6 +292,32 @@ async function saveSequences(instructorId, seqs) {
       );
     } catch (e) {
       console.error('  MongoDB saveSequences failed:', e.message);
+    }
+  }
+}
+
+async function loadAlarms(instructorId) {
+  if (db) {
+    try {
+      const doc = await db.collection('alarms').findOne({ _id: instructorId });
+      if (doc && doc.alarms) return doc.alarms;
+    } catch (e) {
+      console.error('  MongoDB loadAlarms failed:', e.message);
+    }
+  }
+  return [];
+}
+
+async function saveAlarms(instructorId, alarms) {
+  if (db) {
+    try {
+      await db.collection('alarms').updateOne(
+        { _id: instructorId },
+        { $set: { alarms, updatedAt: new Date() } },
+        { upsert: true }
+      );
+    } catch (e) {
+      console.error('  MongoDB saveAlarms failed:', e.message);
     }
   }
 }
@@ -429,6 +456,7 @@ async function initSession(instructorId) {
   s.library = await loadLibrary(instructorId);
   s.savedOrders = await loadSavedOrders(instructorId);
   s.sequences = await loadSequences(instructorId);
+  s.alarms = await loadAlarms(instructorId);
 
   // Load or generate class code
   const existingCode = await loadClassCode(instructorId);
@@ -745,6 +773,41 @@ app.delete('/api/sequences/:id', requireAuth, async (req, res) => {
   s.sequences = s.sequences.filter(x => x.id !== req.params.id);
   await saveSequences(req.instructorId, s.sequences);
   res.json(s.sequences);
+});
+
+// ── Scheduled alarms REST endpoints (auth required) ────────
+app.get('/api/alarms', requireAuth, (req, res) => {
+  const s = getSession(req.instructorId);
+  res.json(s.alarms);
+});
+
+app.post('/api/alarms', requireAuth, async (req, res) => {
+  const s = getSession(req.instructorId);
+  const alarm = req.body;
+  alarm.id = alarm.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const idx = s.alarms.findIndex(a => a.id === alarm.id);
+  if (idx >= 0) s.alarms[idx] = alarm;
+  else s.alarms.push(alarm);
+  await saveAlarms(req.instructorId, s.alarms);
+  res.json(s.alarms);
+});
+
+app.delete('/api/alarms/:id', requireAuth, async (req, res) => {
+  const s = getSession(req.instructorId);
+  s.alarms = s.alarms.filter(a => a.id !== req.params.id);
+  await saveAlarms(req.instructorId, s.alarms);
+  res.json(s.alarms);
+});
+
+app.put('/api/alarms/reorder', requireAuth, async (req, res) => {
+  const s = getSession(req.instructorId);
+  const { ids } = req.body;
+  if (Array.isArray(ids)) {
+    const map = Object.fromEntries(s.alarms.map(a => [a.id, a]));
+    s.alarms = ids.map(id => map[id]).filter(Boolean);
+    await saveAlarms(req.instructorId, s.alarms);
+  }
+  res.json(s.alarms);
 });
 
 // ── Alarm settings REST endpoints (auth required) ──────────

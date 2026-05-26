@@ -1111,6 +1111,101 @@
   }
   .checkin-toggle:checked::after { transform: translateX(18px); }
 
+  /* Alarms tab */
+  .alarms-list { display: flex; flex-direction: column; gap: 6px; }
+  .alarms-empty { font-size: 0.85rem; color: var(--text-faint); text-align: center; padding: 24px 0; }
+  .alarm-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border: 1px solid var(--border-mid); border-radius: 6px;
+    background: var(--subtle-bg); transition: all 0.15s;
+  }
+  .alarm-row.alarm-disabled { opacity: 0.45; }
+  .alarm-row.alarm-fired { border-color: var(--green); background: rgba(78, 204, 163, 0.08); }
+  .alarm-row.alarm-firing {
+    border-color: var(--red);
+    animation: alarm-pulse 0.8s ease-in-out infinite alternate;
+  }
+  @keyframes alarm-pulse {
+    from { background: rgba(231, 76, 60, 0.08); }
+    to { background: rgba(231, 76, 60, 0.25); }
+  }
+  .alarm-time-input {
+    width: 80px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px;
+    background: var(--bg); color: var(--text); font-size: 0.85rem; font-family: inherit;
+    text-align: center;
+  }
+  .alarm-label-input {
+    flex: 1; min-width: 0; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px;
+    background: var(--bg); color: var(--text); font-size: 0.82rem; font-family: inherit;
+  }
+  .alarm-label-input::placeholder { color: var(--text-faint); }
+  .alarm-toggle {
+    position: relative; width: 32px; height: 17px; cursor: pointer;
+    -webkit-appearance: none; appearance: none; background: var(--border-mid);
+    border-radius: 9px; border: none; outline: none; transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .alarm-toggle:checked { background: var(--green); }
+  .alarm-toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 13px; height: 13px; border-radius: 50%;
+    background: #fff; transition: transform 0.2s;
+  }
+  .alarm-toggle:checked::after { transform: translateX(15px); }
+  .alarm-btn {
+    padding: 3px 6px; border: 1px solid var(--border-mid); border-radius: 4px;
+    background: transparent; color: var(--dim); font-size: 0.7rem;
+    cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink: 0;
+  }
+  .alarm-btn:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
+  .alarm-btn.btn-dismiss {
+    color: var(--green); border-color: var(--green); font-weight: 600;
+  }
+  .alarm-btn.btn-dismiss:hover { background: var(--hover-green); }
+  .alarm-btn.btn-snooze { color: var(--yellow); border-color: var(--yellow); }
+  .alarm-btn.btn-snooze:hover { background: rgba(241, 196, 15, 0.1); }
+  .alarm-btn.btn-delete { color: var(--red); border-color: transparent; }
+  .alarm-btn.btn-delete:hover { background: var(--hover-red); border-color: var(--red); }
+  .alarm-detail-row {
+    display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap;
+  }
+  .alarm-detail-label { font-size: 0.7rem; color: var(--dim); }
+  .alarm-sound-select {
+    padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px;
+    background: var(--bg); color: var(--text); font-size: 0.72rem; font-family: inherit;
+    max-width: 120px;
+  }
+  .alarm-card {
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 8px 10px; border: 1px solid var(--border-mid); border-radius: 6px;
+    background: var(--subtle-bg); transition: all 0.15s;
+  }
+  .alarm-card.alarm-disabled { opacity: 0.45; }
+  .alarm-card.alarm-fired { border-color: var(--green); background: rgba(78, 204, 163, 0.08); }
+  .alarm-card.alarm-firing {
+    border-color: var(--red);
+    animation: alarm-pulse 0.8s ease-in-out infinite alternate;
+  }
+  .alarm-card-top { display: flex; align-items: center; gap: 8px; }
+  .alarm-card-bottom { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+  /* Toggle switch (generic) */
+  .toggle-switch {
+    position: relative; display: inline-block; width: 36px; height: 19px; flex-shrink: 0;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: var(--border-mid); border-radius: 10px; transition: background 0.2s;
+  }
+  .toggle-slider::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 15px; height: 15px; border-radius: 50%;
+    background: #fff; transition: transform 0.2s;
+  }
+  .toggle-switch input:checked + .toggle-slider { background: var(--green); }
+  .toggle-switch input:checked + .toggle-slider::after { transform: translateX(17px); }
+
   /* OBS copy buttons */
   .obs-copy-btn {
     padding: 4px 12px; font-size: 0.7rem; font-weight: 600;
@@ -1503,6 +1598,7 @@
     <!-- Tab bar -->
     <div class="tab-bar">
       <button class="tab-btn active" onclick="switchTab('library')">Library</button>
+      <button class="tab-btn" onclick="switchTab('alarms')">Alarms</button>
       <button class="tab-btn" onclick="switchTab('students')">Students<span class="tab-badge badge-empty" id="studentsBadge"></span></button>
     </div>
 
@@ -1580,6 +1676,23 @@
         <option value="students">Students</option>
         <option value="settings">Settings</option>
       </select>
+    </div>
+
+    <!-- Tab: Alarms (scheduled daily alarms) -->
+    <div class="tab-content" id="tab-alarms">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--dim);">Scheduled Alarms</span>
+          <label class="toggle-switch" title="Master on/off for all alarms">
+            <input type="checkbox" id="alarmsMasterToggle" checked onchange="toggleAlarmsMaster(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <button class="lib-toolbar-btn" onclick="addAlarm()" title="Add new alarm" style="font-size:1.1rem; padding:2px 8px;">+</button>
+      </div>
+      <div id="alarmsList" class="alarms-list">
+        <div class="alarms-empty">No alarms yet. Click + to add one.</div>
+      </div>
     </div>
 
     <!-- Tab: Students (check-in status board) -->
@@ -2443,9 +2556,10 @@ async function startApp() {
   try { await loadSequences(); renderSequenceList(); } catch(e) { console.error('loadSequences:', e); }
   try { loadQRCode(); } catch(e) { console.error('loadQRCode:', e); }
 
-  // Load alarm settings and custom sounds from server
+  // Load alarm settings, custom sounds, and scheduled alarms from server
   try { await fetchCustomSounds(); } catch(e) { console.error('fetchCustomSounds:', e); }
   try { await fetchAlarmSettings(); } catch(e) { console.error('fetchAlarmSettings:', e); }
+  try { await fetchAlarms(); renderAlarmsList(); startAlarmChecker(); } catch(e) { console.error('fetchAlarms:', e); }
 
   // Load palette (scoped to instructor)
   loadSavedPalette();
@@ -2887,7 +3001,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ── Tab switching ──
-const TAB_NAMES = ['library', 'students'];
+const TAB_NAMES = ['library', 'alarms', 'students'];
 function switchTab(name) {
   // 'settings' now opens the overlay instead of a tab
   if (name === 'settings') { openSettings(); return; }
@@ -6190,6 +6304,275 @@ function switchLibView(view) {
     timersBtn.classList.add('active');
     seqView.style.display = 'none';
     timersView.style.display = 'block';
+  }
+}
+
+// ── Scheduled Alarms ──
+var alarmsData = []; // { id, time:'HH:MM', label, sound, visualAlert, repeatAlert, enabled }
+var alarmsMasterEnabled = true;
+var alarmCheckInterval = null;
+var alarmFiringTimers = {}; // id -> intervalId for repeat-alert sounds
+var alarmSnoozed = {}; // id -> snooze expiry timestamp
+
+async function fetchAlarms() {
+  try {
+    const resp = await authFetch('/api/alarms');
+    if (resp.ok) alarmsData = await resp.json();
+  } catch(e) { console.error('fetchAlarms:', e); }
+}
+
+async function saveAlarm(alarm) {
+  // Strip transient client-side state before saving
+  const toSave = { ...alarm };
+  delete toSave._fired;
+  delete toSave._firing;
+  try {
+    const resp = await authFetch('/api/alarms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(toSave),
+    });
+    if (resp.ok) alarmsData = await resp.json();
+  } catch(e) { console.error('saveAlarm:', e); }
+}
+
+async function deleteAlarmById(id) {
+  try {
+    const resp = await authFetch('/api/alarms/' + id, { method: 'DELETE' });
+    if (resp.ok) alarmsData = await resp.json();
+  } catch(e) { console.error('deleteAlarm:', e); }
+}
+
+function addAlarm() {
+  // Default: next hour, empty label, use current alarm sound, visual+repeat on, enabled
+  const now = new Date();
+  const nextHour = new Date(now.getTime() + 60 * 60000);
+  const hh = String(nextHour.getHours()).padStart(2, '0');
+  const mm = String(nextHour.getMinutes()).padStart(2, '0');
+  const defaultSound = document.getElementById('alarmSound') ? document.getElementById('alarmSound').value : '';
+  const alarm = {
+    time: hh + ':' + mm,
+    label: '',
+    sound: defaultSound,
+    visualAlert: true,
+    repeatAlert: true,
+    enabled: true,
+  };
+  saveAlarm(alarm).then(() => renderAlarmsList());
+}
+
+async function removeAlarm(id) {
+  if (!await customConfirm('Delete this alarm?')) return;
+  stopAlarmFiring(id);
+  await deleteAlarmById(id);
+  renderAlarmsList();
+}
+
+function updateAlarmField(id, field, value) {
+  const alarm = alarmsData.find(a => a.id === id);
+  if (!alarm) return;
+  alarm[field] = value;
+  // Clear fired state if time changed
+  if (field === 'time') {
+    alarm._fired = false;
+    alarm._firing = false;
+    stopAlarmFiring(id);
+  }
+  saveAlarm(alarm); // fire-and-forget
+  // Re-render only if visual state change
+  if (field === 'enabled') renderAlarmsList();
+}
+
+function toggleAlarmsMaster(on) {
+  alarmsMasterEnabled = on;
+  if (!on) {
+    // Stop all currently firing alarms
+    alarmsData.forEach(a => { a._firing = false; stopAlarmFiring(a.id); });
+    renderAlarmsList();
+  }
+}
+
+function renderAlarmsList() {
+  const container = document.getElementById('alarmsList');
+  if (!container) return;
+  if (alarmsData.length === 0) {
+    container.innerHTML = '<div class="alarms-empty">No alarms yet. Click + to add one.</div>';
+    return;
+  }
+  // Sort by time
+  const sorted = [...alarmsData].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+
+  container.innerHTML = sorted.map(a => {
+    const [h, m] = (a.time || '00:00').split(':').map(Number);
+    const alarmMins = h * 60 + m;
+    const isPast = alarmMins < nowMins;
+    const isFiring = a._firing;
+    const isFired = a._fired && !isFiring;
+    const cls = [
+      'alarm-card',
+      !a.enabled ? 'alarm-disabled' : '',
+      isFiring ? 'alarm-firing' : '',
+      isFired ? 'alarm-fired' : '',
+    ].filter(Boolean).join(' ');
+
+    const soundOptions = buildAlarmSoundOptions(a.sound || '');
+
+    return '<div class="' + cls + '" data-alarm-id="' + a.id + '">' +
+      '<div class="alarm-card-top">' +
+        '<input type="time" class="alarm-time-input" value="' + (a.time || '') + '" ' +
+          'onchange="updateAlarmField(\'' + a.id + '\', \'time\', this.value)">' +
+        '<input type="text" class="alarm-label-input" value="' + esc(a.label || '') + '" ' +
+          'placeholder="Label (e.g. First Break)" ' +
+          'onchange="updateAlarmField(\'' + a.id + '\', \'label\', this.value)">' +
+        '<input type="checkbox" class="alarm-toggle" title="Enable/disable" ' +
+          (a.enabled ? 'checked' : '') + ' ' +
+          'onchange="updateAlarmField(\'' + a.id + '\', \'enabled\', this.checked)">' +
+        (isFiring ?
+          '<button class="alarm-btn btn-dismiss" onclick="dismissAlarm(\'' + a.id + '\')">Dismiss</button>' +
+          '<button class="alarm-btn btn-snooze" onclick="snoozeAlarm(\'' + a.id + '\')">+5m</button>'
+          : '') +
+        '<button class="alarm-btn btn-delete" onclick="removeAlarm(\'' + a.id + '\')" title="Delete">&#10005;</button>' +
+      '</div>' +
+      '<div class="alarm-card-bottom">' +
+        '<span class="alarm-detail-label">Sound:</span>' +
+        '<select class="alarm-sound-select" onchange="updateAlarmField(\'' + a.id + '\', \'sound\', this.value)">' +
+          soundOptions +
+        '</select>' +
+        '<label style="display:flex; align-items:center; gap:3px; font-size:0.7rem; color:var(--dim); cursor:pointer;">' +
+          '<input type="checkbox" ' + (a.visualAlert ? 'checked' : '') + ' style="margin:0;" ' +
+            'onchange="updateAlarmField(\'' + a.id + '\', \'visualAlert\', this.checked)"> Flash' +
+        '</label>' +
+        '<label style="display:flex; align-items:center; gap:3px; font-size:0.7rem; color:var(--dim); cursor:pointer;">' +
+          '<input type="checkbox" ' + (a.repeatAlert ? 'checked' : '') + ' style="margin:0;" ' +
+            'onchange="updateAlarmField(\'' + a.id + '\', \'repeatAlert\', this.checked)"> Repeat' +
+        '</label>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function buildAlarmSoundOptions(selectedVal) {
+  let html = '<option value="">— no sound —</option>';
+  customSoundsCache.forEach(s => {
+    const val = 'custom:' + s.id;
+    html += '<option value="' + val + '"' + (val === selectedVal ? ' selected' : '') + '>' + esc(s.name) + '</option>';
+  });
+  return html;
+}
+
+// ── Alarm checker (runs every 15s) ──
+function startAlarmChecker() {
+  if (alarmCheckInterval) clearInterval(alarmCheckInterval);
+  checkAlarms(); // immediate first check
+  alarmCheckInterval = setInterval(checkAlarms, 15000);
+}
+
+function checkAlarms() {
+  if (!alarmsMasterEnabled) return;
+  const now = new Date();
+  const nowH = now.getHours();
+  const nowM = now.getMinutes();
+  let needsRender = false;
+
+  // Reset fired state at midnight (new day)
+  if (nowH === 0 && nowM === 0) {
+    alarmsData.forEach(a => { a._fired = false; a._firing = false; });
+  }
+
+  alarmsData.forEach(a => {
+    if (!a.enabled || a._fired || a._firing) return;
+    // Check snooze
+    if (alarmSnoozed[a.id] && Date.now() < alarmSnoozed[a.id]) return;
+    if (alarmSnoozed[a.id] && Date.now() >= alarmSnoozed[a.id]) {
+      delete alarmSnoozed[a.id];
+      // Snooze expired — fire it now
+      fireAlarm(a);
+      needsRender = true;
+      return;
+    }
+    const [h, m] = (a.time || '00:00').split(':').map(Number);
+    if (nowH === h && nowM === m) {
+      fireAlarm(a);
+      needsRender = true;
+    }
+  });
+  if (needsRender) renderAlarmsList();
+}
+
+function fireAlarm(alarm) {
+  alarm._firing = true;
+  // Play sound
+  if (alarm.sound && alarm.sound.startsWith('custom:')) {
+    const soundId = alarm.sound.split(':')[1];
+    playCustomSound(soundId);
+    if (alarm.repeatAlert) {
+      alarmFiringTimers[alarm.id] = setInterval(() => playCustomSound(soundId), 3000);
+    }
+  }
+  // Visual alert — flash the tab and show notification
+  if (alarm.visualAlert) {
+    flashAlarmTab(alarm);
+  }
+  // If not repeat, auto-dismiss after sound plays once
+  if (!alarm.repeatAlert) {
+    setTimeout(() => {
+      alarm._firing = false;
+      alarm._fired = true;
+      renderAlarmsList();
+    }, 2000);
+  }
+}
+
+var alarmFlashInterval = null;
+function flashAlarmTab(alarm) {
+  // Flash the Alarms tab button
+  const tabBtns = document.querySelectorAll('.tab-bar .tab-btn');
+  const alarmsBtn = tabBtns[TAB_NAMES.indexOf('alarms')];
+  if (!alarmsBtn) return;
+  let flashOn = false;
+  if (alarmFlashInterval) clearInterval(alarmFlashInterval);
+  alarmFlashInterval = setInterval(() => {
+    flashOn = !flashOn;
+    alarmsBtn.style.background = flashOn ? 'var(--red)' : '';
+    alarmsBtn.style.color = flashOn ? '#fff' : '';
+  }, 500);
+  // Auto-stop flash after 30s or on dismiss
+  setTimeout(() => stopAlarmFlash(), 30000);
+}
+
+function stopAlarmFlash() {
+  if (alarmFlashInterval) { clearInterval(alarmFlashInterval); alarmFlashInterval = null; }
+  const tabBtns = document.querySelectorAll('.tab-bar .tab-btn');
+  const alarmsBtn = tabBtns[TAB_NAMES.indexOf('alarms')];
+  if (alarmsBtn) { alarmsBtn.style.background = ''; alarmsBtn.style.color = ''; }
+}
+
+function dismissAlarm(id) {
+  const alarm = alarmsData.find(a => a.id === id);
+  if (!alarm) return;
+  alarm._firing = false;
+  alarm._fired = true;
+  stopAlarmFiring(id);
+  stopAlarmFlash();
+  renderAlarmsList();
+}
+
+function snoozeAlarm(id) {
+  const alarm = alarmsData.find(a => a.id === id);
+  if (!alarm) return;
+  alarm._firing = false;
+  stopAlarmFiring(id);
+  stopAlarmFlash();
+  alarmSnoozed[id] = Date.now() + 5 * 60000; // 5 minutes
+  renderAlarmsList();
+}
+
+function stopAlarmFiring(id) {
+  if (alarmFiringTimers[id]) {
+    clearInterval(alarmFiringTimers[id]);
+    delete alarmFiringTimers[id];
   }
 }
 

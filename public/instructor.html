@@ -4879,7 +4879,7 @@ function renderLibrary() {
   let gridHtml = '<div class="lib-grid">' +
     '<div class="lib-grid-header" style="grid-template-columns:' + gridCols + '">' +
     '<div class="lib-hdr-cell"></div>' +
-    '<div class="lib-hdr-cell" style="padding:4px 2px;"><input type="checkbox" class="lib-select-all" id="libSelectAll" onchange="toggleSelectAll(this)" title="Select all"></div>' +
+    '<div class="lib-hdr-cell" style="padding:0; display:flex; align-items:center; justify-content:center;"><input type="checkbox" class="lib-select-all" id="libSelectAll" onchange="toggleSelectAll(this)" title="Select all"></div>' +
     '<div class="lib-hdr-cell"></div><div class="lib-hdr-cell"></div>' +
     libCols.slice(4).map((c, ci) => {
       const idx = ci + 4;

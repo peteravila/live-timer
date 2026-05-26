@@ -1207,7 +1207,7 @@
     padding: 8px 10px; border: 1px solid var(--border-mid); border-radius: 6px;
     background: var(--subtle-bg); transition: all 0.15s;
   }
-  .alarm-card.alarm-disabled { opacity: 0.7; }
+  .alarm-card.alarm-disabled { /* toggle switch indicates state */ }
   .alarm-card.alarm-fired { border-color: var(--green); background: var(--hover-green); }
   .alarm-card.alarm-firing {
     border-color: var(--red);
@@ -1748,7 +1748,6 @@
             <input type="checkbox" id="alarmsMasterToggle" checked onchange="toggleAlarmsMaster(this.checked)">
             <span class="toggle-slider"></span>
           </label>
-          <span id="alarmsMasterBadge" style="display:none; font-size:0.7rem; font-weight:700; color:var(--red); text-transform:uppercase; letter-spacing:0.5px;">OFF</span>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
           <button class="lib-toolbar-btn" id="alarmDeleteBtn" onclick="batchDeleteAlarms()" title="Delete selected alarms" style="font-size:0.8rem; padding:2px 8px; display:none; color:var(--red);">Delete</button>
@@ -6791,13 +6790,6 @@ function hideAlarmSetMenu() {
 
 function toggleAlarmsMaster(on) {
   alarmsMasterEnabled = on;
-  const list = document.getElementById('alarmsList');
-  if (list) list.style.opacity = on ? '' : '0.55';
-  const badge = document.getElementById('alarmsMasterBadge');
-  if (badge) {
-    badge.textContent = on ? '' : 'OFF';
-    badge.style.display = on ? 'none' : '';
-  }
   if (!on) {
     // Stop all currently firing alarms
     alarmsData.forEach(a => {

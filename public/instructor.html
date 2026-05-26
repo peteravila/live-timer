@@ -1129,21 +1129,32 @@
     from { background: rgba(231, 76, 60, 0.08); }
     to { background: rgba(231, 76, 60, 0.25); }
   }
-  .alarm-time-input {
-    width: 110px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px;
-    background: var(--bg); color: var(--text); font-size: 0.85rem; font-family: inherit;
-    text-align: center; flex-shrink: 0;
-  }
   .alarm-time-wrap {
-    display: flex; align-items: center; gap: 2px; flex-shrink: 0;
+    display: flex; align-items: center; gap: 3px; flex-shrink: 0;
+  }
+  .alarm-spin-col {
+    display: flex; flex-direction: column; align-items: center; gap: 1px;
+  }
+  .alarm-spin-col .alarm-spin-label {
+    font-size: 0.55rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px;
+    line-height: 1; user-select: none;
+  }
+  .alarm-spin-val {
+    font-size: 0.95rem; font-weight: 600; color: var(--text); min-width: 24px;
+    text-align: center; line-height: 1; user-select: none; font-variant-numeric: tabular-nums;
   }
   .alarm-spin-btn {
-    padding: 0; width: 20px; height: 20px; border: 1px solid var(--border-mid);
-    border-radius: 3px; background: transparent; color: var(--dim);
-    font-size: 0.7rem; cursor: pointer; display: flex; align-items: center;
+    padding: 0; width: 22px; height: 16px; border: 1px solid var(--border-mid);
+    border-radius: 3px; background: transparent; color: var(--blue);
+    font-size: 0.6rem; cursor: pointer; display: flex; align-items: center;
     justify-content: center; transition: all 0.15s; flex-shrink: 0; line-height: 1;
+    user-select: none;
   }
   .alarm-spin-btn:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
+  .alarm-time-colon {
+    font-size: 1rem; font-weight: 700; color: var(--dim); line-height: 1;
+    user-select: none; margin: 0 1px;
+  }
   .alarm-label-input {
     flex: 1; min-width: 0; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px;
     background: var(--bg); color: var(--text); font-size: 0.82rem; font-family: inherit;
@@ -6419,22 +6430,59 @@ function updateAlarmField(id, field, value) {
   if (field === 'enabled' || field === 'time') renderAlarmsList();
 }
 
-function spinAlarmTime(id, deltaMinutes) {
-  const alarm = alarmsData.find(a => a.id === id);
+function spinAlarmField(alarmId, field, dir) {
+  const alarm = alarmsData.find(a => a.id === alarmId);
   if (!alarm) return;
-  const [h, m] = (alarm.time || '00:00').split(':').map(Number);
-  let totalMins = h * 60 + m + deltaMinutes;
-  if (totalMins < 0) totalMins += 1440;
-  if (totalMins >= 1440) totalMins -= 1440;
-  const newH = String(Math.floor(totalMins / 60)).padStart(2, '0');
-  const newM = String(totalMins % 60).padStart(2, '0');
-  alarm.time = newH + ':' + newM;
+  let [h, m] = (alarm.time || '00:00').split(':').map(Number);
+  if (field === 'h') {
+    h += dir;
+    if (h < 0) h = 23;
+    if (h > 23) h = 0;
+  } else {
+    m += dir;
+    if (m < 0) { m = 59; h = (h - 1 + 24) % 24; }
+    if (m > 59) { m = 0; h = (h + 1) % 24; }
+  }
+  alarm.time = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
   alarm._fired = false;
   alarm._firing = false;
-  stopAlarmFiring(id);
-  saveAlarm(alarm);
-  renderAlarmsList();
+  stopAlarmFiring(alarmId);
+  // Update display immediately without full re-render (avoids losing focus/state)
+  const hEl = document.getElementById('alarmH_' + alarmId);
+  const mEl = document.getElementById('alarmM_' + alarmId);
+  if (hEl) hEl.textContent = String(h).padStart(2,'0');
+  if (mEl) mEl.textContent = String(m).padStart(2,'0');
+  // Debounce save
+  clearTimeout(alarm._saveTimer);
+  alarm._saveTimer = setTimeout(() => saveAlarm(alarm), 500);
 }
+
+// Hold-to-repeat for alarm spinner buttons (event delegation)
+let alarmSpinTimer = null, alarmSpinDelay = null;
+function startAlarmSpin(btn) {
+  const aid = btn.dataset.aid;
+  const field = btn.dataset.field;
+  const dir = parseInt(btn.dataset.dir, 10);
+  spinAlarmField(aid, field, dir);
+  alarmSpinDelay = setTimeout(() => {
+    alarmSpinTimer = setInterval(() => spinAlarmField(aid, field, dir), 120);
+  }, 400);
+}
+function stopAlarmSpin() {
+  clearTimeout(alarmSpinDelay); clearInterval(alarmSpinTimer);
+  alarmSpinDelay = null; alarmSpinTimer = null;
+}
+document.addEventListener('mousedown', (e) => {
+  const btn = e.target.closest('.alarm-spin-btn');
+  if (btn) { e.preventDefault(); startAlarmSpin(btn); }
+});
+document.addEventListener('touchstart', (e) => {
+  const btn = e.target.closest('.alarm-spin-btn');
+  if (btn) { e.preventDefault(); startAlarmSpin(btn); }
+}, { passive: false });
+document.addEventListener('mouseup', stopAlarmSpin);
+document.addEventListener('touchend', stopAlarmSpin);
+document.addEventListener('touchcancel', stopAlarmSpin);
 
 function toggleAlarmsMaster(on) {
   alarmsMasterEnabled = on;
@@ -6457,12 +6505,7 @@ function renderAlarmsList() {
     container.innerHTML = '<div class="alarms-empty">No alarms yet. Click + to add one.</div>';
     return;
   }
-  // Sort by time
-  const sorted = [...alarmsData].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
-  const now = new Date();
-  const nowMins = now.getHours() * 60 + now.getMinutes();
-
-  container.innerHTML = sorted.map(a => {
+  container.innerHTML = alarmsData.map(a => {
     const [h, m] = (a.time || '00:00').split(':').map(Number);
     const alarmMins = h * 60 + m;
     const isPast = alarmMins < nowMins;
@@ -6480,10 +6523,19 @@ function renderAlarmsList() {
     return '<div class="' + cls + '" data-alarm-id="' + a.id + '">' +
       '<div class="alarm-card-top">' +
         '<div class="alarm-time-wrap">' +
-          '<button class="alarm-spin-btn" onclick="spinAlarmTime(\'' + a.id + '\', -5)" title="-5 min">&#9660;</button>' +
-          '<input type="time" class="alarm-time-input" value="' + (a.time || '') + '" ' +
-            'onchange="updateAlarmField(\'' + a.id + '\', \'time\', this.value)">' +
-          '<button class="alarm-spin-btn" onclick="spinAlarmTime(\'' + a.id + '\', 5)" title="+5 min">&#9650;</button>' +
+          '<div class="alarm-spin-col">' +
+            '<span class="alarm-spin-label">hrs</span>' +
+            '<button class="alarm-spin-btn" data-aid="' + a.id + '" data-field="h" data-dir="1">&#9650;</button>' +
+            '<span class="alarm-spin-val" id="alarmH_' + a.id + '">' + String(h).padStart(2,'0') + '</span>' +
+            '<button class="alarm-spin-btn" data-aid="' + a.id + '" data-field="h" data-dir="-1">&#9660;</button>' +
+          '</div>' +
+          '<span class="alarm-time-colon">:</span>' +
+          '<div class="alarm-spin-col">' +
+            '<span class="alarm-spin-label">min</span>' +
+            '<button class="alarm-spin-btn" data-aid="' + a.id + '" data-field="m" data-dir="1">&#9650;</button>' +
+            '<span class="alarm-spin-val" id="alarmM_' + a.id + '">' + String(m).padStart(2,'0') + '</span>' +
+            '<button class="alarm-spin-btn" data-aid="' + a.id + '" data-field="m" data-dir="-1">&#9660;</button>' +
+          '</div>' +
         '</div>' +
         '<input type="text" class="alarm-label-input" value="' + esc(a.label || '') + '" ' +
           'placeholder="Label (e.g. First Break)" ' +

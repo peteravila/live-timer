@@ -1350,7 +1350,7 @@
         <div class="text-side-label">Preset Name</div>
         <input type="text" class="text-side-input" id="fieldName" placeholder="e.g. Break 15" autocomplete="off">
         <div class="text-side-hint">Library only — not shown to students.</div>
-        <hr style="border:none; border-top:1px solid var(--border-light); margin:4px 0;">
+        <hr style="border:none; border-top:1px solid var(--border-light); margin:6px 0;">
         <div class="transport-grid">
           <button class="transport-btn tb-start" onclick="doStart()" title="Push all and start">&#9654;&#xFE0E;</button>
           <button class="transport-btn tb-pause" onclick="doPause()" title="Pause">&#9208;&#xFE0E;</button>
@@ -1368,19 +1368,19 @@
             <button class="seq-stop-btn" onclick="stopSequence()" title="End sequence">End</button>
           </span>
         </div>
-        <hr style="border:none; border-top:1px solid var(--border-light); margin:4px 0;">
+        <hr style="border:none; border-top:1px solid var(--border-light); margin:6px 0;">
         <button class="btn-push-all" onclick="pushAllFields()" title="Pushes all checked fields">Push All</button>
         <button class="btn-pull-all" onclick="pullAllFields()" title="Load student-visible values into mockup">Pull All</button>
         <button class="btn-to-library" onclick="saveToLibrary()" title="Save mockup fields to library timers">to Library</button>
-        <hr style="border:none; border-top:1px solid var(--border-light); margin:4px 0;">
+        <hr style="border:none; border-top:1px solid var(--border-light); margin:6px 0;">
         <div class="left-options-panel">
           <div class="checkbox-row" style="margin-bottom:6px;">
             <input type="checkbox" id="fieldShowEnd" class="custom-cb" checked onchange="socket.emit('update-show-end-time', { showEndTime: this.checked })">
             <label for="fieldShowEnd" style="font-size:0.78rem;">Show end time</label>
           </div>
-          <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-            <label for="bgModeSelect" style="font-size:0.78rem; color:var(--dim);">Background</label>
-            <select id="bgModeSelect" style="padding:3px 6px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--text); font-size:0.75rem;" onchange="bgModeFromDropdown(this.value)">
+          <div style="margin-bottom:6px;">
+            <label for="bgModeSelect" style="font-size:0.78rem; color:var(--dim); display:block; margin-bottom:3px;">Background</label>
+            <select id="bgModeSelect" style="width:100%; padding:3px 6px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--text); font-size:0.75rem;" onchange="bgModeFromDropdown(this.value)">
               <option value="default">Default</option>
               <option value="transparent">Transparent</option>
               <option value="black">Black</option>

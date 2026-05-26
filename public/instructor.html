@@ -1215,6 +1215,28 @@
   }
   .alarm-card-top { display: flex; align-items: center; gap: 8px; }
   .alarm-card-bottom { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .alarm-drag-handle {
+    cursor: grab; color: var(--dim); font-size: 0.75rem; padding: 2px 2px;
+    user-select: none; opacity: 0.4; transition: opacity 0.15s; flex-shrink: 0;
+    line-height: 1; letter-spacing: 1px;
+  }
+  .alarm-drag-handle:hover { opacity: 1; }
+  .alarm-drag-handle:active { cursor: grabbing; }
+  .alarm-card.dragging { opacity: 0.25; }
+  .alarm-card.drag-over-above { box-shadow: 0 -2px 0 0 var(--green); }
+  .alarm-card.drag-over-below { box-shadow: 0 2px 0 0 var(--green); }
+  .alarm-insert-row {
+    display: flex; align-items: center; justify-content: center;
+    padding: 1px 0; opacity: 0; transition: opacity 0.15s;
+  }
+  .alarms-list:hover .alarm-insert-row { opacity: 0.4; }
+  .alarm-insert-row:hover { opacity: 1 !important; }
+  .alarm-insert-btn {
+    font-size: 0.65rem; color: var(--dim); background: transparent;
+    border: 1px dashed var(--border-mid); border-radius: 4px;
+    padding: 0 10px; cursor: pointer; line-height: 16px; transition: all 0.15s;
+  }
+  .alarm-insert-btn:hover { color: var(--green); border-color: var(--green); }
 
   /* Toggle switch (generic) */
   .toggle-switch {
@@ -6780,7 +6802,11 @@ function renderAlarmsList() {
     container.innerHTML = '<div class="alarms-empty">No alarms yet. Click + to add one.</div>';
     return;
   }
-  container.innerHTML = alarmsData.map(a => {
+  const insertBtn = idx =>
+    '<div class="alarm-insert-row"><button class="alarm-insert-btn" onclick="insertAlarmAt(' + idx + ')" title="Insert alarm here">+</button></div>';
+
+  let html = insertBtn(0);
+  alarmsData.forEach((a, i) => {
     const [h, m] = (a.time || '00:00').split(':').map(Number);
     const alarmAmPm = h >= 12 ? 'PM' : 'AM';
     const alarmDispH = ((h % 12) || 12);
@@ -6795,8 +6821,9 @@ function renderAlarmsList() {
 
     const soundOptions = buildAlarmSoundOptions(a.sound || '');
 
-    return '<div class="' + cls + '" data-alarm-id="' + a.id + '">' +
+    html += '<div class="' + cls + '" data-alarm-id="' + a.id + '" draggable="false">' +
       '<div class="alarm-card-top">' +
+        '<span class="alarm-drag-handle" title="Drag to reorder">&#9776;</span>' +
         '<input type="checkbox" class="alarm-select-cb" data-alarm-id="' + a.id + '" onchange="updateAlarmDeleteBtn()" style="margin:0 4px 0 0; cursor:pointer; accent-color:var(--green);">' +
         '<div class="alarm-time-wrap">' +
           '<div class="alarm-time-group">' +
@@ -6843,7 +6870,9 @@ function renderAlarmsList() {
         '</label>' +
       '</div>' +
     '</div>';
-  }).join('');
+    html += insertBtn(i + 1);
+  });
+  container.innerHTML = html;
 }
 
 function buildAlarmSoundOptions(selectedVal) {
@@ -6853,6 +6882,114 @@ function buildAlarmSoundOptions(selectedVal) {
     html += '<option value="' + val + '"' + (val === selectedVal ? ' selected' : '') + '>' + esc(s.name) + '</option>';
   });
   return html;
+}
+
+function insertAlarmAt(index) {
+  const set = getActiveAlarmSet();
+  if (!set) return;
+  const now = new Date();
+  const nextHour = new Date(now.getTime() + 60 * 60000);
+  const hh = String(nextHour.getHours()).padStart(2, '0');
+  const mm = String(nextHour.getMinutes()).padStart(2, '0');
+  const defaultSound = document.getElementById('alarmSound') ? document.getElementById('alarmSound').value : '';
+  const alarm = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    time: hh + ':' + mm,
+    label: '',
+    sound: defaultSound,
+    visualAlert: true,
+    repeatAlert: true,
+    enabled: true,
+  };
+  set.alarms.splice(index, 0, alarm);
+  syncAlarmsRef();
+  saveAlarmSets();
+  renderAlarmsList();
+}
+
+// ── Alarm drag-to-reorder ──
+var alarmDragId = null;
+var alarmDragAllowed = false;
+
+document.addEventListener('mousedown', e => {
+  if (e.target.closest('.alarm-drag-handle')) {
+    alarmDragAllowed = true;
+    const card = e.target.closest('.alarm-card');
+    if (card) card.setAttribute('draggable', 'true');
+  }
+});
+document.addEventListener('mouseup', () => {
+  alarmDragAllowed = false;
+  document.querySelectorAll('.alarm-card[draggable="true"]').forEach(el => el.setAttribute('draggable', 'false'));
+});
+
+document.addEventListener('dragstart', e => {
+  const card = e.target.closest('.alarm-card');
+  if (!card || !alarmDragAllowed) { e.preventDefault(); return; }
+  alarmDragId = card.dataset.alarmId;
+  card.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', alarmDragId);
+});
+
+document.addEventListener('dragover', e => {
+  const card = e.target.closest('.alarm-card');
+  if (!card || !alarmDragId || card.dataset.alarmId === alarmDragId) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  // Determine if above or below midpoint
+  const rect = card.getBoundingClientRect();
+  const midY = rect.top + rect.height / 2;
+  document.querySelectorAll('.alarm-card').forEach(el => { el.classList.remove('drag-over-above', 'drag-over-below'); });
+  if (e.clientY < midY) card.classList.add('drag-over-above');
+  else card.classList.add('drag-over-below');
+});
+
+document.addEventListener('dragleave', e => {
+  const card = e.target.closest('.alarm-card');
+  if (card) card.classList.remove('drag-over-above', 'drag-over-below');
+});
+
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  const targetCard = e.target.closest('.alarm-card');
+  if (!targetCard || !alarmDragId) return;
+  const targetId = targetCard.dataset.alarmId;
+  if (targetId === alarmDragId) return;
+
+  const set = getActiveAlarmSet();
+  if (!set) return;
+
+  const fromIdx = set.alarms.findIndex(a => a.id === alarmDragId);
+  const toIdx = set.alarms.findIndex(a => a.id === targetId);
+  if (fromIdx < 0 || toIdx < 0) return;
+
+  // Remove dragged item
+  const [moved] = set.alarms.splice(fromIdx, 1);
+  // Determine insert position based on above/below
+  const rect = targetCard.getBoundingClientRect();
+  const midY = rect.top + rect.height / 2;
+  let insertIdx = set.alarms.findIndex(a => a.id === targetId);
+  if (e.clientY >= midY) insertIdx++;
+  set.alarms.splice(insertIdx, 0, moved);
+
+  syncAlarmsRef();
+  saveAlarmSets();
+  alarmDragCleanup();
+  renderAlarmsList();
+});
+
+document.addEventListener('dragend', () => {
+  alarmDragCleanup();
+});
+
+function alarmDragCleanup() {
+  alarmDragId = null;
+  alarmDragAllowed = false;
+  document.querySelectorAll('.alarm-card').forEach(el => {
+    el.classList.remove('dragging', 'drag-over-above', 'drag-over-below');
+    el.setAttribute('draggable', 'false');
+  });
 }
 
 // ── Alarm checker (runs every 15s) ──

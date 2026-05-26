@@ -1130,10 +1130,20 @@
     to { background: rgba(231, 76, 60, 0.25); }
   }
   .alarm-time-input {
-    width: 80px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px;
+    width: 110px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px;
     background: var(--bg); color: var(--text); font-size: 0.85rem; font-family: inherit;
-    text-align: center;
+    text-align: center; flex-shrink: 0;
   }
+  .alarm-time-wrap {
+    display: flex; align-items: center; gap: 2px; flex-shrink: 0;
+  }
+  .alarm-spin-btn {
+    padding: 0; width: 20px; height: 20px; border: 1px solid var(--border-mid);
+    border-radius: 3px; background: transparent; color: var(--dim);
+    font-size: 0.7rem; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: all 0.15s; flex-shrink: 0; line-height: 1;
+  }
+  .alarm-spin-btn:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
   .alarm-label-input {
     flex: 1; min-width: 0; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px;
     background: var(--bg); color: var(--text); font-size: 0.82rem; font-family: inherit;
@@ -6312,6 +6322,7 @@ var alarmsData = []; // { id, time:'HH:MM', label, sound, visualAlert, repeatAle
 var alarmsMasterEnabled = true;
 var alarmCheckInterval = null;
 var alarmFiringTimers = {}; // id -> intervalId for repeat-alert sounds
+var alarmFiringAudios = {}; // id -> currently playing Audio object
 var alarmSnoozed = {}; // id -> snooze expiry timestamp
 
 async function fetchAlarms() {
@@ -6383,6 +6394,23 @@ function updateAlarmField(id, field, value) {
   if (field === 'enabled') renderAlarmsList();
 }
 
+function spinAlarmTime(id, deltaMinutes) {
+  const alarm = alarmsData.find(a => a.id === id);
+  if (!alarm) return;
+  const [h, m] = (alarm.time || '00:00').split(':').map(Number);
+  let totalMins = h * 60 + m + deltaMinutes;
+  if (totalMins < 0) totalMins += 1440;
+  if (totalMins >= 1440) totalMins -= 1440;
+  const newH = String(Math.floor(totalMins / 60)).padStart(2, '0');
+  const newM = String(totalMins % 60).padStart(2, '0');
+  alarm.time = newH + ':' + newM;
+  alarm._fired = false;
+  alarm._firing = false;
+  stopAlarmFiring(id);
+  saveAlarm(alarm);
+  renderAlarmsList();
+}
+
 function toggleAlarmsMaster(on) {
   alarmsMasterEnabled = on;
   if (!on) {
@@ -6421,8 +6449,12 @@ function renderAlarmsList() {
 
     return '<div class="' + cls + '" data-alarm-id="' + a.id + '">' +
       '<div class="alarm-card-top">' +
-        '<input type="time" class="alarm-time-input" value="' + (a.time || '') + '" ' +
-          'onchange="updateAlarmField(\'' + a.id + '\', \'time\', this.value)">' +
+        '<div class="alarm-time-wrap">' +
+          '<button class="alarm-spin-btn" onclick="spinAlarmTime(\'' + a.id + '\', -5)" title="-5 min">&#9660;</button>' +
+          '<input type="time" class="alarm-time-input" value="' + (a.time || '') + '" ' +
+            'onchange="updateAlarmField(\'' + a.id + '\', \'time\', this.value)">' +
+          '<button class="alarm-spin-btn" onclick="spinAlarmTime(\'' + a.id + '\', 5)" title="+5 min">&#9650;</button>' +
+        '</div>' +
         '<input type="text" class="alarm-label-input" value="' + esc(a.label || '') + '" ' +
           'placeholder="Label (e.g. First Break)" ' +
           'onchange="updateAlarmField(\'' + a.id + '\', \'label\', this.value)">' +
@@ -6501,14 +6533,18 @@ function checkAlarms() {
   if (needsRender) renderAlarmsList();
 }
 
-function fireAlarm(alarm) {
+async function fireAlarm(alarm) {
   alarm._firing = true;
   // Play sound
   if (alarm.sound && alarm.sound.startsWith('custom:')) {
     const soundId = alarm.sound.split(':')[1];
-    playCustomSound(soundId);
+    const audio = await playCustomSound(soundId);
+    if (audio) alarmFiringAudios[alarm.id] = audio;
     if (alarm.repeatAlert) {
-      alarmFiringTimers[alarm.id] = setInterval(() => playCustomSound(soundId), 3000);
+      alarmFiringTimers[alarm.id] = setInterval(async () => {
+        const a = await playCustomSound(soundId);
+        if (a) alarmFiringAudios[alarm.id] = a;
+      }, 3000);
     }
   }
   // Visual alert — flash the tab and show notification
@@ -6574,6 +6610,12 @@ function stopAlarmFiring(id) {
     clearInterval(alarmFiringTimers[id]);
     delete alarmFiringTimers[id];
   }
+  if (alarmFiringAudios[id]) {
+    try { alarmFiringAudios[id].pause(); alarmFiringAudios[id].currentTime = 0; } catch(e) {}
+    delete alarmFiringAudios[id];
+  }
+  // Also stop any preview audio that playCustomSound may have set
+  stopPreview();
 }
 
 // ── Sequences ──

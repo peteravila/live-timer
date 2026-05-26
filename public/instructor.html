@@ -6507,8 +6507,6 @@ function renderAlarmsList() {
   }
   container.innerHTML = alarmsData.map(a => {
     const [h, m] = (a.time || '00:00').split(':').map(Number);
-    const alarmMins = h * 60 + m;
-    const isPast = alarmMins < nowMins;
     const isFiring = a._firing;
     const isFired = a._fired && !isFiring;
     const cls = [

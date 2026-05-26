@@ -6325,10 +6325,25 @@ var alarmFiringTimers = {}; // id -> intervalId for repeat-alert sounds
 var alarmFiringAudios = {}; // id -> currently playing Audio object
 var alarmSnoozed = {}; // id -> snooze expiry timestamp
 
+// Preserve transient _fired/_firing state when server replaces alarmsData
+function mergeAlarmsFromServer(serverAlarms) {
+  const transient = {};
+  alarmsData.forEach(a => {
+    if (a._fired || a._firing) transient[a.id] = { _fired: a._fired, _firing: a._firing };
+  });
+  serverAlarms.forEach(a => {
+    if (transient[a.id]) {
+      a._fired = transient[a.id]._fired;
+      a._firing = transient[a.id]._firing;
+    }
+  });
+  alarmsData = serverAlarms;
+}
+
 async function fetchAlarms() {
   try {
     const resp = await authFetch('/api/alarms');
-    if (resp.ok) alarmsData = await resp.json();
+    if (resp.ok) mergeAlarmsFromServer(await resp.json());
   } catch(e) { console.error('fetchAlarms:', e); }
 }
 
@@ -6343,14 +6358,15 @@ async function saveAlarm(alarm) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(toSave),
     });
-    if (resp.ok) alarmsData = await resp.json();
+    if (resp.ok) mergeAlarmsFromServer(await resp.json());
   } catch(e) { console.error('saveAlarm:', e); }
 }
 
 async function deleteAlarmById(id) {
+  stopAlarmFiring(id);
   try {
     const resp = await authFetch('/api/alarms/' + id, { method: 'DELETE' });
-    if (resp.ok) alarmsData = await resp.json();
+    if (resp.ok) mergeAlarmsFromServer(await resp.json());
   } catch(e) { console.error('deleteAlarm:', e); }
 }
 
@@ -6389,9 +6405,16 @@ function updateAlarmField(id, field, value) {
     alarm._firing = false;
     stopAlarmFiring(id);
   }
+  // Disabling a firing alarm should stop it
+  if (field === 'enabled' && !value && alarm._firing) {
+    alarm._firing = false;
+    alarm._fired = true;
+    stopAlarmFiring(id);
+    stopAlarmFlash();
+  }
   saveAlarm(alarm); // fire-and-forget
-  // Re-render only if visual state change
-  if (field === 'enabled') renderAlarmsList();
+  // Re-render on visual state changes
+  if (field === 'enabled' || field === 'time') renderAlarmsList();
 }
 
 function spinAlarmTime(id, deltaMinutes) {
@@ -6415,7 +6438,12 @@ function toggleAlarmsMaster(on) {
   alarmsMasterEnabled = on;
   if (!on) {
     // Stop all currently firing alarms
-    alarmsData.forEach(a => { a._firing = false; stopAlarmFiring(a.id); });
+    alarmsData.forEach(a => {
+      if (a._firing) { a._firing = false; a._fired = true; }
+      stopAlarmFiring(a.id);
+    });
+    stopAlarmFlash();
+    stopPreview();
     renderAlarmsList();
   }
 }

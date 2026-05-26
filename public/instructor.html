@@ -6532,6 +6532,11 @@ document.addEventListener('touchcancel', stopAlarmSpin);
 
 function toggleAlarmsMaster(on) {
   alarmsMasterEnabled = on;
+  const list = document.getElementById('alarmsList');
+  if (list) {
+    list.style.opacity = on ? '' : '0.35';
+    list.style.pointerEvents = on ? '' : 'none';
+  }
   if (!on) {
     // Stop all currently firing alarms
     alarmsData.forEach(a => {

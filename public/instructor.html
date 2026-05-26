@@ -6398,6 +6398,8 @@ async function removeAlarm(id) {
 function updateAlarmField(id, field, value) {
   const alarm = alarmsData.find(a => a.id === id);
   if (!alarm) return;
+  // Skip if value hasn't changed (prevents spurious saves from blur events)
+  if (alarm[field] === value) return;
   alarm[field] = value;
   // Clear fired state if time changed
   if (field === 'time') {
@@ -6579,14 +6581,8 @@ async function fireAlarm(alarm) {
   if (alarm.visualAlert) {
     flashAlarmTab(alarm);
   }
-  // If not repeat, auto-dismiss after sound plays once
-  if (!alarm.repeatAlert) {
-    setTimeout(() => {
-      alarm._firing = false;
-      alarm._fired = true;
-      renderAlarmsList();
-    }, 2000);
-  }
+  // Always stay in firing state until user clicks Dismiss
+  renderAlarmsList();
 }
 
 var alarmFlashInterval = null;

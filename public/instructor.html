@@ -3390,7 +3390,7 @@ function saveToLibrary() {
 
   // Build field checkboxes with editable controls
   const inputStyle = 'padding:2px 6px;border-radius:4px;border:1px solid var(--border-mid);background:rgba(255,255,255,0.06);color:var(--text);font-size:0.78rem;font-family:inherit;flex:1;min-width:0;';
-  const selectStyle = 'padding:2px 4px;border-radius:4px;border:1px solid var(--border-mid);background:#2a2a3e;color:var(--text);font-size:0.78rem;font-family:inherit;';
+  const selectStyle = 'padding:2px 4px;border-radius:4px;border:1px solid var(--border-mid);background:var(--input-bg);color:var(--text);font-size:0.78rem;font-family:inherit;';
   const cbStyle = 'accent-color:var(--green);';
   const currentHours = Math.floor(currentMins / 60);
   const currentMinsPart = currentMins % 60;
@@ -3411,15 +3411,15 @@ function saveToLibrary() {
       '<input type="checkbox" id="toLibShowEnd"' + (currentShowEnd ? ' checked' : '') + ' style="' + cbStyle + '">' },
     { key: 'bgMode', label: 'Background', control:
       '<select id="toLibBgMode" style="' + selectStyle + '">' +
-      '<option value="default"' + (!currentModes.transparent && !currentModes.blackBg ? ' selected' : '') + ' style="background:#2a2a3e;color:#e0e0e0;">Default</option>' +
-      '<option value="transparent"' + (currentModes.transparent ? ' selected' : '') + ' style="background:#2a2a3e;color:#e0e0e0;">Transparent</option>' +
-      '<option value="black"' + (currentModes.blackBg ? ' selected' : '') + ' style="background:#2a2a3e;color:#e0e0e0;">Black</option></select>' },
+      '<option value="default"' + (!currentModes.transparent && !currentModes.blackBg ? ' selected' : '') + ' style="background:var(--input-bg);color:var(--text);">Default</option>' +
+      '<option value="transparent"' + (currentModes.transparent ? ' selected' : '') + ' style="background:var(--input-bg);color:var(--text);">Transparent</option>' +
+      '<option value="black"' + (currentModes.blackBg ? ' selected' : '') + ' style="background:var(--input-bg);color:var(--text);">Black</option></select>' },
     { key: 'clockOnly', label: 'Clock Only', control:
       '<input type="checkbox" id="toLibClockOnly"' + (currentModes.clockOnly ? ' checked' : '') + ' style="' + cbStyle + '">' },
     { key: 'goToTab', label: 'After Loading', control:
       '<select id="toLibGoToTab" style="' + selectStyle + '">' +
       ['library','students','settings'].map(v =>
-        '<option value="' + v + '"' + (v === currentGoToTab ? ' selected' : '') + ' style="background:#2a2a3e;color:#e0e0e0;">' + (tabNames[v] || v) + '</option>'
+        '<option value="' + v + '"' + (v === currentGoToTab ? ' selected' : '') + ' style="background:var(--input-bg);color:var(--text);">' + (tabNames[v] || v) + '</option>'
       ).join('') + '</select>' }
   ];
 
@@ -4248,11 +4248,7 @@ function commitOpenInput(id) {
 
 function spinUp(id) {
   commitOpenInput(id);
-  const carry = setSpinVal(id, getSpinVal(id) + 1);
-  if (carry !== 0 && (id === 'durM' || id === 'tarM')) {
-    const hourId = id === 'durM' ? 'durH' : 'tarH';
-    setSpinVal(hourId, getSpinVal(hourId) + carry);
-  }
+  setSpinVal(id, getSpinVal(id) + 1);
   if (id.startsWith('dur')) syncTargetFromDuration();
   else syncDurationFromTarget();
   checkDirty();
@@ -4260,11 +4256,7 @@ function spinUp(id) {
 }
 function spinDown(id) {
   commitOpenInput(id);
-  const carry = setSpinVal(id, getSpinVal(id) - 1);
-  if (carry !== 0 && (id === 'durM' || id === 'tarM')) {
-    const hourId = id === 'durM' ? 'durH' : 'tarH';
-    setSpinVal(hourId, getSpinVal(hourId) + carry);
-  }
+  setSpinVal(id, getSpinVal(id) - 1);
   if (id.startsWith('dur')) syncTargetFromDuration();
   else syncDurationFromTarget();
   checkDirty();
@@ -6475,8 +6467,8 @@ function spinAlarmField(alarmId, field, dir) {
     if (h > 23) h = 0;
   } else {
     m += dir;
-    if (m < 0) { m = 59; h = (h - 1 + 24) % 24; }
-    if (m > 59) { m = 0; h = (h + 1) % 24; }
+    if (m < 0) m = 59;
+    if (m > 59) m = 0;
   }
   alarm.time = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
   alarm._fired = false;
@@ -7270,18 +7262,18 @@ async function loadPaletteFromServer() {
       <div style="display:flex; gap:16px;">
         <div style="flex:1;">
           <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">Background</label>
-          <select id="ntBgMode" style="width:100%; padding:6px; border-radius:6px; border:1px solid var(--border-mid); background:#2a2a3e; color:var(--text); font-family:inherit; font-size:0.8rem;">
-            <option value="default" style="background:#2a2a3e; color:#e0e0e0;">Default</option>
-            <option value="transparent" style="background:#2a2a3e; color:#e0e0e0;">Transparent</option>
-            <option value="black" style="background:#2a2a3e; color:#e0e0e0;">Black</option>
+          <select id="ntBgMode" style="width:100%; padding:6px; border-radius:6px; border:1px solid var(--border-mid); background:var(--input-bg); color:var(--text); font-family:inherit; font-size:0.8rem;">
+            <option value="default" style="background:var(--input-bg); color:var(--text);">Default</option>
+            <option value="transparent" style="background:var(--input-bg); color:var(--text);">Transparent</option>
+            <option value="black" style="background:var(--input-bg); color:var(--text);">Black</option>
           </select>
         </div>
         <div style="flex:1;">
           <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">After Loading</label>
-          <select id="ntGoToTab" style="width:100%; padding:6px; border-radius:6px; border:1px solid var(--border-mid); background:#2a2a3e; color:var(--text); font-family:inherit; font-size:0.8rem;">
-            <option value="library" selected style="background:#2a2a3e; color:#e0e0e0;">Library</option>
-            <option value="students" style="background:#2a2a3e; color:#e0e0e0;">Students</option>
-            <option value="settings" style="background:#2a2a3e; color:#e0e0e0;">Settings</option>
+          <select id="ntGoToTab" style="width:100%; padding:6px; border-radius:6px; border:1px solid var(--border-mid); background:var(--input-bg); color:var(--text); font-family:inherit; font-size:0.8rem;">
+            <option value="library" selected style="background:var(--input-bg); color:var(--text);">Library</option>
+            <option value="students" style="background:var(--input-bg); color:var(--text);">Students</option>
+            <option value="settings" style="background:var(--input-bg); color:var(--text);">Settings</option>
           </select>
         </div>
       </div>

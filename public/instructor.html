@@ -755,7 +755,7 @@
   }
   .lib-row-btn:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
   .lib-row-btn.btn-loaded {
-    border-color: var(--green); color: var(--green);
+    border-color: var(--green); color: var(--green); font-weight: 700;
   }
   .lib-row-btn.btn-loaded:hover { background: var(--hover-green-strong); }
   .lib-row-go { font-size: 0.55rem; }
@@ -4879,7 +4879,7 @@ function renderLibrary() {
   let gridHtml = '<div class="lib-grid">' +
     '<div class="lib-grid-header" style="grid-template-columns:' + gridCols + '">' +
     '<div class="lib-hdr-cell"></div>' +
-    '<div class="lib-hdr-cell" style="padding:4px 2px 4px 0;"><input type="checkbox" class="lib-select-all" id="libSelectAll" onchange="toggleSelectAll(this)" title="Select all"></div>' +
+    '<div class="lib-hdr-cell" style="padding:4px 2px;"><input type="checkbox" class="lib-select-all" id="libSelectAll" onchange="toggleSelectAll(this)" title="Select all"></div>' +
     '<div class="lib-hdr-cell"></div><div class="lib-hdr-cell"></div>' +
     libCols.slice(4).map((c, ci) => {
       const idx = ci + 4;
@@ -7081,9 +7081,12 @@ async function fireAlarm(alarm) {
     const audio = await playCustomSound(soundId);
     if (audio) alarmFiringAudios[alarm.id] = audio;
     if (alarm.repeatAlert) {
-      alarmFiringTimers[alarm.id] = setInterval(async () => {
+      const aid = alarm.id;
+      alarmFiringTimers[aid] = setInterval(async () => {
+        if (!alarm._firing) return; // alarm was dismissed mid-interval
         const a = await playCustomSound(soundId);
-        if (a) alarmFiringAudios[alarm.id] = a;
+        if (a && alarm._firing) alarmFiringAudios[aid] = a;
+        else if (a) { a.pause(); a.currentTime = 0; } // dismiss happened during await
       }, 3000);
     }
   }

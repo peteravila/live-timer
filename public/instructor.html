@@ -83,6 +83,7 @@
   .text-side-input {
     width: 100%; padding: 6px 8px; border: 1px solid var(--border-light); border-radius: 6px;
     background: var(--bg); color: var(--text); font-size: 0.85rem; font-family: inherit;
+    margin-top: 3px;
   }
   .text-side-input:focus { outline: none; border-color: var(--blue); }
   .text-side-hint { font-size: 0.65rem; color: var(--dim); line-height: 1.3; }
@@ -102,7 +103,7 @@
     padding: 7px 12px; border: 2px solid var(--blue); border-radius: 6px;
     background: transparent; color: var(--blue); font-size: 0.8rem; font-weight: 600;
     cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: inherit;
-    width: 100%; margin-top: 4px;
+    width: 100%;
   }
   .btn-to-library:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
   .push-all-hint { font-size: 0.6rem; color: var(--text-faint); line-height: 1.3; text-align: center; }
@@ -1368,11 +1369,11 @@
             <button class="seq-stop-btn" onclick="stopSequence()" title="End sequence">End</button>
           </span>
         </div>
-        <hr style="border:none; border-top:1px solid var(--border-light); margin:6px 0;">
+        <hr style="border:none; border-top:1px solid var(--border-light); margin:8px 0;">
         <button class="btn-push-all" onclick="pushAllFields()" title="Pushes all checked fields">Push All</button>
         <button class="btn-pull-all" onclick="pullAllFields()" title="Load student-visible values into mockup">Pull All</button>
         <button class="btn-to-library" onclick="saveToLibrary()" title="Save mockup fields to library timers">to Library</button>
-        <hr style="border:none; border-top:1px solid var(--border-light); margin:6px 0;">
+        <hr style="border:none; border-top:1px solid var(--border-light); margin:8px 0;">
         <div class="left-options-panel">
           <div class="checkbox-row" style="margin-bottom:6px;">
             <input type="checkbox" id="fieldShowEnd" class="custom-cb" checked onchange="socket.emit('update-show-end-time', { showEndTime: this.checked })">

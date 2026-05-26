@@ -1195,13 +1195,19 @@ io.on('connection', (socket) => {
           session = getSession(instructorId);
           joinRoom = 'students:' + instructorId;
         }
-      } else if (sessions.size === 1) {
-        // No code/token/apiKey but only one instructor exists — auto-route
-        // (covers large-screen display viewers opened without ?code= param)
-        const onlyId = sessions.keys().next().value;
-        instructorId = onlyId;
-        session = getSession(instructorId);
-        joinRoom = 'students:' + instructorId;
+      } else if (sessions.size > 0) {
+        // No code/token/apiKey — auto-route to the session with a running timer,
+        // or the first session if none running (covers OBS/display viewers without ?code=)
+        let fallbackId = null;
+        for (const [id, s] of sessions) {
+          if (s.timerState && s.timerState.running) { fallbackId = id; break; }
+          if (!fallbackId) fallbackId = id;
+        }
+        if (fallbackId) {
+          instructorId = fallbackId;
+          session = getSession(instructorId);
+          joinRoom = 'students:' + instructorId;
+        }
       }
       role = identifyRole;
       validated = true;

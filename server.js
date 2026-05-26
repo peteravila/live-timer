@@ -799,6 +799,17 @@ app.delete('/api/alarms/:id', requireAuth, async (req, res) => {
   res.json(s.alarms);
 });
 
+app.post('/api/alarms/batch-delete', requireAuth, async (req, res) => {
+  const s = getSession(req.instructorId);
+  const { ids } = req.body;
+  if (Array.isArray(ids) && ids.length) {
+    const removeSet = new Set(ids);
+    s.alarms = s.alarms.filter(a => !removeSet.has(a.id));
+    await saveAlarms(req.instructorId, s.alarms);
+  }
+  res.json(s.alarms);
+});
+
 app.put('/api/alarms/reorder', requireAuth, async (req, res) => {
   const s = getSession(req.instructorId);
   const { ids } = req.body;

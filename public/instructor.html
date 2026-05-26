@@ -42,12 +42,8 @@
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;
     margin-top: 4px;
   }
-  .connected-badge {
-    text-align: center; margin-top: 2px;
-  }
-  .connected-label {
-    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;
-    color: var(--dim); margin-bottom: 2px;
+  .left-options-panel {
+    margin-top: 4px; padding: 0;
   }
   .connected-count {
     font-size: 2rem; font-weight: 700; color: var(--green);
@@ -1377,9 +1373,23 @@
         <button class="btn-pull-all" onclick="pullAllFields()" title="Load student-visible values into mockup">Pull All</button>
         <button class="btn-to-library" onclick="saveToLibrary()" title="Save mockup fields to library timers">to Library</button>
         <hr style="border:none; border-top:1px solid var(--border-light); margin:8px 0;">
-        <div class="connected-badge">
-          <div class="connected-label">Phones Connected</div>
-          <div class="connected-count" id="connectedCount">0</div>
+        <div class="left-options-panel">
+          <div class="checkbox-row" style="margin-bottom:6px;">
+            <input type="checkbox" id="fieldShowEnd" class="custom-cb" checked onchange="socket.emit('update-show-end-time', { showEndTime: this.checked })">
+            <label for="fieldShowEnd" style="font-size:0.78rem;">Show end time</label>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+            <label for="bgModeSelect" style="font-size:0.78rem; color:var(--dim);">Background</label>
+            <select id="bgModeSelect" style="padding:3px 6px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--text); font-size:0.75rem;" onchange="bgModeFromDropdown(this.value)">
+              <option value="default">Default</option>
+              <option value="transparent">Transparent</option>
+              <option value="black">Black</option>
+            </select>
+          </div>
+          <div class="checkbox-row">
+            <input type="checkbox" id="fieldClockOnly" class="custom-cb" onchange="updateDisplayModes()">
+            <label for="fieldClockOnly" style="font-size:0.78rem;">Clock only</label>
+          </div>
         </div>
       </div>
 
@@ -1491,7 +1501,6 @@
     <!-- Tab bar -->
     <div class="tab-bar">
       <button class="tab-btn active" onclick="switchTab('library')">Library</button>
-      <button class="tab-btn" onclick="switchTab('options')">Options</button>
       <button class="tab-btn" onclick="switchTab('students')">Students<span class="tab-badge badge-empty" id="studentsBadge"></span></button>
     </div>
 
@@ -1559,49 +1568,24 @@
     </div>
 
     <!-- Tab: Options (per-timer, saved with library items) -->
-    <div class="tab-content" id="tab-options">
-      <div class="section-title" style="margin-bottom:18px;">Timer Options</div>
-      <div style="font-size:0.75rem; color:var(--dim); margin-bottom:18px;">These options are saved with each library item.</div>
-
-      <div class="checkbox-row" style="margin-bottom:10px;">
-        <input type="checkbox" id="fieldShowEnd" class="custom-cb" checked onchange="socket.emit('update-show-end-time', { showEndTime: this.checked })">
-        <label for="fieldShowEnd">Show end time to students</label>
-      </div>
-
-      <div style="margin-bottom:14px;">
-        <div style="font-size:0.8rem; color:var(--dim); margin-bottom:8px; font-weight:600;">Background</div>
-        <div class="checkbox-row" style="margin-bottom:6px;">
-          <input type="radio" name="bgMode" id="fieldBgDefault" class="custom-cb" value="default" checked onchange="updateBgMode()">
-          <label for="fieldBgDefault">Default</label>
-        </div>
-        <div class="checkbox-row" style="margin-bottom:6px;">
-          <input type="radio" name="bgMode" id="fieldBgTransparent" class="custom-cb" value="transparent" onchange="updateBgMode()">
-          <label for="fieldBgTransparent">Transparent</label>
-        </div>
-        <div class="checkbox-row" style="margin-bottom:6px;">
-          <input type="radio" name="bgMode" id="fieldBgBlack" class="custom-cb" value="black" onchange="updateBgMode()">
-          <label for="fieldBgBlack">Black</label>
-        </div>
-      </div>
-
-      <div class="checkbox-row" style="margin-bottom:10px;">
-        <input type="checkbox" id="fieldClockOnly" class="custom-cb" onchange="updateDisplayModes()">
-        <label for="fieldClockOnly">Clock only — hide text and ring</label>
-      </div>
-
-      <div style="display:flex; align-items:center; gap:8px; margin-top:18px;">
-        <label for="optGoToTab" style="font-size:0.85rem; color:var(--text-muted);">After loading, go to tab:</label>
-        <select id="optGoToTab" style="padding:6px 10px; border:1px solid var(--border-light); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
-          <option value="library">Library</option>
-          <option value="options">Options</option>
-          <option value="students">Students</option>
-          <option value="settings">Settings</option>
-        </select>
-      </div>
+    <!-- Hidden elements preserved for JS compatibility (Options tab removed) -->
+    <div style="display:none;">
+      <input type="radio" name="bgMode" id="fieldBgDefault" value="default" checked>
+      <input type="radio" name="bgMode" id="fieldBgTransparent" value="transparent">
+      <input type="radio" name="bgMode" id="fieldBgBlack" value="black">
+      <select id="optGoToTab">
+        <option value="library">Library</option>
+        <option value="students">Students</option>
+        <option value="settings">Settings</option>
+      </select>
     </div>
 
     <!-- Tab: Students (check-in status board) -->
     <div class="tab-content" id="tab-students">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--dim);">Phones Connected</span>
+        <span id="connectedCount" style="font-size:1.1rem; font-weight:700; color:var(--green);">0</span>
+      </div>
       <div class="students-toolbar">
         <div class="checkin-toggle-wrap">
           <input type="checkbox" class="checkin-toggle" id="checkinToggle" onchange="toggleCheckin(this.checked)">
@@ -1709,7 +1693,6 @@
                 <label for="optStartTab" style="font-size:0.85rem; color:var(--text-muted);">Go to tab</label>
                 <select id="optStartTab" style="padding:6px 10px; border:1px solid var(--border-light); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
                   <option value="library">Library</option>
-                  <option value="options">Options</option>
                   <option value="students">Students</option>
                   <option value="settings">Settings</option>
                 </select>
@@ -2370,8 +2353,9 @@ function logout() {
   document.getElementById('fieldBgTransparent').checked = false;
   document.getElementById('fieldBgBlack').checked = false;
   document.getElementById('fieldClockOnly').checked = false;
-  document.getElementById('optGoToTab').value = 'timer';
-  document.getElementById('optStartTab').value = 'timer';
+  document.getElementById('bgModeSelect').value = 'default';
+  document.getElementById('optGoToTab').value = 'library';
+  document.getElementById('optStartTab').value = 'library';
 
   // Reset mockup visuals
   resetMockupIdle();
@@ -2901,7 +2885,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ── Tab switching ──
-const TAB_NAMES = ['library', 'options', 'students'];
+const TAB_NAMES = ['library', 'students'];
 function switchTab(name) {
   // 'settings' now opens the overlay instead of a tab
   if (name === 'settings') { openSettings(); return; }
@@ -3185,7 +3169,16 @@ function setBgModeFromFlags(transparent, blackBg) {
   document.getElementById('fieldBgDefault').checked = !transparent && !blackBg;
   document.getElementById('fieldBgTransparent').checked = !!transparent;
   document.getElementById('fieldBgBlack').checked = !!blackBg;
+  // Sync the dropdown
+  const sel = document.getElementById('bgModeSelect');
+  if (sel) sel.value = transparent ? 'transparent' : blackBg ? 'black' : 'default';
   syncMockupBgMode();
+}
+function bgModeFromDropdown(val) {
+  document.getElementById('fieldBgDefault').checked = (val === 'default');
+  document.getElementById('fieldBgTransparent').checked = (val === 'transparent');
+  document.getElementById('fieldBgBlack').checked = (val === 'black');
+  updateBgMode();
 }
 
 function pushAllFields() {
@@ -3279,7 +3272,7 @@ function saveToLibrary() {
       '<input type="checkbox" id="toLibClockOnly"' + (currentModes.clockOnly ? ' checked' : '') + ' style="' + cbStyle + '">' },
     { key: 'goToTab', label: 'After Loading', control:
       '<select id="toLibGoToTab" style="' + selectStyle + '">' +
-      ['library','options','students','settings'].map(v =>
+      ['library','students','settings'].map(v =>
         '<option value="' + v + '"' + (v === currentGoToTab ? ' selected' : '') + ' style="background:#2a2a3e;color:#e0e0e0;">' + (tabNames[v] || v) + '</option>'
       ).join('') + '</select>' }
   ];
@@ -4075,6 +4068,7 @@ document.getElementById('btnPushCourseTitle').addEventListener('mousedown', () =
 
 // Bg mode and clock-only radios/checkboxes call updateBgMode()/updateDisplayModes() via onchange in HTML
 document.querySelectorAll('input[name="bgMode"]').forEach(r => r.addEventListener('change', checkDirty));
+document.getElementById('bgModeSelect').addEventListener('change', checkDirty);
 document.getElementById('fieldClockOnly').addEventListener('change', checkDirty);
 document.getElementById('optGoToTab').addEventListener('change', () => checkDirty());
 
@@ -4744,7 +4738,6 @@ function renderLibrary() {
       <input type="checkbox" class="lib-cell-cb" data-field="clockOnly" data-orig="${!!t.clockOnly}" ${t.clockOnly ? 'checked' : ''} onchange="libMarkDirty(this)">
       <select class="lib-cell-select" data-field="goToTab" data-orig="${goTo}" onchange="libMarkDirty(this)">
         <option value="library" ${goTo === 'library' ? 'selected' : ''}>Library</option>
-        <option value="options" ${goTo === 'options' ? 'selected' : ''}>Options</option>
         <option value="students" ${goTo === 'students' ? 'selected' : ''}>Students</option>
         <option value="settings" ${goTo === 'settings' ? 'selected' : ''}>Settings</option>
       </select>
@@ -5056,7 +5049,6 @@ function newBlankRow() {
       <input type="checkbox" class="lib-cell-cb" data-field="clockOnly" data-orig="false" onchange="libMarkDirty(this)">
       <select class="lib-cell-select" data-field="goToTab" data-orig="library" onchange="libMarkDirty(this)" style="border-color:#444;background:rgba(255,255,255,0.06);">
         <option value="library" selected>Library</option>
-        <option value="options">Options</option>
         <option value="students">Students</option>
         <option value="settings">Settings</option>
       </select>
@@ -5304,11 +5296,11 @@ function loadLibTimer(id) {
   setBgModeFromFlags(t.transparent, t.blackBg);
   document.getElementById('fieldClockOnly').checked = !!t.clockOnly;
 
-  // Per-item options — map legacy tab names (text/timer tabs removed)
+  // Per-item options — map legacy tab names (text/timer/options tabs removed)
   let goTo = t.goToTab || 'library';
   if (goTo === 'identity' || goTo === 'setup' || goTo === 'text') goTo = 'library';
   if (goTo === 'time' || goTo === 'timer') goTo = 'library';
-  if (goTo === 'message') goTo = 'library';
+  if (goTo === 'message' || goTo === 'options') goTo = 'library';
   document.getElementById('optGoToTab').value = goTo;
 
   // Suppress dirty check — fields were just loaded from this library item
@@ -5499,7 +5491,7 @@ async function duplicateTimer(id) {
   let newGoTo = newest.goToTab || 'library';
   if (newGoTo === 'identity' || newGoTo === 'setup' || newGoTo === 'text') newGoTo = 'library';
   if (newGoTo === 'time' || newGoTo === 'timer') newGoTo = 'library';
-  if (newGoTo === 'message') newGoTo = 'library';
+  if (newGoTo === 'message' || newGoTo === 'options') newGoTo = 'library';
   document.getElementById('optGoToTab').value = newGoTo;
   renderLibrary();
 }
@@ -6727,7 +6719,6 @@ async function loadPaletteFromServer() {
           <label style="font-size:0.7rem; color:var(--dim); text-transform:uppercase; letter-spacing:1px;">After Loading</label>
           <select id="ntGoToTab" style="width:100%; padding:6px; border-radius:6px; border:1px solid var(--border-mid); background:#2a2a3e; color:var(--text); font-family:inherit; font-size:0.8rem;">
             <option value="library" selected style="background:#2a2a3e; color:#e0e0e0;">Library</option>
-            <option value="options" style="background:#2a2a3e; color:#e0e0e0;">Options</option>
             <option value="students" style="background:#2a2a3e; color:#e0e0e0;">Students</option>
             <option value="settings" style="background:#2a2a3e; color:#e0e0e0;">Settings</option>
           </select>

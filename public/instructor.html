@@ -1215,6 +1215,19 @@
   }
   .alarm-card-top { display: flex; align-items: center; gap: 8px; }
   .alarm-card-bottom { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .alarm-days-wrap {
+    display: inline-flex; align-items: center; gap: 2px; margin-left: 4px;
+  }
+  .alarm-day-btn {
+    width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border-mid);
+    background: transparent; color: var(--dim); font-size: 0.6rem; font-weight: 600;
+    cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; font-family: inherit; line-height: 1;
+  }
+  .alarm-day-btn.active {
+    background: var(--green); color: var(--btn-text-on-accent); border-color: var(--green);
+  }
+  .alarm-day-btn:hover { border-color: var(--green); }
   .alarm-drag-handle {
     cursor: grab; color: var(--dim); font-size: 0.75rem; padding: 2px 2px;
     user-select: none; opacity: 0.4; transition: opacity 0.15s; flex-shrink: 0;
@@ -1227,14 +1240,13 @@
   .alarm-card.drag-over-below { box-shadow: 0 2px 0 0 var(--green); }
   .alarm-insert-row {
     display: flex; align-items: center; justify-content: center;
-    padding: 1px 0; opacity: 0; transition: opacity 0.15s;
+    padding: 2px 0; transition: opacity 0.15s; opacity: 0.5;
   }
-  .alarms-list:hover .alarm-insert-row { opacity: 0.4; }
-  .alarm-insert-row:hover { opacity: 1 !important; }
+  .alarm-insert-row:hover { opacity: 1; }
   .alarm-insert-btn {
-    font-size: 0.65rem; color: var(--dim); background: transparent;
+    font-size: 0.85rem; color: var(--dim); background: transparent;
     border: 1px dashed var(--border-mid); border-radius: 4px;
-    padding: 0 10px; cursor: pointer; line-height: 16px; transition: all 0.15s;
+    padding: 1px 16px; cursor: pointer; line-height: 20px; transition: all 0.15s;
   }
   .alarm-insert-btn:hover { color: var(--green); border-color: var(--green); }
 
@@ -1502,17 +1514,17 @@
             <input type="checkbox" id="fieldShowEnd" class="custom-cb" checked onchange="socket.emit('update-show-end-time', { showEndTime: this.checked })">
             <label for="fieldShowEnd" style="font-size:0.78rem;">Show end time</label>
           </div>
-          <div style="margin-bottom:4px;">
+          <div class="checkbox-row" style="margin-bottom:4px;">
+            <input type="checkbox" id="fieldClockOnly" class="custom-cb" onchange="updateDisplayModes()">
+            <label for="fieldClockOnly" style="font-size:0.78rem;">Clock only</label>
+          </div>
+          <div>
             <label for="bgModeSelect" style="font-size:0.78rem; color:var(--dim); display:block; margin-bottom:3px;">Background</label>
             <select id="bgModeSelect" style="width:100%; padding:3px 6px; border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--text); font-size:0.75rem;" onchange="bgModeFromDropdown(this.value)">
               <option value="default">Default</option>
               <option value="transparent">Transparent</option>
               <option value="black">Black</option>
             </select>
-          </div>
-          <div class="checkbox-row">
-            <input type="checkbox" id="fieldClockOnly" class="custom-cb" onchange="updateDisplayModes()">
-            <label for="fieldClockOnly" style="font-size:0.78rem;">Clock only</label>
           </div>
         </div>
         <hr style="border:none; border-top:1px solid var(--border-light); margin:4px 0;">
@@ -6795,6 +6807,35 @@ function toggleAlarmsMaster(on) {
   }
 }
 
+var ALARM_DAY_LABELS = ['S','M','T','W','T','F','S'];
+
+function buildAlarmDayPickers(alarm) {
+  const days = alarm.days || [0,1,2,3,4,5,6]; // default: all days
+  return ALARM_DAY_LABELS.map((lbl, i) =>
+    '<button class="alarm-day-btn' + (days.includes(i) ? ' active' : '') + '" ' +
+      'onclick="toggleAlarmDay(\'' + alarm.id + '\',' + i + ')" title="' +
+      ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][i] + '">' + lbl + '</button>'
+  ).join('');
+}
+
+function toggleAlarmDay(alarmId, dayIndex) {
+  const alarm = alarmsData.find(a => a.id === alarmId);
+  if (!alarm) return;
+  if (!alarm.days) alarm.days = [0,1,2,3,4,5,6];
+  const idx = alarm.days.indexOf(dayIndex);
+  if (idx >= 0) {
+    if (alarm.days.length <= 1) return; // don't allow zero days
+    alarm.days.splice(idx, 1);
+  } else {
+    alarm.days.push(dayIndex);
+    alarm.days.sort();
+  }
+  // Update just the day buttons without full re-render
+  const wrap = document.querySelector('.alarm-card[data-alarm-id="' + alarmId + '"] .alarm-days-wrap');
+  if (wrap) wrap.innerHTML = buildAlarmDayPickers(alarm);
+  saveAlarmSets();
+}
+
 function renderAlarmsList() {
   const container = document.getElementById('alarmsList');
   if (!container) return;
@@ -6868,6 +6909,7 @@ function renderAlarmsList() {
           '<input type="checkbox" ' + (a.repeatAlert ? 'checked' : '') + ' style="margin:0; accent-color:var(--green);" ' +
             'onchange="updateAlarmField(\'' + a.id + '\', \'repeatAlert\', this.checked)"> Repeat' +
         '</label>' +
+        '<span class="alarm-days-wrap">' + buildAlarmDayPickers(a) + '</span>' +
       '</div>' +
     '</div>';
     html += insertBtn(i + 1);
@@ -7011,8 +7053,12 @@ function checkAlarms() {
     alarmsData.forEach(a => { a._fired = false; a._firing = false; });
   }
 
+  const todayDay = now.getDay(); // 0=Sun, 6=Sat
   alarmsData.forEach(a => {
     if (!a.enabled || a._fired || a._firing) return;
+    // Skip if today isn't in this alarm's active days
+    const days = a.days || [0,1,2,3,4,5,6];
+    if (!days.includes(todayDay)) return;
     // Check snooze
     if (alarmSnoozed[a.id] && Date.now() < alarmSnoozed[a.id]) return;
     if (alarmSnoozed[a.id] && Date.now() >= alarmSnoozed[a.id]) {

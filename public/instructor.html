@@ -680,7 +680,7 @@
   .btn-field-add:hover { background: var(--hover-green-strong) !important; }
 
   /* Library grid — single scrollable panel */
-  .lib-grid-wrap { max-height: 460px; overflow: auto; }
+  .lib-grid-wrap { overflow: auto; }
   .lib-grid { min-width: max-content; }
   .lib-grid-header {
     display: grid; gap: 0; padding: 0;
@@ -3090,6 +3090,7 @@ function switchTab(name) {
   requestAnimationFrame(() => {
     window.scrollTo(0, scrollY);
     if (colRight) colRight.style.minHeight = '';
+    if (name === 'library') resizeLibGrid();
   });
 }
 
@@ -4935,7 +4936,21 @@ function renderLibrary() {
   updateLibSelection();
   // Clear any editing state
   libClearEditing();
+  // Fit grid to viewport
+  resizeLibGrid();
 }
+
+/* Dynamically size the library grid so the horizontal scrollbar
+   sits flush with the bottom of the viewport. */
+function resizeLibGrid() {
+  const wrap = document.querySelector('#libraryList .lib-grid-wrap');
+  if (!wrap) return;
+  const top = wrap.getBoundingClientRect().top;
+  // 18px accounts for the tab-content bottom padding + border-radius breathing room
+  const available = window.innerHeight - top - 18;
+  wrap.style.maxHeight = Math.max(120, Math.round(available)) + 'px';
+}
+window.addEventListener('resize', resizeLibGrid);
 
 // ── Inline grid editing: toolbar Save/Cancel with row locking ──
 let libEditingId = null;  // ID of the row currently being edited (or null)

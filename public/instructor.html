@@ -1241,7 +1241,7 @@
   .settings-panel {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,0.5);
-    width: 600px; max-width: 92vw; max-height: 85vh;
+    width: 720px; max-width: 92vw; max-height: 85vh;
     display: flex; flex-direction: column;
     animation: settings-slide-in 0.2s ease-out;
   }
@@ -1262,6 +1262,7 @@
   .settings-close:hover { color: var(--text); }
   .settings-body { padding: 16px 20px 20px; overflow-y: auto; flex: 1; }
   .settings-label { text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  .settings-indent { margin-left: 20px; margin-top: 8px; }
 
   /* Palette picker — collapsible toggle row */
   .palette-section { margin-bottom: 20px; }
@@ -1639,9 +1640,9 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div style="margin-bottom:20px;">
-            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">Class Code</label>
-            <div style="display:flex; align-items:flex-start; gap:16px; margin-top:8px;">
-              <div style="margin-left:103px; flex:1; min-width:0;">
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">CLASS CODE</label>
+            <div class="settings-indent" style="display:flex; align-items:flex-start; gap:16px;">
+              <div style="flex:1; min-width:0;">
                 <button class="settings-btn" onclick="generateNewCode()">Disconnect All Phones</button>
                 <div style="font-size:0.75rem; color:var(--dim); margin-top:4px;">Generates a new code and disconnects all current students.</div>
                 <div style="margin-top:8px;">
@@ -1655,71 +1656,85 @@
 
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-            <label class="settings-label" for="alarmSound" style="font-size:0.85rem; color:var(--text-muted); white-space:nowrap; min-width:95px;">Alarm sound:</label>
-            <select id="alarmSound" style="flex:1; padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
-              <option value="">— no sound —</option>
-            </select>
-            <button class="settings-btn" id="alarmTestBtn" onclick="toggleSoundPreview('alarmSound')">&#9654; Test</button>
-            <button class="settings-btn" onclick="deleteSelectedSound('alarmSound')" style="color:var(--red);">&#10005;</button>
-          </div>
-          <div style="margin-left:103px;">
-            <div class="checkbox-row" style="margin-bottom:8px;">
-              <input type="checkbox" id="alarmLoop" class="custom-cb">
-              <label for="alarmLoop">Loop alarm until stopped</label>
+          <div>
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">ALARM SOUND</label>
+            <div class="settings-indent">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <select id="alarmSound" style="flex:1; max-width:260px; padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
+                  <option value="">— no sound —</option>
+                </select>
+                <button class="settings-btn" id="alarmTestBtn" onclick="toggleSoundPreview('alarmSound')">&#9654; Test</button>
+                <button class="settings-btn" onclick="deleteSelectedSound('alarmSound')" style="color:var(--red);">&#10005;</button>
+              </div>
+              <div class="checkbox-row" style="margin-bottom:8px;">
+                <input type="checkbox" id="alarmLoop" class="custom-cb">
+                <label for="alarmLoop">Loop alarm until stopped</label>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <label class="settings-btn" style="cursor:pointer;">
+                  + Add Sound (.mp3)
+                  <input type="file" id="customSoundUpload" accept=".mp3,audio/mpeg" style="display:none;" onchange="addCustomSound(this)">
+                </label>
+              </div>
             </div>
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-              <label class="settings-btn" style="cursor:pointer;">
-                + Add Sound (.mp3)
-                <input type="file" id="customSoundUpload" accept=".mp3,audio/mpeg" style="display:none;" onchange="addCustomSound(this)">
-              </label>
-            </div>
-          </div>
-
-          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
-
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-            <label class="settings-label" for="warningSound" style="font-size:0.85rem; color:var(--text-muted); white-space:nowrap; min-width:95px;">Warning alert:</label>
-            <select id="warningSound" style="flex:1; padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
-              <option value="">— no sound —</option>
-            </select>
-            <button class="settings-btn" id="warningTestBtn" onclick="toggleSoundPreview('warningSound')">&#9654; Test</button>
-            <button class="settings-btn" onclick="deleteSelectedSound('warningSound')" style="color:var(--red);">&#10005;</button>
-          </div>
-          <div style="margin-left:103px; display:flex; align-items:center; gap:8px;">
-            <input type="checkbox" id="warningEnabled" class="custom-cb">
-            <label for="warningEnabled" style="font-size:0.85rem; color:var(--text-muted);">Play warning</label>
-            <input type="number" id="warningMinutes" value="5" min="1" max="60" style="width:50px; padding:5px 8px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem; text-align:center;">
-            <span style="font-size:0.85rem; color:var(--text-muted);">min before end</span>
-          </div>
-
-          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
-
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px;">
-            <label class="settings-label" for="optStartTab" style="font-size:0.85rem; color:var(--text-muted);">After starting, go to tab:</label>
-            <select id="optStartTab" style="padding:6px 10px; border:1px solid var(--border-light); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
-              <option value="library">Library</option>
-              <option value="options">Options</option>
-              <option value="students">Students</option>
-              <option value="settings">Settings</option>
-            </select>
-          </div>
-
-          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
-
-          <div style="margin-bottom:20px;">
-            <div class="checkbox-row">
-              <input type="checkbox" id="muteStudents" class="custom-cb">
-              <label for="muteStudents" style="font-size:0.85rem; color:var(--text-muted);">Mute student updates</label>
-            </div>
-            <div style="font-size:0.75rem; color:var(--dim); margin-top:4px; margin-left:103px;">When muted, timer changes only appear in the preview — not on student screens.</div>
           </div>
 
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
-            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">Library Backup</label>
-            <div style="display:flex; gap:8px; margin-top:8px; margin-left:103px;">
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">WARNING ALERT</label>
+            <div class="settings-indent">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <select id="warningSound" style="flex:1; max-width:260px; padding:6px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
+                  <option value="">— no sound —</option>
+                </select>
+                <button class="settings-btn" id="warningTestBtn" onclick="toggleSoundPreview('warningSound')">&#9654; Test</button>
+                <button class="settings-btn" onclick="deleteSelectedSound('warningSound')" style="color:var(--red);">&#10005;</button>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="warningEnabled" class="custom-cb">
+                <label for="warningEnabled" style="font-size:0.85rem; color:var(--text-muted);">Play warning</label>
+                <input type="number" id="warningMinutes" value="5" min="1" max="60" style="width:50px; padding:5px 8px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem; text-align:center;">
+                <span style="font-size:0.85rem; color:var(--text-muted);">min before end</span>
+              </div>
+            </div>
+          </div>
+
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
+
+          <div style="margin-bottom:20px;">
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">AFTER STARTING</label>
+            <div class="settings-indent">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label for="optStartTab" style="font-size:0.85rem; color:var(--text-muted);">Go to tab</label>
+                <select id="optStartTab" style="padding:6px 10px; border:1px solid var(--border-light); border-radius:6px; background:var(--bg); color:var(--text); font-size:0.85rem;">
+                  <option value="library">Library</option>
+                  <option value="options">Options</option>
+                  <option value="students">Students</option>
+                  <option value="settings">Settings</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
+
+          <div style="margin-bottom:20px;">
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">STUDENT UPDATES</label>
+            <div style="font-size:0.75rem; color:var(--dim); margin-top:4px;">When muted, timer changes only appear in the preview — not on student screens.</div>
+            <div class="settings-indent">
+              <div class="checkbox-row">
+                <input type="checkbox" id="muteStudents" class="custom-cb">
+                <label for="muteStudents" style="font-size:0.85rem; color:var(--text-muted);">Mute</label>
+              </div>
+            </div>
+          </div>
+
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
+
+          <div>
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">LIBRARY BACKUP</label>
+            <div class="settings-indent" style="display:flex; gap:8px;">
               <button class="settings-btn" onclick="exportLibrary()">Export</button>
               <label class="settings-btn" style="cursor:pointer;">
                 Import
@@ -1731,8 +1746,8 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
-            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">Display URLs</label>
-            <div style="display:flex; align-items:center; gap:8px; margin:10px 0;">
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">DISPLAY URLS</label>
+            <div class="settings-indent" style="display:flex; align-items:center; gap:8px;">
               <button class="obs-copy-btn" onclick="copyDisplayUrl()">Copy</button>
               <span style="font-size:0.75rem; color:var(--dim);">Student display screen (projected or second monitor)</span>
             </div>
@@ -1741,8 +1756,9 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
-            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">OBS Browser Source URLs</label>
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">OBS BROWSER SOURCE URLS</label>
             <div style="font-size:0.7rem; color:var(--text-faint); margin:4px 0 10px;">Click Copy to copy a URL. Paste into OBS as a Browser Source.</div>
+            <div class="settings-indent">
             <table style="border-collapse:collapse; font-size:0.75rem; margin-top:6px;">
               <thead>
                 <tr>
@@ -1822,21 +1838,22 @@
               <button class="obs-copy-btn" onclick="copyQROnlyUrl()">Copy</button>
               <span style="font-size:0.75rem; color:var(--dim);">QR code overlay</span>
             </div>
+            </div><!-- /settings-indent -->
           </div>
 
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
-            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">Account</label>
-            <div style="margin-top:8px; margin-left:103px;">
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">ACCOUNT</label>
+            <div class="settings-indent">
               <button class="settings-btn" onclick="showChangePassword()">Change Password</button>
             </div>
           </div>
 
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
           <div>
-            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">About</label>
-            <div style="margin-top:8px; margin-left:103px; font-size:0.8rem; color:var(--dim);">
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">ABOUT</label>
+            <div class="settings-indent" style="font-size:0.8rem; color:var(--dim);">
               LiveTimer v1.0<br>
               &copy; 2025 Peter Avila. All rights reserved.
             </div>
@@ -1845,8 +1862,8 @@
           <!-- Admin section: only visible if isAdmin account -->
           <div id="adminSection" style="display:none;">
             <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
-            <label class="settings-label" style="font-size:0.85rem; color:#e74c3c;">Admin — Instructors</label>
-            <div style="margin-top:8px;">
+            <label class="settings-label" style="font-size:0.85rem; color:#e74c3c;">ADMIN — INSTRUCTORS</label>
+            <div class="settings-indent">
               <!-- Search + toolbar (mirrors Library tab pattern) -->
               <div class="lib-toolbar" id="adminSearchBar" style="display:none;">
                 <div class="lib-search-wrap"><svg class="lib-search-icon" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="7.5"/><line x1="21" y1="21" x2="16" y2="16"/></svg><input type="text" class="lib-search" id="adminSearch" placeholder="Search instructors..." oninput="filterAdminGrid()" style="padding-left:25px;"><button class="lib-search-close" onclick="toggleAdminSearch()" title="Close search"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
@@ -1878,19 +1895,21 @@
             </div>
 
             <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
-            <label class="settings-label" style="font-size:0.85rem; color:#e74c3c;">Admin — Default Sounds</label>
+            <label class="settings-label" style="font-size:0.85rem; color:#e74c3c;">ADMIN — DEFAULT SOUNDS</label>
             <div style="font-size:0.75rem; color:var(--dim); margin-top:4px; margin-bottom:8px;">These sounds are copied to every new instructor account on creation.</div>
-            <div id="defaultSoundsList" style="margin-bottom:8px;"></div>
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-              <label class="settings-btn" style="cursor:pointer;">
-                + Add Default Sound (.mp3)
-                <input type="file" id="defaultSoundUpload" accept=".mp3,audio/mpeg" style="display:none;" onchange="addDefaultSound(this)">
-              </label>
+            <div class="settings-indent">
+              <div id="defaultSoundsList" style="margin-bottom:8px;"></div>
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <label class="settings-btn" style="cursor:pointer;">
+                  + Add Default Sound (.mp3)
+                  <input type="file" id="defaultSoundUpload" accept=".mp3,audio/mpeg" style="display:none;" onchange="addDefaultSound(this)">
+                </label>
+              </div>
             </div>
 
             <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
-            <label class="settings-label" style="font-size:0.85rem; color:#e74c3c;">Admin — Screenshot Mode</label>
-            <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+            <label class="settings-label" style="font-size:0.85rem; color:#e74c3c;">ADMIN — SCREENSHOT MODE</label>
+            <div class="settings-indent" style="display:flex; align-items:center; gap:10px;">
               <label class="switch"><input type="checkbox" id="screenshotMode" onchange="toggleScreenshotMode()"><span class="slider"></span></label>
               <span style="font-size:0.8rem; color:var(--dim);">Paused timers look like they're running (for taking screenshots)</span>
             </div>
@@ -6544,7 +6563,7 @@ function buildPalettePicker() {
 
   // Toggle button
   let html = '<button class="palette-toggle" onclick="togglePalettePicker()">';
-  html += '<span class="palette-toggle-label">Theme</span>';
+  html += '<span class="palette-toggle-label">THEME</span>';
   html += '<div class="palette-toggle-preview">';
   html += buildMiniSwatches(current.colors);
   html += '<span class="palette-toggle-name">' + current.name + '</span>';

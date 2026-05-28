@@ -187,29 +187,6 @@
   /* Message field-wrap: fixed size, no flex-grow */
   .mock-field-wrap:last-of-type { flex-shrink: 0; }
 
-  /* Font-size spinners on editable fields */
-  .font-size-spinner {
-    position: absolute; right: -22px; top: 50%; transform: translateY(-50%);
-    display: flex; flex-direction: column; align-items: center; gap: 0;
-    z-index: 5; opacity: 0; transition: opacity 0.15s;
-  }
-  .mock-field-wrap:hover .font-size-spinner { opacity: 1; }
-  .font-size-spinner.has-override { opacity: 1; }
-  .fs-arrow {
-    background: transparent; border: none; color: var(--blue);
-    font-size: 0.55rem; cursor: pointer; padding: 1px 4px; line-height: 1;
-    transition: color 0.15s; border-radius: 3px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .fs-arrow:hover { color: var(--green); }
-  .fs-auto-btn {
-    background: none; border: none; font-size: 0.45rem; cursor: pointer;
-    color: var(--dim); text-transform: uppercase; letter-spacing: 0.3px;
-    padding: 0 2px; line-height: 1; transition: color 0.15s; white-space: nowrap;
-  }
-  .fs-auto-btn:hover { color: var(--green); }
-  .fs-auto-btn.is-override { color: var(--blue); font-weight: 700; }
-
   /* Non-editable elements — scaled to 64% of phone (250/390) */
   .mock-ring { width: 85px; height: 85px; margin: 1px 0; flex-shrink: 0; }
   .mock-ring-bg { fill: none; stroke: var(--subtle-bg2); stroke-width: 5; }
@@ -1698,11 +1675,6 @@
         <!-- Course Title -->
         <div class="mock-field-wrap">
           <div class="mock-editable mock-course-title" contenteditable="true" data-placeholder="Course Title" id="fieldCourseTitle"></div>
-          <div class="font-size-spinner" data-field="fieldCourseTitle">
-            <button class="fs-arrow" onmousedown="fsSpinStart('fieldCourseTitle',1,event)" onmouseup="fsSpinStop()" onmouseleave="fsSpinStop()" title="Increase font size">&#9650;</button>
-            <button class="fs-auto-btn" onclick="fsResetAuto('fieldCourseTitle')" title="Reset to auto-size">Auto</button>
-            <button class="fs-arrow" onmousedown="fsSpinStart('fieldCourseTitle',-1,event)" onmouseup="fsSpinStop()" onmouseleave="fsSpinStop()" title="Decrease font size">&#9660;</button>
-          </div>
           <div class="mock-ctx" id="mockCtxCourseTitle">
             <button class="mock-ctx-btn mock-ctx-go" onclick="pushFieldAndStart('fieldCourseTitle')" title="Push this field and start">&#9654;&#xFE0E;</button>
             <button class="mock-ctx-btn mock-ctx-push" id="btnPushCourseTitle" onclick="pushCourseTitle()" title="Push this field to students">Push</button>
@@ -1722,11 +1694,6 @@
         <!-- Label / Title -->
         <div class="mock-field-wrap">
           <div class="mock-editable mock-label" contenteditable="true" data-placeholder="Timer Label" id="fieldLabel"></div>
-          <div class="font-size-spinner" data-field="fieldLabel">
-            <button class="fs-arrow" onmousedown="fsSpinStart('fieldLabel',1,event)" onmouseup="fsSpinStop()" onmouseleave="fsSpinStop()" title="Increase font size">&#9650;</button>
-            <button class="fs-auto-btn" onclick="fsResetAuto('fieldLabel')" title="Reset to auto-size">Auto</button>
-            <button class="fs-arrow" onmousedown="fsSpinStart('fieldLabel',-1,event)" onmouseup="fsSpinStop()" onmouseleave="fsSpinStop()" title="Decrease font size">&#9660;</button>
-          </div>
           <div class="mock-ctx" id="mockCtxLabel">
             <button class="mock-ctx-btn mock-ctx-go" onclick="pushFieldAndStart('fieldLabel')" title="Push this field and start">&#9654;&#xFE0E;</button>
             <button class="mock-ctx-btn mock-ctx-push" onclick="loadTitle()" title="Push this field to students">Push</button>
@@ -1760,11 +1727,6 @@
             <div class="mock-editable mock-end-time-label" contenteditable="true" data-placeholder="End Time Label" id="fieldEndTimeLabel">Class resumes at</div>
             <div class="mock-end-time-computed" id="mockEndTimeComputed"></div>
           </div>
-          <div class="font-size-spinner" data-field="fieldEndTimeLabel">
-            <button class="fs-arrow" onmousedown="fsSpinStart('fieldEndTimeLabel',1,event)" onmouseup="fsSpinStop()" onmouseleave="fsSpinStop()" title="Increase font size">&#9650;</button>
-            <button class="fs-auto-btn" onclick="fsResetAuto('fieldEndTimeLabel')" title="Reset to auto-size">Auto</button>
-            <button class="fs-arrow" onmousedown="fsSpinStart('fieldEndTimeLabel',-1,event)" onmouseup="fsSpinStop()" onmouseleave="fsSpinStop()" title="Decrease font size">&#9660;</button>
-          </div>
           <div class="mock-ctx" id="mockCtxEndTimeLabel">
             <button class="mock-ctx-btn mock-ctx-go" onclick="pushFieldAndStart('fieldEndTimeLabel')" title="Push this field and start">&#9654;&#xFE0E;</button>
             <button class="mock-ctx-btn mock-ctx-push" onclick="loadEndTimeLabel()" title="Push this field to students">Push</button>
@@ -1778,11 +1740,6 @@
         <!-- Message -->
         <div class="mock-field-wrap">
           <div class="mock-editable mock-message" contenteditable="true" data-placeholder="Message to students" id="fieldMessage"></div>
-          <div class="font-size-spinner" data-field="fieldMessage">
-            <button class="fs-arrow" onmousedown="fsSpinStart('fieldMessage',1,event)" onmouseup="fsSpinStop()" onmouseleave="fsSpinStop()" title="Increase font size">&#9650;</button>
-            <button class="fs-auto-btn" onclick="fsResetAuto('fieldMessage')" title="Reset to auto-size">Auto</button>
-            <button class="fs-arrow" onmousedown="fsSpinStart('fieldMessage',-1,event)" onmouseup="fsSpinStop()" onmouseleave="fsSpinStop()" title="Decrease font size">&#9660;</button>
-          </div>
           <div class="mock-ctx" id="mockCtxMessage">
             <button class="mock-ctx-btn mock-ctx-go" onclick="pushFieldAndStart('fieldMessage')" title="Push this field and start">&#9654;&#xFE0E;</button>
             <button class="mock-ctx-btn mock-ctx-push" onclick="loadMessage()" title="Push this field to students">Push</button>
@@ -3799,8 +3756,6 @@ const autoSizeConfig = {
 function autoSizeField(el) {
   const config = autoSizeConfig[el.id];
   if (!config) return;
-  // Skip if user has a manual font-size override active
-  if (fontSizeOverrides[el.id]) return;
   // Start from current inline size, or max if none set
   let size = parseFloat(el.style.fontSize) || config.max;
   size = Math.min(config.max, Math.max(config.min, size));
@@ -3838,88 +3793,6 @@ document.addEventListener('input', (e) => {
   if (e.target.closest('.mock-editable')) autoSizeAllFields();
 });
 
-// ── Font-size manual override spinners ──
-// Per-field config: min/max in rem, step for each spinner click
-const fontSizeSpinConfig = {
-  fieldCourseTitle:  { min: 0.5, max: 2.0, step: 0.05 },
-  fieldLabel:        { min: 0.5, max: 2.0, step: 0.05 },
-  fieldEndTimeLabel: { min: 0.4, max: 1.4, step: 0.05 },
-  fieldMessage:      { min: 0.5, max: 2.0, step: 0.05 },
-};
-// Track which fields have a manual override (truthy = overridden)
-var fontSizeOverrides = {};
-var _fsSpinTimer = null;
-var _fsSpinInterval = null;
-
-function fsGetCurrentSize(fieldId) {
-  const el = document.getElementById(fieldId);
-  if (!el) return 1.0;
-  return parseFloat(el.style.fontSize) || parseFloat(getComputedStyle(el).fontSize) / 16 || 1.0;
-}
-
-function fsApplySize(fieldId, dir) {
-  const cfg = fontSizeSpinConfig[fieldId];
-  if (!cfg) return;
-  let size = fsGetCurrentSize(fieldId);
-  size = +(size + dir * cfg.step).toFixed(3);
-  size = Math.min(cfg.max, Math.max(cfg.min, size));
-  const el = document.getElementById(fieldId);
-  if (el) el.style.fontSize = size + 'rem';
-  // Mark as overridden
-  fontSizeOverrides[fieldId] = true;
-  fsUpdateUI(fieldId);
-}
-
-function fsSpinStart(fieldId, dir, e) {
-  if (e) e.preventDefault();
-  fsSpinStop();
-  fsApplySize(fieldId, dir);
-  _fsSpinTimer = setTimeout(() => {
-    _fsSpinInterval = setInterval(() => fsApplySize(fieldId, dir), 80);
-  }, 400);
-}
-
-function fsSpinStop() {
-  if (_fsSpinTimer) { clearTimeout(_fsSpinTimer); _fsSpinTimer = null; }
-  if (_fsSpinInterval) { clearInterval(_fsSpinInterval); _fsSpinInterval = null; }
-}
-
-function fsResetAuto(fieldId) {
-  delete fontSizeOverrides[fieldId];
-  fsUpdateUI(fieldId);
-  // For fields with auto-sizing, re-run it; for others, clear the inline override
-  if (autoSizeConfig[fieldId]) {
-    autoSizeAllFields();
-  } else {
-    const el = document.getElementById(fieldId);
-    if (el) el.style.fontSize = '';
-  }
-}
-
-function fsResetAll() {
-  fontSizeOverrides = {};
-  document.querySelectorAll('.font-size-spinner').forEach(sp => {
-    sp.classList.remove('has-override');
-    const btn = sp.querySelector('.fs-auto-btn');
-    if (btn) btn.classList.remove('is-override');
-    // Clear inline fontSize for fields not in autoSizeConfig (they won't be reset by autoSizeAllFields)
-    const fid = sp.dataset.field;
-    if (fid && !autoSizeConfig[fid]) {
-      const el = document.getElementById(fid);
-      if (el) el.style.fontSize = '';
-    }
-  });
-  autoSizeAllFields();
-}
-
-function fsUpdateUI(fieldId) {
-  const spinner = document.querySelector('.font-size-spinner[data-field="' + fieldId + '"]');
-  if (!spinner) return;
-  const isOverride = !!fontSizeOverrides[fieldId];
-  spinner.classList.toggle('has-override', isOverride);
-  const btn = spinner.querySelector('.fs-auto-btn');
-  if (btn) btn.classList.toggle('is-override', isOverride);
-}
 
 // ── Escape key: revert field to value when editing began ──
 const fieldSnapshot = {};
@@ -4028,7 +3901,6 @@ function pushAllFields() {
 // ── Pull — load student-visible values back into mockup ──
 function pullField(fieldId) {
   setField(fieldId, liveText[fieldId] || '');
-  fsResetAuto(fieldId);
   markDirtyFields();
   autoSizeAllFields();
   document.getElementById(fieldId).focus();
@@ -5165,7 +5037,6 @@ function pushCourseTitle() {
 }
 function clearCourseTitle() {
   setField('fieldCourseTitle', '');
-  fsResetAuto('fieldCourseTitle');
   markDirtyFields();
   document.getElementById('fieldCourseTitle').focus();
 }
@@ -5183,7 +5054,6 @@ async function loadTitle() {
 
 function clearTitle() {
   setField('fieldLabel', '');
-  fsResetAuto('fieldLabel');
   markDirtyFields();
   document.getElementById('fieldLabel').focus();
 }
@@ -5211,7 +5081,6 @@ async function loadMessage() {
 
 function clearMessage() {
   setField('fieldMessage', '');
-  fsResetAuto('fieldMessage');
   markDirtyFields();
   document.getElementById('fieldMessage').focus();
 }
@@ -5226,7 +5095,6 @@ function loadEndTimeLabel() {
 
 function clearEndTimeLabel() {
   setField('fieldEndTimeLabel', '');
-  fsResetAuto('fieldEndTimeLabel');
   checkDirty();
   markDirtyFields();
   document.getElementById('fieldEndTimeLabel').focus();
@@ -6158,7 +6026,6 @@ function loadLibTimer(id) {
   updateMockDigitsFromSpinners();
   markDirtyFields();
   updateButtonStates();
-  fsResetAll(); // Clear manual font overrides — auto-size will handle the new content
   autoSizeAllFields();
 
   // Hide contextual buttons that may have appeared during field loading

@@ -3728,9 +3728,9 @@ function switchTab(name) {
 
 // ── Contenteditable field helpers ──
 // Read text from a contenteditable div (equivalent to input.value)
-function getField(id) { return (document.getElementById(id).innerText || '').trim(); }
+function getField(id) { return (document.getElementById(id).textContent || '').trim(); }
 // Write text to a contenteditable div (equivalent to input.value = ...)
-function setField(id, val) { document.getElementById(id).innerText = val; }
+function setField(id, val) { document.getElementById(id).textContent = val; }
 
 // ── Dirty-field tracking (changed but not pushed) ──
 // Stores the field text (in field format) that students currently see

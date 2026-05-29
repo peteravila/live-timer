@@ -4572,9 +4572,10 @@ function updateMockupLive(s) {
   const ringFg = document.getElementById('mockRingFg');
   const endTimeEl = document.getElementById('mockEndTimeComputed');
 
-  // Update digits
-  document.getElementById('mockDigitsText').textContent = fmt(s.remainingSeconds);
-  digits.classList.toggle('has-hours', Math.abs(s.remainingSeconds) >= 3600);
+  // Update digits — show 00:00 when timer was reset (stopped back to full duration)
+  const wasReset = !s.running && s.remainingSeconds === s.totalSeconds && s.totalSeconds > 0;
+  document.getElementById('mockDigitsText').textContent = wasReset ? fmtHM(0) : fmt(s.remainingSeconds);
+  digits.classList.toggle('has-hours', !wasReset && Math.abs(s.remainingSeconds) >= 3600);
 
   // Update ring
   const refTotal = s.originalTotal || s.totalSeconds;

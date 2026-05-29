@@ -276,6 +276,14 @@
   .code-gate .name-input:focus { outline: none; border-color: var(--blue); }
   .code-gate .name-label { font-size: 0.85rem; color: #666; }
 
+  /* Narrow viewports (phonesim iframe) — compact check-in footer */
+  @media (max-width: 280px) {
+    .checkin-footer { padding: 4px 4px; padding-bottom: calc(4px + env(safe-area-inset-bottom, 0)); gap: 2px; }
+    .checkin-buttons { gap: 4px; }
+    .checkin-btn { padding: 5px 2px; font-size: 0.6rem; border-radius: 6px; border-width: 1.5px; max-width: 60px; }
+    .checkin-footer-name { font-size: 0.6rem; padding: 1px 4px; }
+  }
+
   /* Large screens: always show timer, hide code gate, hide check-in footer */
   @media (min-width: 800px) {
     .code-gate { display: none !important; }

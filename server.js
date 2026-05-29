@@ -1116,6 +1116,23 @@ app.get('/qr', async (req, res) => {
   }
 });
 
+// QR code for instructor's own phone (includes instructor=true + API key)
+app.get('/qr-instructor', requireAuth, async (req, res) => {
+  const instructorId = req.instructorId;
+  const s = getSession(instructorId);
+  const instructor = await db.collection('instructors').findOne({ _id: new ObjectId(instructorId) });
+  if (!instructor || !instructor.apiKey) return res.status(400).json({ error: 'No API key available' });
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const url = `${protocol}://${host}/?code=${s.classCode}&instructor=true&key=${encodeURIComponent(instructor.apiKey)}`;
+  try {
+    const dataUrl = await QRCode.toDataURL(url, { width: 300, margin: 2 });
+    res.json({ qr: dataUrl });
+  } catch (err) {
+    res.status(500).json({ error: 'Could not generate QR code' });
+  }
+});
+
 // QR-only page — needs a code parameter to know which instructor
 app.get('/qr-only', (req, res) => {
   res.send(`<!DOCTYPE html>

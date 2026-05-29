@@ -1878,10 +1878,20 @@
 
     <!-- Tab: Students (check-in status board) -->
     <div class="tab-content" id="tab-students">
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-        <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--dim);">Phones Connected</span>
-        <span id="connectedCount" style="font-size:1.1rem; font-weight:700; color:var(--green);">0</span>
-        <span id="instructorPhoneIndicator" style="display:none; font-size:0.7rem; color:var(--dim); border:1px solid var(--border-light); border-radius:10px; padding:1px 8px;">+ you</span>
+      <div style="display:flex; align-items:flex-start; gap:16px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border);">
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--dim);">Class Code</span>
+            <span id="classCodeDisplay" style="font-size:1.4rem; font-weight:800; letter-spacing:4px; color:var(--green); font-family:monospace;"></span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--dim);">Phones Connected</span>
+            <span id="connectedCount" style="font-size:1.1rem; font-weight:700; color:var(--green);">0</span>
+            <span id="instructorPhoneIndicator" style="display:none; font-size:0.7rem; color:var(--dim); border:1px solid var(--border-light); border-radius:10px; padding:1px 8px;">+ you</span>
+          </div>
+          <button class="settings-btn" onclick="generateNewCode()" style="font-size:0.7rem;">Disconnect All Phones</button>
+        </div>
+        <div id="qrContainer" style="flex-shrink:0;">Loading QR code...</div>
       </div>
       <div class="students-toolbar">
         <div class="checkin-toggle-wrap">
@@ -1917,23 +1927,6 @@
 
           <!-- Palette Picker -->
           <div class="palette-section" id="paletteSection"></div>
-
-          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
-
-          <div style="margin-bottom:20px;">
-            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">CLASS CODE</label>
-            <div class="settings-indent" style="display:flex; align-items:flex-start; gap:16px;">
-              <div style="flex:1; min-width:0;">
-                <button class="settings-btn" onclick="generateNewCode()">Disconnect All Phones</button>
-                <div style="font-size:0.75rem; color:var(--dim); margin-top:4px;">Generates a new code and disconnects all current students.</div>
-                <div style="margin-top:8px;">
-                  <span style="font-size:0.8rem; color:var(--dim);">Current code:</span>
-                  <span id="classCodeDisplay" style="font-size:1.4rem; font-weight:800; letter-spacing:4px; color:var(--green); font-family:monospace; margin-left:6px;"></span>
-                </div>
-              </div>
-              <div id="qrContainer" style="flex-shrink:0;">Loading QR code...</div>
-            </div>
-          </div>
 
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
@@ -2036,11 +2029,16 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
-            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">INSTRUCTOR PHONE</label>
-            <div style="font-size:0.7rem; color:var(--text-faint); margin:4px 0 8px;">Connect your own phone to the timer without being counted as a student.</div>
-            <div class="settings-indent" style="display:flex; align-items:center; gap:8px;">
-              <button class="obs-copy-btn" onclick="copyInstructorPhoneUrl()">Copy</button>
-              <span id="instructorPhoneStatus" style="font-size:0.75rem; color:var(--dim);">Not connected</span>
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">INSTRUCTOR CLASS CODE</label>
+            <div style="font-size:0.7rem; color:var(--text-faint); margin:4px 0 8px;">Scan this QR code from your phone to connect without being counted as a student.</div>
+            <div class="settings-indent" style="display:flex; align-items:flex-start; gap:16px;">
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                  <span id="instructorPhoneStatus" style="font-size:0.8rem; color:var(--dim);">Not connected</span>
+                </div>
+                <button class="obs-copy-btn" onclick="copyInstructorPhoneUrl()">Copy URL</button>
+              </div>
+              <div id="instructorQrContainer" style="flex-shrink:0;"></div>
             </div>
           </div>
 
@@ -4640,8 +4638,9 @@ socket.on('last-timer', (data) => {
 
 socket.on('class-code', (code) => {
   document.getElementById('classCodeDisplay').textContent = code;
-  // Refresh QR code since it includes the class code
+  // Refresh QR codes since they include the class code
   loadQRCode();
+  loadInstructorQR();
 });
 
 socket.on('mute-state', (isMuted) => {
@@ -6515,6 +6514,15 @@ function loadQRCode() {
 }
 loadQRCode();
 
+function loadInstructorQR() {
+  authFetch('/qr-instructor').then(r => r.json()).then(data => {
+    document.getElementById('instructorQrContainer').innerHTML = `<img src="${data.qr}" alt="Instructor QR" width="120" style="border-radius:8px; background:#fff; padding:4px;">`;
+  }).catch(() => {
+    document.getElementById('instructorQrContainer').textContent = 'QR unavailable';
+  });
+}
+loadInstructorQR();
+
 // ── Audio: distinct synthesized sounds ──
 // ── Alarm / warning playback ──
 let alarmLoopTimer = null;
@@ -8012,7 +8020,7 @@ function copyInstructorPhoneUrl() {
     const btn = document.querySelector('button[onclick="copyInstructorPhoneUrl()"]');
     if (btn) {
       btn.textContent = 'Copied!';
-      setTimeout(() => btn.textContent = 'Copy', 1500);
+      setTimeout(() => btn.textContent = 'Copy URL', 1500);
     }
   });
 }

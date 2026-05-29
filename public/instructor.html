@@ -134,6 +134,28 @@
   .phone-mockup.live-mode .mock-ring,
   .phone-mockup.live-mode .mock-digits-wrap,
   .phone-mockup.live-mode .mock-checkin-footer { visibility: hidden; }
+  .phone-mockup.live-mode { border-color: #d4a017; box-shadow: 0 0 12px rgba(212, 160, 23, 0.35); }
+  .phone-mockup.live-mode .live-badge { display: flex; }
+
+  /* LIVE badge */
+  .live-badge {
+    display: none;
+    position: absolute; top: 6px; right: 8px; z-index: 10;
+    align-items: center; gap: 4px;
+    background: rgba(212, 160, 23, 0.85); color: #1a1a2e;
+    font-size: 0.55rem; font-weight: 800; letter-spacing: 1px;
+    padding: 2px 7px 2px 5px; border-radius: 8px;
+    text-transform: uppercase; font-family: inherit;
+  }
+  .live-badge-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #e03030;
+    animation: live-pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
 
   /* Phone mockup frame */
   .phone-mockup {
@@ -1705,6 +1727,7 @@
       <!-- Phone mockup -->
       <div class="phone-mockup" id="phoneMockup">
         <iframe id="livePreviewFrame" class="mockup-live-frame" src="about:blank"></iframe>
+        <div class="live-badge"><span class="live-badge-dot"></span>LIVE</div>
         <div class="phone-mockup-notch"></div>
 
         <!-- Course Title -->
@@ -1962,14 +1985,10 @@
     <div class="settings-body">
 
           <div>
-            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">INSTRUCTOR CLASS CODE</label>
-            <div style="font-size:0.7rem; color:var(--text-faint); margin:4px 0 8px;">Scan this QR code from your phone to connect without being counted as a student.</div>
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">INSTRUCTOR PHONE</label>
+            <div style="font-size:0.7rem; color:var(--text-faint); margin:4px 0 8px;">Scan the QR code or copy the URL to connect your phone without being counted as a student.</div>
             <div class="settings-indent" style="display:flex; align-items:flex-start; gap:16px;">
               <div style="flex:1; min-width:0;">
-                <div style="margin-bottom:8px;">
-                  <span style="font-size:0.75rem; color:var(--dim);">Code:</span>
-                  <span id="instructorClassCode" style="font-size:1.2rem; font-weight:800; letter-spacing:3px; color:var(--green); font-family:monospace; margin-left:4px;"></span>
-                </div>
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
                   <span id="instructorPhoneStatus" style="font-size:0.8rem; color:var(--dim);">Not connected</span>
                 </div>
@@ -3106,9 +3125,6 @@ function logout() {
   // Clear class code and QR
   document.getElementById('classCodeDisplay').textContent = '----';
   document.getElementById('qrContainer').innerHTML = '';
-  const instrCode = document.getElementById('instructorClassCode');
-  if (instrCode) instrCode.textContent = '----';
-
   // Clear student count
   const countEl = document.getElementById('connectedCount');
   if (countEl) countEl.textContent = '0';
@@ -4717,8 +4733,6 @@ socket.on('last-timer', (data) => {
 
 socket.on('class-code', (code) => {
   document.getElementById('classCodeDisplay').textContent = code;
-  const instrCode = document.getElementById('instructorClassCode');
-  if (instrCode) instrCode.textContent = code;
   // Refresh QR codes and live preview since they include the class code
   loadQRCode();
   loadInstructorQR();

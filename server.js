@@ -1089,8 +1089,9 @@ app.get('/qr', async (req, res, next) => {
   if (key) {
     const instructor = await findByApiKey(key);
     if (instructor) {
-      req.instructor = { id: instructor._id || instructor.email, email: instructor.email };
-      req.instructorId = instructor._id || instructor.email;
+      const iid = instructor._id.toString();
+      req.instructor = { id: iid, email: instructor.email };
+      req.instructorId = iid;
       return next();
     }
   }

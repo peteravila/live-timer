@@ -698,8 +698,6 @@ function autoSizeAllFields() {
 window.addEventListener('resize', autoSizeAllFields);
 
 socket.on('timer-update', (s) => {
-  // DEBUG: log text fields arriving from server (logs to parent window console)
-  if (isPhoneSim) try { window.parent.console.log('[phonesim] timer-update:', JSON.stringify({ courseTitle: s.courseTitle, label: s.label, message: s.message, running: s.running })); } catch(e) {}
   // Hide sequence interstitial if showing
   const seqOverlay = document.getElementById('seqNextOverlay');
   if (seqOverlay.classList.contains('visible') && s.running) seqOverlay.classList.remove('visible');

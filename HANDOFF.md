@@ -87,133 +87,115 @@ TimerApp/
 
 ### Server (server.js)
 
-The server manages a single global timer state object:
+The server manages per-instructor sessions. Each session contains a timer state object, library, sequences, alarm sets, class code, and student tracking. Sessions are keyed by instructor ID and created on first login.
 
-```javascript
-let timerState = {
-  courseTitle: '',        // Session-level, persists across stop/reset
-  label: '',             // Timer title shown to students
-  message: '',           // Custom message shown to students
-  totalSeconds: 0,       // Current total for display
-  originalTotal: 0,      // Original duration for ring/color thresholds
-  remainingSeconds: 0,   // Current seconds remaining
-  running: false,        // Is countdown active?
-  endTime: null,         // Epoch ms when timer will hit 0
-  showEndTime: true,     // Whether to display end time
-  endTimeFormatted: '',  // Human-readable end time
-  endTimeLabel: 'Class resumes at', // Customizable label for end time
-};
-```
+**Timer state fields:** courseTitle, label, message, totalSeconds, originalTotal, remainingSeconds, running, endTime (epoch ms), showEndTime, endTimeFormatted, endTimeLabel. The `courseTitle` persists across stop/reset — it's a session-level field.
 
 **Timer accuracy:** The server calculates `endTime` as an absolute timestamp when the timer starts. The tick interval (250ms) computes remaining time as `endTime - Date.now()`, avoiding drift from interval inaccuracy.
 
-**Restore feature:** When a timer starts, the server snapshots it as `lastTimer`. If stopped or page refreshes, the instructor can restore — the server recalculates remaining time from the original `endTime`.
+**Persistence:** Timer state saves to MongoDB on every user-initiated state change (start, pause, stop, load, text edits) but not on every tick — the saved `endTime` is sufficient for recovery. On server restart, if a running timer's `endTime` is still in the future, the server resumes ticking automatically.
 
-**Class code persistence:** The class code persists to MongoDB (collection `settings`, doc `_id: 'classCode'`) and `class-code.json` as fallback. On startup, the server loads the existing code or generates a new one. "Disconnect All Students" generates a new code, saves it, and force-disconnects all student sockets.
+**Socket rooms:** Each instructor gets `instructor:{id}` (instructor panel + preview connections) and `students:{id}` (student connections) rooms. The `broadcast()` function sends to both rooms (or just the instructor room when muted).
 
 **Socket.io events (client → server):**
-- `set-timer` — Load a timer with {minutes, label, message, showEndTime, endTimeLabel}
-- `start` — Begin countdown
-- `pause` — Pause countdown
-- `stop` — Stop and reset timer
-- `reset` — Reset to original duration
-- `add-time` — Add minutes to running timer {minutes}
-- `restore` — Restore last timer from snapshot
-- `update-message` — Live-update student message {message}
-- `update-label` — Live-update timer label {label}
-- `update-course-title` — Update course title {courseTitle}
-- `update-end-time-label` — Update end time label {endTimeLabel}
-- `validate-code` — Student submits class code for validation
-- `disconnect-all` — Instructor generates new code, disconnects students
-- `set-transparent` / `set-clock-only` — Toggle display modes
-- `toggle-mute` — Toggle mute
+- Timer: `set-timer`, `start`, `pause`, `stop`, `reset`, `add-time`, `restore`
+- Text: `update-message`, `update-label`, `update-course-title`, `update-end-time-label`
+- Code: `validate-code`, `disconnect-all`
+- Display: `set-transparent`, `set-clock-only`, `toggle-mute`
+- Sequences: `start-sequence`, `skip-sequence-step`, `stop-sequence`, `get-sequence-state`
+- Check-in: `set-checkin-enabled`, `student-checkin`, `student-identify`, `reset-student-states`
 
 **Socket.io events (server → client):**
-- `timer-update` — Broadcasts full timerState to all clients (4x/second while running)
-- `timer-done` — Fired when countdown reaches zero
-- `client-count` — Number of connected clients
-- `last-timer` — Sends restore snapshot to instructor
-- `class-code` — Sends current code to instructor
-- `code-accepted` / `code-rejected` — Response to student validation
-- `code-expired` — Sent to students when code changes (disconnect-all)
+- `timer-update` — Broadcasts full timerState (4x/second while running)
+- `timer-done` — When countdown reaches zero
+- `client-count` — Connected phone count (excludes instructor phone)
+- `last-timer` — Restore snapshot to instructor
+- `class-code` — Current code to instructor
+- `code-accepted` / `code-rejected` / `code-expired` — Code validation
+- `sequence-state` / `sequence-next-preview` — Sequence playback state
+- `checkin-enabled` — Check-in toggle state
+- `student-list` — Real-time student status board
+- `instructor-phone` — Whether instructor's phone is connected
 
-### Timer Library (REST API)
+### REST API
 
-Saved timer presets persist to MongoDB (collection `library`) with JSON file fallback. Each timer has:
+**Auth:**
+- `POST /api/auth/login` — Returns JWT
+- `POST /api/auth/signup` — First user becomes admin
+- `POST /api/auth/change-password` — Change own password
 
-```javascript
-{
-  id: '1',
-  name: 'Lunch Break',
-  minutes: 60,
-  label: 'Lunch Break',
-  message: 'Enjoy your lunch!',
-  showEndTime: true,
-  goToTab: 'library'  // which tab to switch to after loading
-}
-```
+**Admin (requireAdmin middleware):**
+- `GET /api/admin/instructors` — List all instructors
+- `POST /api/admin/add-instructor`, `update-instructor`, `delete-instructor`, `reset-password`, `toggle-admin`
 
-**Endpoints:**
-- `GET /api/library` — List all timers
-- `POST /api/library` — Create or update a timer (upsert by id)
-- `DELETE /api/library/:id` — Delete a timer
-- `PUT /api/library/reorder` — Reorder timers by array of IDs
+**Library:**
+- `GET /api/library` — List timers
+- `POST /api/library` — Upsert timer
+- `DELETE /api/library/:id` — Delete timer
+- `PUT /api/library/reorder` — Reorder by ID array
+- `POST /api/library/batch-delete` — Batch delete
 
-### QR Code
+**Sequences:** `GET /api/sequences`, `POST /api/sequences`, `DELETE /api/sequences/:id`
 
-`GET /qr` returns `{ url, qr, code }` where `qr` is a data URL PNG. The URL includes `?code=XXXX` so students who scan bypass the code entry screen.
+**Alarm sets:** `GET /api/alarm-sets`, `PUT /api/alarm-sets`
+
+**Alarm settings:** `GET /api/alarm-settings`, `POST /api/alarm-settings`
+
+**Saved orders:** `GET /api/saved-orders`, `POST /api/saved-orders`, `DELETE /api/saved-orders/:id`
+
+**QR codes:** `GET /qr` (student), `GET /qr-instructor` (instructor phone)
+
+**Pages:** `GET /qr-only` (dedicated QR display page for OBS)
+
+### MongoDB Collections (per instructor)
+
+- `instructors` — Accounts (email, password hash, name, isAdmin, apiKey)
+- `timerState` — Per-instructor timer state
+- `library` — Per-instructor timer presets
+- `sequences` — Per-instructor sequence definitions
+- `alarmSets` — Per-instructor alarm set collections
+- `alarmSettings` — Per-instructor alarm preferences (sound, visual flash)
+- `savedOrders` — Per-instructor named timer arrangements
+- `classCode` — Per-instructor class code persistence
 
 ### Instructor Page (public/instructor.html)
 
-Single self-contained HTML file (~4000+ lines). Key features:
+Single self-contained HTML file (~7000+ lines). Key features:
 
-- **Phone mockup centerpiece:** A live phone-shaped preview that mirrors the student view. Not an iframe — native HTML/CSS with contenteditable fields. Updates in real time during countdown (digits, ring, colors, state classes).
-- **Contenteditable fields:** Course title, label, end time label, and message are editable directly on the mockup. Changes push to server on blur or via Push buttons.
-- **Digit spinners on mockup:** Clock digits flanked by hour (▲▼) and minute (▲▼) spinner arrows with "hrs"/"min" labels. Blue when active, green on hover, hold-to-repeat (400ms delay, 120ms interval). Disabled (dimmed) when timer is running or paused. Clock field is fixed-width (180px). Idle display uses HH:MM format; running display uses HH:MM:SS.
-- **"..." button:** Below the right (minutes) spinner, opens the duration popup for quick-set times, target-time mode, and add-time functionality.
-- **Transport controls:** Play, Pause, Stop, Restore buttons below the mockup. Blue when enabled, green hover mask, `outline: none` to suppress focus rings.
-- **Duration popup:** Draggable overlay with hour/minute spinners, quick-set buttons, target-time mode, and Add button. Translucent frosted glass (`backdrop-filter: blur(6px)`) so the timer is visible underneath.
-- **Library toolbar:** Batch operations toolbar with New, Update (field picker dialog), Duplicate, Delete buttons, and a Reset Columns button. Uses `.enabled` class pattern (blue when active, green hover). Batch update shows a field picker dialog with current values. Batch delete checks for sequence dependencies and offers to clean up.
-- **Library grid:** Full-width grid showing all timer fields (checkbox, load, play, name, duration, title, end time label, message, show end time, background mode, clock only, after loading). Horizontal scrolling, resizable column headers with drag handles, sortable columns, localStorage persistence for column widths.
-- **Tabs:** Library (grid of presets with batch ops), Options (per-timer display settings), Settings (class code, mute, alarm, backup).
-- **Custom dialogs:** All native confirm/alert/prompt replaced with styled modal dialogs using frosted glass. `customConfirm(msg)` → Promise<boolean>, `customAlert(msg)` → Promise<void>, `customPrompt(label)` → Promise<string|null>.
-- **Authentication:** Login gate with JWT tokens. Supports signup (first user becomes admin), login, change password, admin password reset. "Hi, [name]" greeting next to logout button.
-- **Audio alarm:** Web Audio API beep pattern when timer finishes.
-- **Connected count:** Shows number of connected clients.
-- **Library backup:** Export/import via JSON files in Settings tab.
-
-**Color thresholds (hybrid):**
-- Green: > min(35%, 10 min) remaining
-- Yellow: min(35%, 10 min) – min(15%, 3 min) remaining
-- Orange: < min(15%, 3 min) remaining
-- Pulsing red: 0% (done)
+- **Phone mockup with Edit/Live tabs:** Edit mode shows native HTML/CSS mockup with contenteditable fields. Live mode shows an iframe of the actual student page (`?preview&phonesim=true&code=XXXX&key=API_KEY`) with gold border and pulsing "LIVE" badge. Important: `getField()`/`setField()` use `textContent` (not `innerText`) because `innerText` returns empty for `visibility: hidden` elements.
+- **Digit spinners:** Hour/minute spinners on the mockup with hold-to-repeat. Disabled when running. "..." button opens duration popup.
+- **Auto-size text fields:** Contenteditable fields auto-shrink/grow font size to fit the mockup space.
+- **Transport controls:** Play, Pause, Stop (resets to 00:00), Restore.
+- **Duration popup:** Draggable overlay with spinners, quick-set buttons, target-time mode, Add button.
+- **Tabs:** Timers (library grid + sequences), Alarms (alarm sets with CRUD), Students (check-in board).
+- **Settings overlay:** Instructor phone QR, mute toggle, library backup, after-starting/after-loading tab preferences, startup tab.
+- **Help overlay:** Full documentation, printable.
+- **Authentication:** JWT login gate, admin grid for managing instructors.
+- **Custom dialogs:** Frosted glass modals replacing native confirm/alert/prompt.
+- **Sequences:** Builder UI for chaining library timers. Auto-advance on timer completion.
+- **Alarm sets:** Named alarm collections. Per-alarm: time, sound, visual flash, repeat, day-of-week scheduling.
+- **Check-in board:** Real-time student status (working/done/away/idle) with summary counts and tab badge.
+- **Saved orders:** Named timer arrangements accessible from the search bar.
 
 ### Student Page (public/student.html)
 
-Single self-contained HTML file (~440 lines). Mobile-first, full-screen design.
+Single self-contained HTML file. Mobile-first design.
 
-- **Code entry gate:** Phone-sized devices must enter a 4-character class code or scan QR. Large screens (≥800px) bypass the gate as "display" viewers.
-- **Reconnection after disconnect-all:** Uses `codeExpired` flag to prevent stale QR code auto-retry. Explicitly calls `socket.connect()` when the student submits a new code after being disconnected.
-- **Progress ring:** SVG circle that depletes as time counts down
-- **Large countdown digits:** Responsive sizing
-- **Background color transitions:** Entire page background shifts through color states
-- **End time display:** Shows customizable label (e.g., "Class resumes at 1:30 PM")
-- **Phone vibration:** Uses `navigator.vibrate()` when timer finishes (mobile only)
-- **OBS mode:** `?obs=true` parameter skips code gate, respects transparent/clock-only modes. QR code display is handled by the dedicated `/qr-only` route.
+- **Code entry gate:** Phones must enter class code or scan QR. Large screens (≥800px) bypass as "display" viewers.
+- **Check-in buttons:** Working, Done, Away, Clear — shown when instructor enables check-in. `phonesim` parameter renders these in the Live preview iframe.
+- **OBS mode:** `?obs=true` skips code gate, respects transparent/clock-only modes.
+- **Color transitions:** idle → green → yellow → orange → pulsing red (done). Hybrid thresholds prevent long timers from changing too early.
+- **Phone vibration:** `navigator.vibrate()` on timer finish.
+- **`/qr-only` route:** Dedicated QR display page for OBS browser sources.
 
 ## Known Issues / Future Work
 
-See `Pending Items.md` for the detailed list. Summary:
+See `Pending.md` for the current list. Key items:
 
-1. ~~**Persist timer state to MongoDB**~~ ✓ DONE — Timer state saves to MongoDB on state changes; server auto-recovers running timers on restart.
-2. **Progress ring scaling for long timers** — Ring drains by percentage; tiny changes on multi-hour timers. Awaiting Peter's decision.
-3. **Multi-instructor support (Phase 2)** — One global timer state currently. Planned: unique rooms per instructor. Auth system is in place (Step 1 complete).
-4. **Free tier sleep** — Render spins down after ~15 min inactivity. Keep-alive ping mitigates but only while instructor tab is active.
-5. ~~**No authentication**~~ ✓ DONE — JWT-based instructor auth with signup, login, admin roles, change/reset password.
-6. **Debug code in student.html submitCode()** — Diagnostic timeout/feedback code should be cleaned up once reconnection flow is confirmed stable.
-7. **Undeployed local changes** — Many local changes (auth, library toolbar, digit spinners, timer persistence, etc.) haven't been pushed to production yet.
-8. **Library mismatch** — Local shows 5 timers but production may have more. Check MongoDB Atlas.
-9. **Email-based forgot password** — Deferred until manual admin resets become a hassle.
+- **Email-based forgot password** — Deferred until manual admin resets become a hassle.
+- **Brochure iteration** — v10 awaiting Peter's review.
+- **Instructor page shrinkage** — Viewport meta tag removed; needs confirmation.
+- **Free tier sleep** — Render spins down after ~15 min inactivity. Keep-alive ping mitigates.
 
 ## CSS Design System
 
@@ -235,9 +217,11 @@ Both pages use a consistent dark theme:
 ## How Peter Uses This in Class
 
 1. Opens instructor panel a couple minutes before needed (to wake up Render)
-2. Shares the student view in Zoom screen share (or uses OBS)
+2. Shares the student view in Zoom screen share (or uses OBS with multiple browser sources)
 3. Students scan QR code from shared screen — timer is now on their phone
 4. Picks a timer from the library, optionally tweaks fields on the mockup, clicks play
-5. Students see countdown on the Zoom share AND on their phones
-6. When students walk away (break, lunch), the timer is in their pocket
-7. Color transitions give at-a-glance status; no one needs to ask "how much time is left?"
+5. Can run sequences for hands-free multi-timer sessions (lecture → break → lab)
+6. Enables check-in so students can report their status (working/done/away)
+7. Students see countdown on the Zoom share AND on their phones
+8. When students walk away (break, lunch), the timer is in their pocket
+9. Color transitions give at-a-glance status; no one needs to ask "how much time is left?"

@@ -483,6 +483,7 @@ if (isPreview) {
   document.getElementById('timerContent').classList.add('visible');
   document.documentElement.style.overflow = 'hidden';
   document.body.style.overflow = 'hidden';
+  if (isPhoneSim) studentValidated = true; // phonesim: allow checkin-enabled to show footer
 } else if (isOBS) {
   // OBS browser source — skip code gate, show timer
   document.getElementById('codeGate').style.display = 'none';

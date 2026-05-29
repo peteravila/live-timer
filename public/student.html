@@ -355,8 +355,9 @@ const urlTransparent = params.get('transparent') === 'true';
 const urlBlack = params.get('black') === 'true';
 const urlClockOnly = params.get('clockonly') === 'true';
 
+const isPhoneSim = params.has('phonesim');
 const isLargeScreen = window.innerWidth >= 800;
-const isDisplayViewer = isPreview || isOBS || isLargeScreen;
+const isDisplayViewer = (isPreview || isOBS || isLargeScreen) && !isPhoneSim;
 
 // ── Persistent student identity ──
 function getStudentId() {

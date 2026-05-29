@@ -3668,7 +3668,7 @@ function switchMockupView(mode) {
     if (!livePreviewLoaded && iframe) {
       const code = document.getElementById('classCodeDisplay')?.textContent || '';
       const credential = apiKey ? '&key=' + encodeURIComponent(apiKey) : '&token=' + encodeURIComponent(authToken);
-      iframe.src = '/?preview&code=' + encodeURIComponent(code) + credential;
+      iframe.src = '/?preview&phonesim=true&code=' + encodeURIComponent(code) + credential;
       livePreviewLoaded = true;
     }
   } else {
@@ -3685,7 +3685,7 @@ function reloadLivePreview() {
   if (!iframe) return;
   const code = document.getElementById('classCodeDisplay')?.textContent || '';
   const credential = apiKey ? '&key=' + encodeURIComponent(apiKey) : '&token=' + encodeURIComponent(authToken);
-  iframe.src = '/?preview&code=' + encodeURIComponent(code) + credential;
+  iframe.src = '/?preview&phonesim=true&code=' + encodeURIComponent(code) + credential;
 }
 
 function switchTab(name) {

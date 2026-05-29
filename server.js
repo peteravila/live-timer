@@ -1284,6 +1284,7 @@ io.on('connection', (socket) => {
             validated = true;
             socket.join('instructor:' + instructorId);
             socket.emit('timer-update', session.timerState);
+            socket.emit('checkin-enabled', session.checkinEnabled);
           }
         });
         return; // exit early — async path handles the rest
@@ -1318,6 +1319,7 @@ io.on('connection', (socket) => {
       if (instructorId) {
         socket.join(joinRoom);
         socket.emit('timer-update', session.timerState);
+        socket.emit('checkin-enabled', session.checkinEnabled);
       }
     }
   });

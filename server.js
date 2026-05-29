@@ -520,12 +520,21 @@ function formatEndTime(epochMs) {
 }
 
 function emitStudentCount(s) {
-  // Count unique students with an active socket connection
+  // Count unique students with an active socket connection (exclude instructor's phone)
   let count = 0;
   for (const st of s.students.values()) {
-    if (st.socketId) count++;
+    if (st.socketId && !st.isInstructor) count++;
   }
   io.to('instructor:' + s.instructorId).emit('client-count', count);
+}
+
+function emitInstructorPhoneStatus(s) {
+  // Check if any instructor-flagged student has an active socket
+  let connected = false;
+  for (const st of s.students.values()) {
+    if (st.isInstructor && st.socketId) { connected = true; break; }
+  }
+  io.to('instructor:' + s.instructorId).emit('instructor-phone', connected);
 }
 
 function broadcast(s) {
@@ -571,12 +580,14 @@ function stopTick(s) {
 
 // ── Student check-in (per-instructor) ───────────────────────
 function broadcastStudentList(s) {
-  const list = Array.from(s.students.values()).map(st => ({
-    id: st.id,
-    name: st.name,
-    state: st.state,
-    timestamp: st.timestamp,
-  }));
+  const list = Array.from(s.students.values())
+    .filter(st => !st.isInstructor)
+    .map(st => ({
+      id: st.id,
+      name: st.name,
+      state: st.state,
+      timestamp: st.timestamp,
+    }));
   io.to('instructor:' + s.instructorId).emit('student-list', list);
 }
 
@@ -1237,6 +1248,7 @@ io.on('connection', (socket) => {
       emitStudentCount(session);
       broadcastStudentList(session);
       broadcastSequenceState(session);
+      emitInstructorPhoneStatus(session);
     } else if (r === 'preview' || r === 'display' || (typeof r === 'object' && (r.role === 'preview' || r.role === 'display'))) {
       // Preview/display: try API key first, then auth token, then class code
       const identifyRole = typeof r === 'object' ? r.role : r;
@@ -1312,13 +1324,27 @@ io.on('connection', (socket) => {
   });
 
   // Student identifies with persistent UUID and optional name
-  socket.on('student-identify', ({ id, name }) => {
+  socket.on('student-identify', async ({ id, name, isInstructor }) => {
     if (role !== 'student' || !session) return;
+
+    // Verify instructor-phone claim via API key in socket auth
+    let verifiedInstructor = false;
+    if (isInstructor) {
+      const authApiKey = socket.handshake.auth && socket.handshake.auth.apiKey;
+      if (authApiKey) {
+        const inst = await findByApiKey(authApiKey);
+        if (inst && inst._id.toString() === instructorId) {
+          verifiedInstructor = true;
+        }
+      }
+    }
+
     studentPersistentId = id;
     let student = session.students.get(id);
     if (student) {
       student.socketId = socket.id;
       if (name) student.name = name;
+      student.isInstructor = verifiedInstructor;
     } else {
       session.studentCounter++;
       student = {
@@ -1327,12 +1353,14 @@ io.on('connection', (socket) => {
         state: 'idle',
         socketId: socket.id,
         timestamp: null,
+        isInstructor: verifiedInstructor,
       };
       session.students.set(id, student);
     }
     socket.emit('student-name', student.name);
     socket.emit('student-state-restore', student.state);
     broadcastStudentList(session);
+    emitInstructorPhoneStatus(session);
   });
 
   socket.on('student-status', ({ state }) => {
@@ -1356,6 +1384,7 @@ io.on('connection', (socket) => {
         }
       }
       emitStudentCount(session);
+      emitInstructorPhoneStatus(session);
     }
   });
 
@@ -1378,6 +1407,7 @@ io.on('connection', (socket) => {
     io.to('instructor:' + instructorId).emit('class-code', session.classCode);
     emitStudentCount(session);
     broadcastStudentList(session);
+    emitInstructorPhoneStatus(session);
   });
 
   socket.on('reset-student-states', () => {

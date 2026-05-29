@@ -1881,6 +1881,7 @@
       <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
         <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--dim);">Phones Connected</span>
         <span id="connectedCount" style="font-size:1.1rem; font-weight:700; color:var(--green);">0</span>
+        <span id="instructorPhoneIndicator" style="display:none; font-size:0.7rem; color:var(--dim); border:1px solid var(--border-light); border-radius:10px; padding:1px 8px;">+ you</span>
       </div>
       <div class="students-toolbar">
         <div class="checkin-toggle-wrap">
@@ -2035,6 +2036,17 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div>
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">INSTRUCTOR PHONE</label>
+            <div style="font-size:0.7rem; color:var(--text-faint); margin:4px 0 8px;">Connect your own phone to the timer without being counted as a student.</div>
+            <div class="settings-indent" style="display:flex; align-items:center; gap:8px;">
+              <button class="obs-copy-btn" onclick="copyInstructorPhoneUrl()">Copy</button>
+              <span id="instructorPhoneStatus" style="font-size:0.75rem; color:var(--dim);">Not connected</span>
+            </div>
+          </div>
+
+          <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
+
+          <div>
             <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">OBS BROWSER SOURCE URLS</label>
             <div style="font-size:0.7rem; color:var(--text-faint); margin:4px 0 10px;">Click Copy to copy a URL. Paste into OBS as a Browser Source.</div>
             <div class="settings-indent">
@@ -2111,15 +2123,17 @@
                   <td style="padding:4px 6px; color:var(--dim);">Clock only, black background</td>
                   <td style="padding:4px 1px;"><button class="obs-copy-btn" onclick="copyOBSUrl('&black=true&clockonly=true')">Copy</button></td>
                 </tr>
+                <tr>
+                  <td style="text-align:center; padding:4px 4px;"></td>
+                  <td style="text-align:center; padding:4px 4px; border-right:1px solid rgba(255,255,255,0.15);"></td>
+                  <td style="text-align:center; padding:4px 4px;"></td>
+                  <td style="text-align:center; padding:4px 4px;"></td>
+                  <td style="text-align:center; padding:4px 4px;"></td>
+                  <td style="padding:4px 6px; color:var(--dim);">QR code only</td>
+                  <td style="padding:4px 1px;"><button class="obs-copy-btn" onclick="copyQROnlyUrl()">Copy</button></td>
+                </tr>
               </tbody>
             </table>
-
-            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted); margin-top:16px; display:block;">QR CODE OVERLAY</label>
-            <div style="font-size:0.7rem; color:var(--text-faint); margin:4px 0 8px;">Shows only the QR code, class code, and connection instructions. Add as a separate OBS browser source.</div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <button class="obs-copy-btn" onclick="copyQROnlyUrl()">Copy</button>
-              <span style="font-size:0.75rem; color:var(--dim);">QR-only page URL</span>
-            </div>
             </div><!-- /settings-indent -->
           </div>
 
@@ -4635,6 +4649,18 @@ socket.on('mute-state', (isMuted) => {
 });
 socket.on('timer-done', () => { warningFired = false; playAlarm(); });
 socket.on('client-count', (n) => { document.getElementById('connectedCount').textContent = n; });
+
+socket.on('instructor-phone', (connected) => {
+  const statusEl = document.getElementById('instructorPhoneStatus');
+  const indicatorEl = document.getElementById('instructorPhoneIndicator');
+  if (statusEl) {
+    statusEl.textContent = connected ? 'Connected' : 'Not connected';
+    statusEl.style.color = connected ? 'var(--green)' : 'var(--dim)';
+  }
+  if (indicatorEl) {
+    indicatorEl.style.display = connected ? '' : 'none';
+  }
+});
 
 } // end initSocket
 
@@ -7971,6 +7997,19 @@ function copyQROnlyUrl() {
   const url = window.location.origin + '/qr-only?' + credential;
   navigator.clipboard.writeText(url).then(() => {
     const btn = document.querySelector('button[onclick="copyQROnlyUrl()"]');
+    if (btn) {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    }
+  });
+}
+
+function copyInstructorPhoneUrl() {
+  if (!apiKey) { customAlert('API key not loaded yet. Please try again.'); return; }
+  const code = document.getElementById('classCodeDisplay')?.textContent || '';
+  const url = window.location.origin + '/?code=' + encodeURIComponent(code) + '&instructor=true&key=' + encodeURIComponent(apiKey);
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.querySelector('button[onclick="copyInstructorPhoneUrl()"]');
     if (btn) {
       btn.textContent = 'Copied!';
       setTimeout(() => btn.textContent = 'Copy', 1500);

@@ -349,6 +349,7 @@ const socket = io(socketAuth);
 const CIRCUMFERENCE = 2 * Math.PI * 80; // 502.65
 const isPreview = params.has('preview');
 const isOBS = params.has('obs');
+const isInstructorPhone = params.get('instructor') === 'true' && !!urlApiKey;
 const urlCode = params.get('code');
 const urlTransparent = params.get('transparent') === 'true';
 const urlBlack = params.get('black') === 'true';
@@ -454,7 +455,7 @@ function editCheckinName() {
       myDisplayName = newName;
       setStudentName(newName);
       nameEl.textContent = newName;
-      socket.emit('student-identify', { id: studentId, name: newName });
+      socket.emit('student-identify', { id: studentId, name: newName, isInstructor: isInstructorPhone });
     }
   }
   function cancel() {
@@ -557,7 +558,7 @@ socket.on('code-accepted', () => {
   }
 
   // Identify to server with persistent UUID and optional name
-  socket.emit('student-identify', { id: studentId, name: myDisplayName || '' });
+  socket.emit('student-identify', { id: studentId, name: myDisplayName || '', isInstructor: isInstructorPhone });
 
   // Restore check-in state
   updateCheckinUI();

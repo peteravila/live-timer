@@ -1079,7 +1079,23 @@ app.get('/api/admin/default-sounds/:id/data', requireAdmin, async (req, res) => 
 });
 
 // ── QR code (auth required — scoped to instructor's class code) ──
-app.get('/qr', requireAuth, async (req, res) => {
+app.get('/qr', async (req, res, next) => {
+  // Accept Bearer token OR API key query param
+  const auth = req.headers.authorization;
+  if (auth && auth.startsWith('Bearer ')) {
+    return requireAuth(req, res, next);
+  }
+  const key = req.query.key;
+  if (key) {
+    const instructor = await findByApiKey(key);
+    if (instructor) {
+      req.instructor = { id: instructor._id || instructor.email, email: instructor.email };
+      req.instructorId = instructor._id || instructor.email;
+      return next();
+    }
+  }
+  return res.status(401).json({ error: 'Not authenticated' });
+}, async (req, res) => {
   const s = getSession(req.instructorId);
   const protocol = req.headers['x-forwarded-proto'] || req.protocol;
   const host = req.headers['x-forwarded-host'] || req.headers.host;
@@ -1167,7 +1183,8 @@ app.get('/qr-only', (req, res) => {
 
   function loadQR() {
     const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
-    fetch('/qr', { headers }).then(r => r.json()).then(data => {
+    const qrUrl = apiKey ? '/qr?key=' + encodeURIComponent(apiKey) : '/qr';
+    fetch(qrUrl, { headers }).then(r => r.json()).then(data => {
       document.getElementById('qrImg').innerHTML = '<img src="' + data.qr + '" alt="QR code">';
       document.getElementById('classCode').textContent = data.code;
       const baseUrl = data.url.replace(/\\?.*$/, '');

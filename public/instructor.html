@@ -4572,10 +4572,9 @@ function updateMockupLive(s) {
   const ringFg = document.getElementById('mockRingFg');
   const endTimeEl = document.getElementById('mockEndTimeComputed');
 
-  // Update digits — show 00:00 when timer was reset (stopped back to full duration)
-  const wasReset = !s.running && s.remainingSeconds === s.totalSeconds && s.totalSeconds > 0;
-  document.getElementById('mockDigitsText').textContent = wasReset ? fmtHM(0) : fmt(s.remainingSeconds);
-  digits.classList.toggle('has-hours', !wasReset && Math.abs(s.remainingSeconds) >= 3600);
+  // Update digits
+  document.getElementById('mockDigitsText').textContent = fmt(s.remainingSeconds);
+  digits.classList.toggle('has-hours', Math.abs(s.remainingSeconds) >= 3600);
 
   // Update ring
   const refTotal = s.originalTotal || s.totalSeconds;
@@ -5311,6 +5310,10 @@ function doStop() {
   markPushed('fieldLabel');
   markPushed('fieldEndTimeLabel');
   markPushed('fieldMessage');
+  // Reset spinners and display to 00:00
+  document.getElementById('hourSpin').value = 0;
+  document.getElementById('minSpin').value = 0;
+  document.getElementById('mockDigitsText').textContent = fmtHM(0);
   socket.emit('stop');
 }
 function doRestore() {

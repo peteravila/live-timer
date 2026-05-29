@@ -1079,25 +1079,21 @@ app.get('/api/admin/default-sounds/:id/data', requireAdmin, async (req, res) => 
 });
 
 // ── QR code (auth required — scoped to instructor's class code) ──
-app.get('/qr', async (req, res, next) => {
-  // Accept Bearer token OR API key query param
+app.get('/qr', async (req, res) => {
+  // Authenticate via Bearer token OR API key query param
+  let instructorId = null;
   const auth = req.headers.authorization;
   if (auth && auth.startsWith('Bearer ')) {
-    return requireAuth(req, res, next);
+    const payload = verifyToken(auth.slice(7));
+    if (payload) instructorId = payload.id;
   }
-  const key = req.query.key;
-  if (key) {
-    const instructor = await findByApiKey(key);
-    if (instructor) {
-      const iid = instructor._id.toString();
-      req.instructor = { id: iid, email: instructor.email };
-      req.instructorId = iid;
-      return next();
-    }
+  if (!instructorId && req.query.key) {
+    const instructor = await findByApiKey(req.query.key);
+    if (instructor) instructorId = instructor._id.toString();
   }
-  return res.status(401).json({ error: 'Not authenticated' });
-}, async (req, res) => {
-  const s = getSession(req.instructorId);
+  if (!instructorId) return res.status(401).json({ error: 'Not authenticated' });
+
+  const s = getSession(instructorId);
   const protocol = req.headers['x-forwarded-proto'] || req.protocol;
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   const studentUrl = `${protocol}://${host}/?code=${s.classCode}`;

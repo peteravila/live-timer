@@ -1089,9 +1089,14 @@ app.get('/qr', async (req, res) => {
   }
   if (!instructorId && req.query.key) {
     const instructor = await findByApiKey(req.query.key);
+    console.log('[/qr] API key lookup:', req.query.key ? 'key provided' : 'no key', '→ found:', !!instructor);
     if (instructor) instructorId = instructor._id.toString();
   }
-  if (!instructorId) return res.status(401).json({ error: 'Not authenticated' });
+  if (!instructorId) {
+    console.log('[/qr] Auth failed — no valid token or API key');
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  console.log('[/qr] Authenticated instructor:', instructorId);
 
   const s = getSession(instructorId);
   const protocol = req.headers['x-forwarded-proto'] || req.protocol;
@@ -1181,12 +1186,21 @@ app.get('/qr-only', (req, res) => {
   function loadQR() {
     const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
     const qrUrl = apiKey ? '/qr?key=' + encodeURIComponent(apiKey) : '/qr';
-    fetch(qrUrl, { headers }).then(r => r.json()).then(data => {
+    console.log('[qr-only] loadQR fetching:', qrUrl, 'hasToken:', !!token, 'hasApiKey:', !!apiKey);
+    fetch(qrUrl, { headers }).then(r => {
+      console.log('[qr-only] /qr response status:', r.status);
+      if (!r.ok) return r.text().then(t => { throw new Error('HTTP ' + r.status + ': ' + t); });
+      return r.json();
+    }).then(data => {
+      console.log('[qr-only] /qr data keys:', Object.keys(data), 'qr length:', data.qr ? data.qr.length : 0);
       document.getElementById('qrImg').innerHTML = '<img src="' + data.qr + '" alt="QR code">';
       document.getElementById('classCode').textContent = data.code;
       const baseUrl = data.url.replace(/\\?.*$/, '');
       document.getElementById('qrHint').innerHTML = "Can't scan? Go to<br><b>" + baseUrl + "</b>";
-    }).catch(() => {});
+    }).catch(err => {
+      console.error('[qr-only] loadQR error:', err);
+      document.getElementById('qrImg').innerHTML = '<div style="color:#f66;font-size:1rem;padding:1em;">QR load failed: ' + err.message + '</div>';
+    });
   }
   loadQR();
 

@@ -5311,8 +5311,7 @@ function doStop() {
   markPushed('fieldEndTimeLabel');
   markPushed('fieldMessage');
   // Reset spinners and display to 00:00
-  document.getElementById('hourSpin').value = 0;
-  document.getElementById('minSpin').value = 0;
+  setDurationFromMinutes(0);
   document.getElementById('mockDigitsText').textContent = fmtHM(0);
   socket.emit('stop');
 }

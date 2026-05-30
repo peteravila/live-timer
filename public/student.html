@@ -32,7 +32,7 @@
 
   /* Clock-only mode — hide everything except digits */
   body.mode-clock-only .course-title,
-  body.mode-clock-only .ring-flip-container,
+  body.mode-clock-only .progress-ring,
   body.mode-clock-only .label,
   body.mode-clock-only .end-time,
   body.mode-clock-only .message,
@@ -284,41 +284,14 @@
     .checkin-footer-name { font-size: 0.6rem; padding: 1px 4px; }
   }
 
-  /* ── Ring flip — class progress donut chart ── */
-  .ring-flip-container {
-    perspective: 600px;
-    width: min(180px, 25vh); height: min(180px, 25vh);
-    margin-bottom: 2px;
-  }
-  .ring-flip-inner {
-    position: relative;
-    width: 100%; height: 100%;
-    transform-style: preserve-3d;
-    transition: transform 0.6s ease;
-  }
-  .ring-flip-inner.flipped {
-    transform: rotateY(180deg);
-  }
-  .ring-flip-front,
-  .ring-flip-back {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .ring-flip-back {
-    transform: rotateY(180deg);
-  }
-  .ring-flip-container .progress-ring {
-    margin-bottom: 0;
-  }
-  .donut-chart {
-    width: 100%; height: 100%;
-  }
+  /* ── Class progress donut — in-place morph ── */
+  .progress-ring.has-progress { cursor: pointer; }
+  .progress-ring .timer-layer { transition: opacity 0.5s ease; }
+  .progress-ring .donut-layer { opacity: 0; transition: opacity 0.5s ease; pointer-events: none; }
+  .progress-ring.show-donut .timer-layer { opacity: 0; }
+  .progress-ring.show-donut .donut-layer { opacity: 1; }
   .donut-center-text {
-    font-size: 0.65rem;
+    font-size: 10px;
     fill: rgba(255,255,255,0.4);
     text-anchor: middle;
     dominant-baseline: central;
@@ -326,12 +299,10 @@
     text-transform: uppercase;
     font-weight: 600;
   }
-  /* Tap hint — subtle pulse on ring when progress is available */
-  .ring-flip-container.has-progress .ring-flip-front {
-    cursor: pointer;
-  }
-  .ring-flip-container.has-progress .ring-flip-back {
-    cursor: pointer;
+  .donut-legend-text {
+    fill: rgba(255,255,255,0.5);
+    font-size: 9px;
+    font-weight: 500;
   }
 
   /* Large screens: always show timer, hide code gate, hide check-in footer */
@@ -361,43 +332,38 @@
 <div class="timer-content" id="timerContent">
   <div class="course-title" id="courseTitle"></div>
 
-  <div class="ring-flip-container" id="ringFlipContainer">
-    <div class="ring-flip-inner" id="ringFlipInner">
-      <div class="ring-flip-front">
-        <svg class="progress-ring" width="180" height="180" viewBox="0 0 180 180">
-          <circle class="progress-bg" cx="90" cy="90" r="80"
-                  fill="none" stroke-width="7" />
-          <circle class="progress-fg" id="progressRing" cx="90" cy="90" r="80"
-                  fill="none" stroke-width="7" stroke="var(--green)"
-                  stroke-dasharray="502.65" stroke-dashoffset="0"
-                  transform="rotate(-90 90 90)" />
-        </svg>
-      </div>
-      <div class="ring-flip-back">
-        <svg class="donut-chart" viewBox="0 0 180 180" id="donutChart">
-          <circle cx="90" cy="90" r="70" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="18" />
-          <circle class="donut-seg donut-working" cx="90" cy="90" r="70"
-                  fill="none" stroke-width="18" stroke="var(--blue)"
-                  stroke-dasharray="0 439.82" transform="rotate(-90 90 90)" />
-          <circle class="donut-seg donut-done" cx="90" cy="90" r="70"
-                  fill="none" stroke-width="18" stroke="var(--green)"
-                  stroke-dasharray="0 439.82" transform="rotate(-90 90 90)" />
-          <circle class="donut-seg donut-away" cx="90" cy="90" r="70"
-                  fill="none" stroke-width="18" stroke="var(--orange)"
-                  stroke-dasharray="0 439.82" transform="rotate(-90 90 90)" />
-          <text class="donut-center-text" x="90" y="75" id="donutLabel">Class</text>
-          <text class="donut-center-text" x="90" y="90" id="donutLabel2">Progress</text>
-          <!-- Legend -->
-          <circle cx="62" cy="110" r="4" fill="var(--blue)" />
-          <text x="70" y="113" fill="rgba(255,255,255,0.5)" font-size="9" font-weight="500">Working</text>
-          <circle cx="62" cy="124" r="4" fill="var(--green)" />
-          <text x="70" y="127" fill="rgba(255,255,255,0.5)" font-size="9" font-weight="500">Done</text>
-          <circle cx="62" cy="138" r="4" fill="var(--orange)" />
-          <text x="70" y="141" fill="rgba(255,255,255,0.5)" font-size="9" font-weight="500">Away</text>
-        </svg>
-      </div>
-    </div>
-  </div>
+  <svg class="progress-ring" id="progressRingSvg" width="180" height="180" viewBox="0 0 180 180">
+    <!-- Timer layer (normal view) -->
+    <g class="timer-layer">
+      <circle class="progress-bg" cx="90" cy="90" r="80"
+              fill="none" stroke-width="7" />
+      <circle class="progress-fg" id="progressRing" cx="90" cy="90" r="80"
+              fill="none" stroke-width="7" stroke="var(--green)"
+              stroke-dasharray="502.65" stroke-dashoffset="0"
+              transform="rotate(-90 90 90)" />
+    </g>
+    <!-- Donut layer (class progress — hidden until tapped) -->
+    <g class="donut-layer">
+      <circle cx="90" cy="90" r="70" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="18" />
+      <circle class="donut-seg donut-working" cx="90" cy="90" r="70"
+              fill="none" stroke-width="18" stroke="var(--blue)"
+              stroke-dasharray="0 439.82" transform="rotate(-90 90 90)" />
+      <circle class="donut-seg donut-done" cx="90" cy="90" r="70"
+              fill="none" stroke-width="18" stroke="var(--green)"
+              stroke-dasharray="0 439.82" transform="rotate(-90 90 90)" />
+      <circle class="donut-seg donut-away" cx="90" cy="90" r="70"
+              fill="none" stroke-width="18" stroke="var(--orange)"
+              stroke-dasharray="0 439.82" transform="rotate(-90 90 90)" />
+      <text class="donut-center-text" x="90" y="75" id="donutLabel">Class</text>
+      <text class="donut-center-text" x="90" y="90" id="donutLabel2">Progress</text>
+      <circle cx="62" cy="110" r="4" fill="var(--blue)" />
+      <text class="donut-legend-text" x="70" y="113">Working</text>
+      <circle cx="62" cy="124" r="4" fill="var(--green)" />
+      <text class="donut-legend-text" x="70" y="127">Done</text>
+      <circle cx="62" cy="138" r="4" fill="var(--orange)" />
+      <text class="donut-legend-text" x="70" y="141">Away</text>
+    </g>
+  </svg>
 
   <div class="label" id="label"></div>
   <div class="digits" id="digits">00:00</div>
@@ -684,8 +650,7 @@ socket.on('code-expired', () => {
   // Reset class progress
   classProgressVisible = false;
   classProgressData = null;
-  document.getElementById('ringFlipContainer').classList.remove('has-progress');
-  document.getElementById('ringFlipInner').classList.remove('flipped');
+  document.getElementById('progressRingSvg').classList.remove('has-progress', 'show-donut');
   setTimeout(() => {
     if (!socket.connected) socket.connect();
   }, 1000);
@@ -722,20 +687,18 @@ let classProgressData = null; // { working, done, away }
 
 socket.on('class-progress-visible', (visible) => {
   classProgressVisible = !!visible;
-  const container = document.getElementById('ringFlipContainer');
+  const ring = document.getElementById('progressRingSvg');
   if (!visible) {
-    container.classList.remove('has-progress');
-    // Flip back to front if currently showing donut
-    document.getElementById('ringFlipInner').classList.remove('flipped');
+    ring.classList.remove('has-progress', 'show-donut');
   } else if (classProgressData) {
-    container.classList.add('has-progress');
+    ring.classList.add('has-progress');
   }
 });
 
 socket.on('class-progress', (data) => {
   classProgressData = data;
   if (classProgressVisible) {
-    document.getElementById('ringFlipContainer').classList.add('has-progress');
+    document.getElementById('progressRingSvg').classList.add('has-progress');
     renderDonutChart(data);
   }
 });
@@ -748,7 +711,6 @@ function renderDonutChart(data) {
   const awaySeg = document.querySelector('.donut-away');
 
   if (total === 0) {
-    // No active students — show empty ring
     workingSeg.setAttribute('stroke-dasharray', '0 ' + circ);
     doneSeg.setAttribute('stroke-dasharray', '0 ' + circ);
     awaySeg.setAttribute('stroke-dasharray', '0 ' + circ);
@@ -761,7 +723,6 @@ function renderDonutChart(data) {
   const dLen = (data.done / total) * circ;
   const aLen = (data.away / total) * circ;
 
-  // Each segment starts where the previous one ended (via rotation offset)
   const wOffset = 0;
   const dOffset = wLen;
   const aOffset = wLen + dLen;
@@ -779,11 +740,11 @@ function renderDonutChart(data) {
   document.getElementById('donutLabel2').textContent = 'Progress';
 }
 
-// Tap ring to flip (phone users only, not display viewers)
+// Tap ring to toggle donut chart (phone users only)
 if (!isDisplayViewer) {
-  document.getElementById('ringFlipContainer').addEventListener('click', () => {
+  document.getElementById('progressRingSvg').addEventListener('click', () => {
     if (!classProgressVisible || !classProgressData) return;
-    document.getElementById('ringFlipInner').classList.toggle('flipped');
+    document.getElementById('progressRingSvg').classList.toggle('show-donut');
   });
 }
 

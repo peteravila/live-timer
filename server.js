@@ -182,6 +182,7 @@ function createSession(instructorId) {
     students: new Map(),
     studentCounter: 0,
     checkinEnabled: false,
+    classProgressVisible: false,
     activeSequence: null,
     sequenceAdvanceTimeout: null,
     screenshotMode: false,
@@ -591,12 +592,24 @@ function broadcastStudentList(s) {
   io.to('instructor:' + s.instructorId).emit('student-list', list);
 }
 
+function broadcastClassProgress(s) {
+  if (!s.classProgressVisible) return;
+  const students = Array.from(s.students.values()).filter(st => !st.isInstructor && st.socketId);
+  const progress = {
+    working: students.filter(st => st.state === 'working').length,
+    done: students.filter(st => st.state === 'done').length,
+    away: students.filter(st => st.state === 'away').length,
+  };
+  io.to('students:' + s.instructorId).emit('class-progress', progress);
+}
+
 function resetAllStudentStates(s) {
   for (const st of s.students.values()) {
     st.state = 'idle';
     st.timestamp = null;
   }
   broadcastStudentList(s);
+  broadcastClassProgress(s);
 }
 
 // ── Sequence playback (per-instructor) ──────────────────────
@@ -1261,6 +1274,7 @@ io.on('connection', (socket) => {
       socket.emit('class-code', session.classCode);
       socket.emit('mute-state', session.muted);
       socket.emit('checkin-enabled', session.checkinEnabled);
+      socket.emit('class-progress-visible', session.classProgressVisible);
       socket.emit('screenshot-mode', session.screenshotMode || false);
       emitStudentCount(session);
       broadcastStudentList(session);
@@ -1285,6 +1299,7 @@ io.on('connection', (socket) => {
             socket.join('instructor:' + instructorId);
             socket.emit('timer-update', session.timerState);
             socket.emit('checkin-enabled', session.checkinEnabled);
+            socket.emit('class-progress-visible', session.classProgressVisible);
           }
         });
         return; // exit early — async path handles the rest
@@ -1320,6 +1335,7 @@ io.on('connection', (socket) => {
         socket.join(joinRoom);
         socket.emit('timer-update', session.timerState);
         socket.emit('checkin-enabled', session.checkinEnabled);
+        socket.emit('class-progress-visible', session.classProgressVisible);
       }
     }
   });
@@ -1336,6 +1352,7 @@ io.on('connection', (socket) => {
       socket.emit('code-accepted');
       socket.emit('timer-update', session.timerState);
       socket.emit('checkin-enabled', session.checkinEnabled);
+      socket.emit('class-progress-visible', session.classProgressVisible);
       emitStudentCount(session);
     } else {
       socket.emit('code-rejected');
@@ -1378,7 +1395,19 @@ io.on('connection', (socket) => {
     }
     socket.emit('student-name', student.name);
     socket.emit('student-state-restore', student.state);
+    // Send current class progress to newly connected student
+    if (session.classProgressVisible) {
+      const students = Array.from(session.students.values()).filter(st => !st.isInstructor && st.socketId);
+      const progress = {
+        working: students.filter(st => st.state === 'working').length,
+        done: students.filter(st => st.state === 'done').length,
+        away: students.filter(st => st.state === 'away').length,
+      };
+      socket.emit('class-progress', progress);
+    }
+    socket.emit('class-progress-visible', session.classProgressVisible);
     broadcastStudentList(session);
+    broadcastClassProgress(session);
     emitInstructorPhoneStatus(session);
   });
 
@@ -1390,6 +1419,7 @@ io.on('connection', (socket) => {
     student.state = state;
     student.timestamp = Date.now();
     broadcastStudentList(session);
+    broadcastClassProgress(session);
   });
 
   socket.on('disconnect', () => {
@@ -1403,6 +1433,7 @@ io.on('connection', (socket) => {
         }
       }
       emitStudentCount(session);
+      broadcastClassProgress(session);
       emitInstructorPhoneStatus(session);
     }
   });
@@ -1426,6 +1457,7 @@ io.on('connection', (socket) => {
     io.to('instructor:' + instructorId).emit('class-code', session.classCode);
     emitStudentCount(session);
     broadcastStudentList(session);
+    broadcastClassProgress(session);
     emitInstructorPhoneStatus(session);
   });
 
@@ -1439,6 +1471,16 @@ io.on('connection', (socket) => {
     session.checkinEnabled = !!enabled;
     io.to('instructor:' + instructorId).emit('checkin-enabled', session.checkinEnabled);
     io.to('students:' + instructorId).emit('checkin-enabled', session.checkinEnabled);
+  });
+
+  socket.on('set-class-progress-visible', (visible) => {
+    if (role !== 'instructor' || !session) return;
+    session.classProgressVisible = !!visible;
+    io.to('instructor:' + instructorId).emit('class-progress-visible', session.classProgressVisible);
+    io.to('students:' + instructorId).emit('class-progress-visible', session.classProgressVisible);
+    if (session.classProgressVisible) {
+      broadcastClassProgress(session);
+    }
   });
 
   socket.on('set-mute', (isMuted) => {

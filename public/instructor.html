@@ -1958,6 +1958,10 @@
           <input type="checkbox" class="checkin-toggle" id="checkinToggle" onchange="toggleCheckin(this.checked)">
           <label class="checkin-toggle-label" for="checkinToggle">Check-in buttons</label>
         </div>
+        <div class="checkin-toggle-wrap">
+          <input type="checkbox" class="checkin-toggle" id="classProgressToggle" onchange="toggleClassProgress(this.checked)">
+          <label class="checkin-toggle-label" for="classProgressToggle">Class progress on phones</label>
+        </div>
         <button onclick="resetStudentStates()" title="Reset all students to idle">Reset All</button>
       </div>
       <div class="students-summary" id="studentsSummary"></div>
@@ -8136,6 +8140,10 @@ function toggleCheckin(enabled) {
   socket.emit('set-checkin-enabled', enabled);
 }
 
+function toggleClassProgress(visible) {
+  socket.emit('set-class-progress-visible', visible);
+}
+
 // Refresh relative timestamps every 30 seconds
 setInterval(() => {
   if (studentList.length > 0) renderStudentBoard();
@@ -8173,6 +8181,10 @@ function initSocketLate() {
   socket.on('checkin-enabled', (enabled) => {
     document.getElementById('checkinToggle').checked = !!enabled;
     document.getElementById('mockCheckinFooter').classList.toggle('visible', !!enabled);
+  });
+
+  socket.on('class-progress-visible', (visible) => {
+    document.getElementById('classProgressToggle').checked = !!visible;
   });
 
   socket.on('connect_error', (err) => {

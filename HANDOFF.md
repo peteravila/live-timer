@@ -120,9 +120,12 @@ The server manages per-instructor sessions. Each session contains a timer state 
 ### REST API
 
 **Auth:**
-- `POST /api/auth/login` — Returns JWT
-- `POST /api/auth/signup` — First user becomes admin
-- `POST /api/auth/change-password` — Change own password
+- `POST /api/login` — Returns JWT
+- `POST /api/signup` — First user becomes admin
+- `POST /api/change-password` — Change own password
+- `GET /api/me` — Current user info
+- `GET /api/api-key` — Get instructor's API key
+- `POST /api/api-key/regenerate` — Regenerate API key
 
 **Admin (requireAdmin middleware):**
 - `GET /api/admin/instructors` — List all instructors
@@ -133,7 +136,18 @@ The server manages per-instructor sessions. Each session contains a timer state 
 - `POST /api/library` — Upsert timer
 - `DELETE /api/library/:id` — Delete timer
 - `PUT /api/library/reorder` — Reorder by ID array
-- `POST /api/library/batch-delete` — Batch delete
+- `GET /api/library/export` — Export library as JSON
+- `POST /api/library/import` — Import library from JSON
+
+**Settings:**
+- `GET /api/settings` — Get user settings (palette, etc.)
+- `POST /api/settings` — Save user settings
+
+**Custom sounds:**
+- `GET /api/custom-sounds` — List custom alarm sounds
+- `POST /api/custom-sounds` — Upload custom sound
+- `DELETE /api/custom-sounds/:id` — Delete custom sound
+- `GET /api/custom-sounds/:id/data` — Get sound data
 
 **Sequences:** `GET /api/sequences`, `POST /api/sequences`, `DELETE /api/sequences/:id`
 
@@ -141,7 +155,7 @@ The server manages per-instructor sessions. Each session contains a timer state 
 
 **Alarm settings:** `GET /api/alarm-settings`, `POST /api/alarm-settings`
 
-**Saved orders:** `GET /api/saved-orders`, `POST /api/saved-orders`, `DELETE /api/saved-orders/:id`
+**Saved orders:** `GET /api/orders`, `POST /api/orders`, `DELETE /api/orders/:id`
 
 **QR codes:** `GET /qr` (student), `GET /qr-instructor` (instructor phone)
 

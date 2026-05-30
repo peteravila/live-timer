@@ -1,69 +1,18 @@
 # LiveTimer — Pending Items
 
-**Updated:** May 16, 2026
+**Updated:** May 29, 2026
 
 ---
 
-### 1. Deploy Latest Changes to Production
+### 1. Email-Based Forgot Password
 
-Local files have many changes that haven't been pushed to GitHub/Render yet:
-- Custom styled dialogs replacing all native confirm/alert/prompt (instructor.html)
-- Duration popup lightened to `rgba(180, 180, 200, 0.2)` with `blur(6px)` (instructor.html)
-- Socket reconnection fixes after disconnect-all (student.html)
-- `codeExpired` flag to prevent stale QR code auto-retry (student.html)
-- Timer state persistence to MongoDB with auto-recovery on restart (server.js)
-- Instructor authentication system (signup, login, token validation, admin roles, change/reset password) (server.js, instructor.html)
-- Library toolbar with batch operations (batch update, duplicate, delete) (instructor.html)
-- Library grid with all timer fields, horizontal scrolling, resizable columns with localStorage persistence (instructor.html)
-- Sequence dependency checking before timer deletion (instructor.html)
-- Digit spinner controls on phone mockup (hours/minutes arrows, hold-to-repeat, disabled when running) (instructor.html)
-- HH:MM idle display format vs HH:MM:SS running format on mockup (instructor.html)
-- "..." button on mockup for quick access to duration popup (instructor.html)
-- Transport button focus outline fix (instructor.html)
+Add email-based password recovery when manual admin resets become a hassle. Currently, admin can reset any instructor's password from the admin grid.
 
-**Status:** Ready to deploy. Use deploy.bat or follow DEPLOY.md.
+**Status:** Deferred
 
 ---
 
-### ~~2. Library Mismatch~~ ✓ RESOLVED
-
----
-
----
-
-### ~~3. Push Button Race Condition Fix~~ ✓ DONE
-
-Fixed via mousedown-capture: the Push button grabs the field value before blur fires, preventing incoming timer-update events from overwriting it. A 2-second sync guard also suppresses server overwrites during the round-trip.
-
----
-
-### 4. Instructor Page Shrinkage
-
-The viewport meta tag was removed in a previous session to fix the instructor page shrinking on certain screens. Not yet confirmed whether the fix worked.
-
-**Status:** Needs confirmation
-
----
-
-### ~~5. Progress Ring Scaling for Long Timers~~ ✓ DONE
-
-Implemented a power curve (`Math.pow(pct, 0.55)`) for timers longer than 10 minutes. The ring drains faster at the start and slower toward the end, keeping it visible in the final minutes.
-
----
-
-### ~~6. Persist Timer State to MongoDB~~ ✓ DONE
-
-Timer state (including endTime and lastTimer restore snapshot) now saves to MongoDB on every user-initiated state change. On server restart, if a running timer's endTime is still in the future, the server resumes ticking automatically.
-
----
-
-### ~~7. Clean Up Debug Code in student.html~~ ✓ DONE
-
-`submitCode()` has been cleaned up — now shows only "Reconnecting..." with no verbose diagnostics.
-
----
-
-### 8. LiveTimer Brochure
+### 2. LiveTimer Brochure
 
 Marketing brochure (v10) has been generated as both PDF and DOCX. Current layout uses mixed left/right alignment, text wrapping around images, reduced word count, and larger fonts. Peter may have further feedback on the layout and content.
 
@@ -71,16 +20,36 @@ Marketing brochure (v10) has been generated as both PDF and DOCX. Current layout
 
 ---
 
-### 9. Multi-Instructor Support (Phase 2)
+### 3. Instructor Page Shrinkage
 
-Per-instructor data isolation: scope library, timer state, class code, sequences, and saved orders by instructor ID. Socket rooms per-instructor. Auth system is already in place (Step 1 complete).
+The viewport meta tag was removed in a previous session to fix the instructor page shrinking on certain screens. Not yet confirmed whether the fix worked.
 
-**Status:** Deferred
+**Status:** Needs confirmation
 
 ---
 
-### 10. Email-Based Forgot Password
+### 4. Free Tier Sleep
 
-Add email-based password recovery when manual admin resets become a hassle.
+Render spins down after ~15 min inactivity. The keep-alive ping (instructor.html pings `/api/library` every 5 minutes) mitigates this but only while the instructor tab is active — browsers throttle background tabs.
 
-**Status:** Deferred
+**Status:** Known limitation, no fix planned
+
+---
+
+### Completed (Archive)
+
+- ~~**Timer state persistence to MongoDB**~~ — Done. Auto-recovery of running timers on restart.
+- ~~**Multi-instructor support**~~ — Done. Full per-instructor data isolation.
+- ~~**Authentication**~~ — Done. JWT-based with admin roles.
+- ~~**Progress ring scaling**~~ — Done. Power curve for long timers.
+- ~~**Debug code cleanup**~~ — Done. submitCode() cleaned up.
+- ~~**Library mismatch**~~ — Resolved.
+- ~~**Push button race condition**~~ — Fixed via mousedown-capture + 2-second sync guard.
+- ~~**Edit/Live mockup tabs**~~ — Done. iframe preview with gold border and LIVE badge.
+- ~~**Check-in / student monitoring**~~ — Done. Real-time status board.
+- ~~**Sequences**~~ — Done. Named timer chains with auto-advance.
+- ~~**Alarm sets**~~ — Done. Named alarm collections with CRUD.
+- ~~**Help overlay**~~ — Done. Full documentation with print support.
+- ~~**Instructor phone connection**~~ — Done. Not counted as student.
+- ~~**Saved orders**~~ — Done. Named timer arrangements.
+- ~~**Custom dialogs**~~ — Done. Frosted glass modals.

@@ -521,10 +521,10 @@ function formatEndTime(epochMs) {
 }
 
 function emitStudentCount(s) {
-  // Count unique students with an active socket connection (exclude instructor's phone)
+  // Count all students on the list (connected + grace period), exclude instructor's phone
   let count = 0;
   for (const st of s.students.values()) {
-    if (st.socketId && !st.isInstructor) count++;
+    if (!st.isInstructor && (st.socketId || st.disconnectTimer)) count++;
   }
   io.to('instructor:' + s.instructorId).emit('client-count', count);
 }
@@ -582,12 +582,13 @@ function stopTick(s) {
 // ── Student check-in (per-instructor) ───────────────────────
 function broadcastStudentList(s) {
   const list = Array.from(s.students.values())
-    .filter(st => !st.isInstructor && st.socketId)
+    .filter(st => !st.isInstructor && (st.socketId || st.disconnectTimer))
     .map(st => ({
       id: st.id,
       name: st.name,
       state: st.state,
       timestamp: st.timestamp,
+      connected: !!st.socketId,
     }));
   io.to('instructor:' + s.instructorId).emit('student-list', list);
 }

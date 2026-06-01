@@ -1112,6 +1112,12 @@
   .student-dot.dot-working { background: #3498db; }
   .student-dot.dot-done { background: #4ecca3; }
   .student-dot.dot-away { background: #e67e22; }
+  .student-row.disconnected { opacity: 0.45; }
+  .student-conn-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  }
+  .student-conn-dot.conn-live { background: #4ecca3; }
+  .student-conn-dot.conn-grace { background: #666; }
   .student-name {
     font-size: 0.9rem; color: var(--text); flex: 1; min-width: 0;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -6994,7 +7000,10 @@ function renderStudentBoard() {
 
   listEl.innerHTML = sorted.map(s => {
     const timeAgo = s.timestamp ? formatTimeAgo(s.timestamp) : '';
-    return `<div class="student-row">
+    const connClass = s.connected ? 'conn-live' : 'conn-grace';
+    const rowClass = s.connected ? '' : ' disconnected';
+    return `<div class="student-row${rowClass}">
+      <div class="student-conn-dot ${connClass}" title="${s.connected ? 'Connected' : 'Reconnecting...'}"></div>
       <div class="student-dot dot-${s.state}"></div>
       <span class="student-name">${esc(s.name)}</span>
       <span class="student-state state-${s.state}">${s.state}</span>

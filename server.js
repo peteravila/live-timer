@@ -1378,6 +1378,11 @@ io.on('connection', (socket) => {
     studentPersistentId = id;
     let student = session.students.get(id);
     if (student) {
+      // Cancel grace-period timer if reconnecting
+      if (student.disconnectTimer) {
+        clearTimeout(student.disconnectTimer);
+        student.disconnectTimer = null;
+      }
       student.socketId = socket.id;
       if (name) student.name = name;
       student.isInstructor = verifiedInstructor;
@@ -1430,10 +1435,23 @@ io.on('connection', (socket) => {
         const student = session.students.get(studentPersistentId);
         if (student.socketId === socket.id) {
           student.socketId = null;
+          // Grace period: keep student on list for 5 minutes to survive phone-idle disconnects.
+          // If they reconnect before the timer fires, student-identify cancels it.
+          if (student.disconnectTimer) clearTimeout(student.disconnectTimer);
+          student.disconnectTimer = setTimeout(() => {
+            student.disconnectTimer = null;
+            // Only remove if still disconnected (no new socketId)
+            if (!student.socketId) {
+              session.students.delete(studentPersistentId);
+              broadcastStudentList(session);
+              broadcastClassProgress(session);
+              emitStudentCount(session);
+            }
+          }, 5 * 60 * 1000); // 5 minutes
         }
       }
       emitStudentCount(session);
-      broadcastStudentList(session);
+      // Don't broadcast student list here — student stays on list during grace period
       broadcastClassProgress(session);
       emitInstructorPhoneStatus(session);
     }
@@ -1453,6 +1471,10 @@ io.on('connection', (socket) => {
     io.to('students:' + instructorId).emit('code-expired');
     const studentSockets = await io.in('students:' + instructorId).fetchSockets();
     for (const s of studentSockets) s.disconnect(true);
+    // Clear any pending grace-period timers before wiping the Map
+    for (const st of session.students.values()) {
+      if (st.disconnectTimer) clearTimeout(st.disconnectTimer);
+    }
     session.students.clear();
     session.studentCounter = 0;
     io.to('instructor:' + instructorId).emit('class-code', session.classCode);

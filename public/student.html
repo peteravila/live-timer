@@ -908,6 +908,43 @@ socket.on('sequence-next-preview', (preview) => {
 // QR code is no longer loaded on the student page.
 // Use the /qr-only OBS browser source for QR display.
 
+// ── Wake Lock: keep phone screen on while a timer is running ──
+let wakeLock = null;
+let timerIsRunning = false;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch (e) {
+    // Wake lock request failed (e.g. low battery, page not visible)
+  }
+}
+
+function releaseWakeLock() {
+  if (wakeLock) {
+    wakeLock.release();
+    wakeLock = null;
+  }
+}
+
+// Re-acquire wake lock when user switches back to this tab
+// (browsers release wake locks when the page becomes hidden)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && timerIsRunning) {
+    requestWakeLock();
+  }
+});
+
+// Hook into timer-update to track running state
+socket.on('timer-update', (s) => {
+  const wasRunning = timerIsRunning;
+  timerIsRunning = !!s.running;
+  if (timerIsRunning && !wasRunning) requestWakeLock();
+  else if (!timerIsRunning && wasRunning) releaseWakeLock();
+});
+
 </script>
 </body>
 </html>

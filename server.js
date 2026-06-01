@@ -582,7 +582,7 @@ function stopTick(s) {
 // ── Student check-in (per-instructor) ───────────────────────
 function broadcastStudentList(s) {
   const list = Array.from(s.students.values())
-    .filter(st => !st.isInstructor)
+    .filter(st => !st.isInstructor && st.socketId)
     .map(st => ({
       id: st.id,
       name: st.name,
@@ -1433,6 +1433,7 @@ io.on('connection', (socket) => {
         }
       }
       emitStudentCount(session);
+      broadcastStudentList(session);
       broadcastClassProgress(session);
       emitInstructorPhoneStatus(session);
     }

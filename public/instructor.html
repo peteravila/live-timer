@@ -110,17 +110,17 @@
 
   /* Mockup view tabs (Edit / Live) */
   .mockup-tabs {
-    display: flex; gap: 0; margin-bottom: 0;
+    display: flex; gap: 0; margin-top: 4px;
     width: 250px; /* match phone-mockup width */
   }
   .mockup-tab {
     flex: 1; padding: 5px 0; border: none; background: transparent;
     color: var(--dim); font-size: 0.7rem; font-weight: 600; font-family: inherit;
     text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer;
-    border-bottom: 2px solid transparent; transition: all 0.15s;
+    border-top: 2px solid transparent; transition: all 0.15s;
   }
   .mockup-tab:hover { color: var(--text-muted); }
-  .mockup-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .mockup-tab.active { color: var(--blue); border-top-color: var(--blue); }
 
   /* Live preview iframe inside phone frame */
   .mockup-live-frame {
@@ -1718,12 +1718,8 @@
       <input type="checkbox" id="includeEndTimeLabel" checked style="display:none;">
       <input type="checkbox" id="includeMessage" checked style="display:none;">
 
-      <!-- Mockup view tabs -->
+      <!-- Phone mockup + Edit/Live tabs below -->
       <div style="display:flex; flex-direction:column; align-items:center;">
-      <div class="mockup-tabs">
-        <button class="mockup-tab active" id="mockupTabEdit" onclick="switchMockupView('edit')">Edit</button>
-        <button class="mockup-tab" id="mockupTabLive" onclick="switchMockupView('live')">Live</button>
-      </div>
 
       <!-- Phone mockup -->
       <div class="phone-mockup" id="phoneMockup">
@@ -1820,7 +1816,11 @@
           </div>
         </div>
       </div>
-      </div><!-- /mockup-tabs-wrap -->
+      <div class="mockup-tabs">
+        <button class="mockup-tab active" id="mockupTabEdit" onclick="switchMockupView('edit')">Edit</button>
+        <button class="mockup-tab" id="mockupTabLive" onclick="switchMockupView('live')">Live</button>
+      </div>
+      </div><!-- /mockup+tabs wrap -->
     </div>
   </div><!-- /col-left -->
 

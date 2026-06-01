@@ -1411,6 +1411,7 @@ io.on('connection', (socket) => {
       socket.emit('class-progress', progress);
     }
     socket.emit('class-progress-visible', session.classProgressVisible);
+    emitStudentCount(session);
     broadcastStudentList(session);
     broadcastClassProgress(session);
     emitInstructorPhoneStatus(session);

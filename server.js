@@ -1447,7 +1447,7 @@ io.on('connection', (socket) => {
               broadcastClassProgress(session);
               emitStudentCount(session);
             }
-          }, 5 * 60 * 1000); // 5 minutes
+          }, 30 * 60 * 1000); // 30 minutes
         }
       }
       emitStudentCount(session);

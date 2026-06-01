@@ -847,18 +847,13 @@ socket.on('timer-update', (s) => {
     etEl.textContent = '';
   }
 
-  // Progress ring — use originalTotal for correct proportions after pause/restart
-  // On long timers (>10 min), use a power curve (pct^0.55) so the ring drains
-  // faster at the start and gradually slower toward the end. This keeps the ring
-  // visible in the final minutes without any sudden pace change.
+  // Progress ring — linear depletion based on remaining / total
   const ring = document.getElementById('progressRing');
   const refTotal = s.originalTotal || s.totalSeconds;
   if (refTotal > 0) {
     const remaining = Math.max(0, s.remainingSeconds);
     const pct = remaining / refTotal;
-    const RESCALE_THRESHOLD = 600;  // only rescale timers longer than 10 min
-    const ringPct = refTotal <= RESCALE_THRESHOLD ? pct : Math.pow(pct, 0.55);
-    ring.style.strokeDashoffset = CIRCUMFERENCE * (1 - ringPct);
+    ring.style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
   } else {
     ring.style.strokeDashoffset = 0;
   }

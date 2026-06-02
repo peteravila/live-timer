@@ -68,6 +68,7 @@
   .col-right {
     flex: 1; min-width: 0;
     display: flex; flex-direction: column;
+    max-height: 540px; /* roughly matches mockup height + transport controls */
   }
   .mockup-area {
     display: flex; gap: 14px; align-items: flex-start;
@@ -1280,6 +1281,7 @@
     padding: 5px 10px; border: 1px solid var(--border-mid); border-radius: 6px;
     background: var(--subtle-bg); transition: all 0.15s;
   }
+  .alarm-card:nth-child(even) { background: rgba(255,255,255,0.02); }
   .alarm-card.alarm-selected { background: rgba(52, 152, 219, 0.12); border-color: rgba(52, 152, 219, 0.4); }
   .alarm-card.alarm-disabled { /* toggle switch indicates state */ }
   .alarm-card.alarm-fired { border-color: var(--green); background: var(--hover-green); }
@@ -1789,14 +1791,14 @@
             <span class="digit-spinner-label">hrs</span>
             <button class="digit-arrow digit-arrow-up ds-btn" data-dsid="durH" data-dsdir="1" title="Hours +1">&#9650;</button>
             <button class="digit-arrow digit-arrow-down ds-btn" data-dsid="durH" data-dsdir="-1" title="Hours −1">&#9660;</button>
-            <span class="digit-expand-spacer">&#8230;</span>
+            <button class="digit-expand-btn" onclick="event.stopPropagation();openDurationPopup()" title="Quick-set times"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="12" x2="16" y2="14"/></svg></button>
           </div>
           <div class="mock-digits" id="mockDigits" onclick="openDurationPopup()" title="Click to set duration"><span id="mockDigitsText">00:00</span></div>
           <div class="digit-spinner digit-spinner-right">
             <span class="digit-spinner-label">min</span>
             <button class="digit-arrow digit-arrow-up ds-btn" data-dsid="durM" data-dsdir="1" title="Minutes +1">&#9650;</button>
             <button class="digit-arrow digit-arrow-down ds-btn" data-dsid="durM" data-dsdir="-1" title="Minutes −1">&#9660;</button>
-            <button class="digit-expand-btn" onclick="event.stopPropagation();openDurationPopup()" title="Quick-set times"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="12" x2="16" y2="14"/></svg></button>
+            <span class="digit-expand-spacer">&#8230;</span>
           </div>
         </div>
 

@@ -67,6 +67,7 @@
   }
   .col-right {
     flex: 1; min-width: 0;
+    display: flex; flex-direction: column;
   }
   .mockup-area {
     display: flex; gap: 14px; align-items: flex-start;
@@ -562,9 +563,10 @@
   .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
   .tab-content {
     display: none; background: var(--card); border-radius: 0 0 12px 12px; overflow-x: auto;
-    padding: 18px;
+    padding: 18px; flex: 1; min-height: 0;
   }
   .tab-content.active { display: block; }
+  #tab-alarms.active { display: flex; flex-direction: column; overflow: hidden; }
 
   /* Sections (used inside tabs) */
   .section {
@@ -1183,7 +1185,7 @@
   .checkin-toggle:checked::after { transform: translateX(18px); }
 
   /* Alarms tab */
-  .alarms-list { display: flex; flex-direction: column; gap: 6px; }
+  .alarms-list { display: flex; flex-direction: column; gap: 3px; overflow-y: auto; flex: 1; min-height: 0; }
   .alarms-empty { font-size: 0.85rem; color: var(--text-faint); text-align: center; padding: 24px 0; }
   .alarm-row {
     display: flex; align-items: center; gap: 8px;
@@ -1275,7 +1277,7 @@
   }
   .alarm-card {
     display: flex; flex-direction: column; gap: 2px;
-    padding: 8px 10px; border: 1px solid var(--border-mid); border-radius: 6px;
+    padding: 5px 10px; border: 1px solid var(--border-mid); border-radius: 6px;
     background: var(--subtle-bg); transition: all 0.15s;
   }
   .alarm-card.alarm-selected { background: rgba(52, 152, 219, 0.12); border-color: rgba(52, 152, 219, 0.4); }
@@ -1310,17 +1312,7 @@
   .alarm-card.dragging { opacity: 0.25; }
   .alarm-card.drag-over-above { box-shadow: 0 -2px 0 0 var(--green); }
   .alarm-card.drag-over-below { box-shadow: 0 2px 0 0 var(--green); }
-  .alarm-insert-row {
-    display: flex; align-items: center; justify-content: center;
-    padding: 2px 0; transition: opacity 0.15s; opacity: 0.5;
-  }
-  .alarm-insert-row:hover { opacity: 1; }
-  .alarm-insert-btn {
-    font-size: 0.85rem; color: var(--dim); background: transparent;
-    border: 1px dashed var(--border-mid); border-radius: 4px;
-    padding: 1px 16px; cursor: pointer; line-height: 20px; transition: all 0.15s;
-  }
-  .alarm-insert-btn:hover { color: var(--green); border-color: var(--green); }
+  /* alarm-insert-row removed */
 
   /* Toggle switch (generic) */
   .toggle-switch {
@@ -7601,10 +7593,7 @@ function renderAlarmsList() {
     container.innerHTML = '<div class="alarms-empty">No alarms yet. Click + to add one.</div>';
     return;
   }
-  const insertBtn = idx =>
-    '<div class="alarm-insert-row"><button class="alarm-insert-btn" onclick="insertAlarmAt(' + idx + ')" title="Insert alarm here">+</button></div>';
-
-  let html = insertBtn(0);
+  let html = '';
   alarmsData.forEach((a, i) => {
     const [h, m] = (a.time || '00:00').split(':').map(Number);
     const alarmAmPm = h >= 12 ? 'PM' : 'AM';
@@ -7670,7 +7659,6 @@ function renderAlarmsList() {
         '<span class="alarm-days-wrap">' + buildAlarmDayPickers(a) + '</span>' +
       '</div>' +
     '</div>';
-    html += insertBtn(i + 1);
   });
   container.innerHTML = html;
 }

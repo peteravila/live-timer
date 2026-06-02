@@ -1237,7 +1237,7 @@
   .alarm-ampm-btn:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
   .alarm-label-input {
     flex: 1; min-width: 0; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px;
-    background: inherit; color: var(--text); font-size: 0.82rem; font-family: inherit;
+    background: var(--alarm-row-bg, var(--subtle-bg)); color: var(--text); font-size: 0.82rem; font-family: inherit;
   }
   .alarm-label-input::placeholder { color: var(--text-faint); }
   .alarm-toggle {
@@ -5389,7 +5389,7 @@ function doReset() {
 }
 function doStop() {
   if (!document.querySelector('.tb-stop').classList.contains('enabled')) return;
-  stopAlarmLoop(); warningFired = false;
+  stopAlarmLoop(); stopAllFiringAlarms(); warningFired = false;
   resetAllFontOverrides();
   // Clear all fields except course title
   setField('fieldLabel', '');
@@ -7908,8 +7908,21 @@ function stopAlarmFiring(id) {
     try { alarmFiringAudios[id].pause(); alarmFiringAudios[id].currentTime = 0; } catch(e) {}
     delete alarmFiringAudios[id];
   }
-  // Also stop any preview audio that playCustomSound may have set
+  // Stop any audio that playCustomSound set as currentPreviewAudio
   stopPreview();
+}
+
+function stopAllFiringAlarms() {
+  alarmsData.forEach(a => {
+    if (a._firing) {
+      a._firing = false;
+      a._fired = true;
+      stopAlarmFiring(a.id);
+    }
+  });
+  // Catch anything that slipped through
+  stopPreview();
+  stopAlarmFlash();
 }
 
 // ── Sequences ──

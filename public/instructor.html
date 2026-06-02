@@ -2276,7 +2276,7 @@
                 <div class="lib-row" style="background:rgba(78,204,163,0.06); border-radius:4px;">
                   <span></span>
                   <input type="text" id="adminAddName" placeholder="Display Name" class="admin-cell-input" style="border-color:#444; background:rgba(255,255,255,0.06);">
-                  <input type="email" id="adminAddEmail" placeholder="Email" class="admin-cell-input" style="border-color:#444; background:rgba(255,255,255,0.06);">
+                  <input type="text" id="adminAddEmail" placeholder="Login ID" class="admin-cell-input" style="border-color:#444; background:rgba(255,255,255,0.06);">
                   <label style="font-size:0.75rem; color:var(--dim); display:flex; align-items:center; gap:3px; cursor:pointer; justify-content:center;">
                     <input type="checkbox" id="adminAddIsAdmin" class="custom-cb">
                   </label>
@@ -3310,7 +3310,7 @@ function renderAdminGrid() {
   const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const gridCols = getAdminGridCols();
   // Header
-  const hdrs = ['', 'Display Name', 'Email (Login ID)', 'Admin', 'Password'];
+  const hdrs = ['', 'Display Name', 'Login ID', 'Admin', 'Password'];
   let html = '<div class="lib-grid">';
   html += `<div class="lib-grid-header" style="grid-template-columns:${gridCols}">`;
   html += '<div class="lib-hdr-cell" style="padding:4px 2px;"><input type="checkbox" class="lib-select-all" id="adminSelectAll" onchange="adminToggleSelectAll(this)" title="Select all"></div>';

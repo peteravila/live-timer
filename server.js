@@ -1688,14 +1688,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('update-font-override', ({ field, scale }) => {
-    console.log('[FONT DEBUG] Received update-font-override:', field, scale, 'role:', role, 'session:', !!session);
     if (role !== 'instructor' || !session) return;
     if (!['courseTitle', 'label', 'message'].includes(field)) return;
     if (!session.timerState.fontOverrides) {
       session.timerState.fontOverrides = { courseTitle: null, label: null, message: null };
     }
     session.timerState.fontOverrides[field] = (typeof scale === 'number') ? scale : null;
-    console.log('[FONT DEBUG] Broadcasting fontOverrides:', JSON.stringify(session.timerState.fontOverrides));
     broadcast(session);
   });
 

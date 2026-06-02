@@ -164,6 +164,7 @@ const DEFAULT_TIMER_STATE = {
   transparent: false,
   blackBg: false,
   clockOnly: false,
+  fontOverrides: { courseTitle: null, label: null, message: null },
 };
 
 function createSession(instructorId) {
@@ -174,7 +175,7 @@ function createSession(instructorId) {
     sequences: [],
     alarmSets: [{ id: 'default', name: 'Default', alarms: [] }],
     activeAlarmSetId: 'default',
-    timerState: { ...DEFAULT_TIMER_STATE },
+    timerState: { ...DEFAULT_TIMER_STATE, fontOverrides: { courseTitle: null, label: null, message: null } },
     lastTimer: null,
     classCode: null,
     muted: false,
@@ -486,6 +487,10 @@ async function initSession(instructorId) {
   if (savedState) {
     if (savedState.timer) {
       Object.assign(s.timerState, savedState.timer);
+      // Ensure fontOverrides exists (missing in older saved data)
+      if (!s.timerState.fontOverrides) {
+        s.timerState.fontOverrides = { courseTitle: null, label: null, message: null };
+      }
       if (s.timerState.running && s.timerState.endTime) {
         const remaining = Math.round((s.timerState.endTime - Date.now()) / 1000);
         if (remaining > 0) {
@@ -521,10 +526,10 @@ function formatEndTime(epochMs) {
 }
 
 function emitStudentCount(s) {
-  // Count all students on the list (connected + grace period), exclude instructor's phone
+  // Count students with active socket connections (exclude instructor's phone)
   let count = 0;
   for (const st of s.students.values()) {
-    if (!st.isInstructor && (st.socketId || st.disconnectTimer)) count++;
+    if (st.socketId && !st.isInstructor) count++;
   }
   io.to('instructor:' + s.instructorId).emit('client-count', count);
 }
@@ -582,13 +587,11 @@ function stopTick(s) {
 // ── Student check-in (per-instructor) ───────────────────────
 function broadcastStudentList(s) {
   const list = Array.from(s.students.values())
-    .filter(st => !st.isInstructor && (st.socketId || st.disconnectTimer))
+    .filter(st => !st.isInstructor && st.socketId)
     .map(st => ({
       id: st.id,
       name: st.name,
       state: st.state,
-      timestamp: st.timestamp,
-      connected: !!st.socketId,
     }));
   io.to('instructor:' + s.instructorId).emit('student-list', list);
 }
@@ -1682,6 +1685,18 @@ io.on('connection', (socket) => {
     session.timerState.showEndTime = showEndTime !== false;
     broadcast(session);
     saveTimerState(instructorId, session);
+  });
+
+  socket.on('update-font-override', ({ field, scale }) => {
+    console.log('[FONT DEBUG] Received update-font-override:', field, scale, 'role:', role, 'session:', !!session);
+    if (role !== 'instructor' || !session) return;
+    if (!['courseTitle', 'label', 'message'].includes(field)) return;
+    if (!session.timerState.fontOverrides) {
+      session.timerState.fontOverrides = { courseTitle: null, label: null, message: null };
+    }
+    session.timerState.fontOverrides[field] = (typeof scale === 'number') ? scale : null;
+    console.log('[FONT DEBUG] Broadcasting fontOverrides:', JSON.stringify(session.timerState.fontOverrides));
+    broadcast(session);
   });
 
   socket.on('restore-last-timer', () => {

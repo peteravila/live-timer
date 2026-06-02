@@ -504,27 +504,48 @@
   /* Contextual Push/Clear buttons */
   .mock-ctx {
     display: none; position: absolute; right: -44px; top: 50%; transform: translateY(-50%);
-    flex-direction: column; gap: 3px; z-index: 100;
+    flex-direction: column; gap: 3px; z-index: 500;
   }
   .mock-ctx.visible { display: flex; }
   .mock-ctx-btn {
-    font-size: 0.55rem; padding: 0; border-radius: 4px; cursor: pointer;
-    font-family: inherit; font-weight: 600; white-space: nowrap;
-    border: 1.5px solid var(--blue); background: transparent; color: var(--blue);
+    font-size: 0.55rem; padding: 0; border-radius: 5px; cursor: pointer;
+    font-family: inherit; font-weight: 700; white-space: nowrap;
+    border: 1px solid rgba(255,255,255,0.45);
+    background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.6) 100%);
+    color: #111;
+    box-shadow: 0 0.5px 0 rgba(255,255,255,0.4) inset, 0 1px 2px rgba(0,0,0,0.15);
     transition: all 0.15s;
     min-width: 38px; width: auto; padding-left: 4px; padding-right: 4px; height: 18px;
     display: flex; align-items: center; justify-content: center;
     box-sizing: border-box;
   }
-  .mock-ctx-btn:hover { background: var(--hover-blue); }
+  .mock-ctx-btn:hover { background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%); }
   .mock-ctx-go { font-size: 0.7rem; }
-  .mock-ctx-go:hover:not(.disabled) { color: var(--green); border-color: var(--green); background: rgba(78,204,163,0.1); }
-  .mock-ctx-go.disabled { opacity: 0.3; cursor: default; pointer-events: none; }
-  .mock-ctx-btn.disabled { opacity: 0.3; cursor: default; pointer-events: none; }
-  .mock-ctx-save { border-color: var(--green); color: var(--green); }
+  .mock-ctx-go.disabled { color: #999; cursor: default; pointer-events: none; }
+  .mock-ctx-btn.disabled { color: #999; cursor: default; pointer-events: none; }
+  .mock-ctx-save { color: #111; }
   .mock-ctx-toggle { }
-  .mock-ctx-toggle.is-on { border-color: var(--green); color: var(--green); }
-  .mock-ctx-toggle.is-off { border-color: var(--border-light); color: var(--border-light); }
+  .mock-ctx-toggle.is-on { color: #111; }
+  .mock-ctx-toggle.is-off { color: #999; }
+  .mock-ctx-font {
+    display: inline-flex; align-items: center; gap: 1px; margin-top: 2px;
+  }
+  .mock-ctx-font-btn {
+    border: 1px solid rgba(255,255,255,0.45);
+    background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.6) 100%);
+    color: #111;
+    box-shadow: 0 0.5px 0 rgba(255,255,255,0.4) inset, 0 1px 2px rgba(0,0,0,0.15);
+    font-size: 0.55rem; padding: 0px 3px; cursor: pointer; border-radius: 5px;
+    font-family: inherit; font-weight: 700; line-height: 1.4;
+    transition: all 0.15s;
+  }
+  .mock-ctx-font-btn:hover { background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%); }
+  .mock-ctx-font-val {
+    font-size: 0.5rem; color: var(--dim); min-width: 24px; text-align: center;
+    cursor: pointer; user-select: none;
+  }
+  .mock-ctx-font-val:hover { color: var(--blue); }
+  .mock-ctx-font-val.is-override { color: var(--blue); font-weight: 700; }
 
   /* Tabs */
   .tab-bar {
@@ -1108,28 +1129,23 @@
   .student-dot {
     width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
   }
-  .student-dot.dot-idle { background: #444; }
-  .student-dot.dot-working { background: #3498db; }
-  .student-dot.dot-done { background: #4ecca3; }
-  .student-dot.dot-away { background: #e67e22; }
-  .student-row.disconnected { opacity: 0.45; }
-  .student-conn-dot {
-    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
-  }
-  .student-conn-dot.conn-live { background: #4ecca3; }
-  .student-conn-dot.conn-grace { background: #666; }
   .student-name {
-    font-size: 0.9rem; color: var(--text); flex: 1; min-width: 0;
+    font-size: 0.9rem; flex: 1; min-width: 0;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .student-state {
     font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
     min-width: 70px; text-align: right;
   }
-  .student-state.state-idle { color: #888; }
-  .student-state.state-working { color: #3498db; }
-  .student-state.state-done { color: #4ecca3; }
-  .student-state.state-away { color: #e67e22; }
+  /* Entire row colored by status */
+  .student-row.row-idle    { color: #888; }
+  .student-row.row-idle .student-dot { background: #888; }
+  .student-row.row-working { color: #3498db; }
+  .student-row.row-working .student-dot { background: #3498db; }
+  .student-row.row-done    { color: #4ecca3; }
+  .student-row.row-done .student-dot { background: #4ecca3; }
+  .student-row.row-away    { color: #e67e22; }
+  .student-row.row-away .student-dot { background: #e67e22; }
   .student-time {
     font-size: 0.7rem; color: var(--text-faint); min-width: 50px; text-align: right;
   }
@@ -1743,6 +1759,11 @@
             <button class="mock-ctx-btn mock-ctx-clear" onclick="clearCourseTitle()" title="Clear this field">Clear</button>
             <button class="mock-ctx-btn mock-ctx-revert" onclick="revertField('fieldCourseTitle')" title="Revert this field to its previous value (Esc)">Revert</button>
             <button class="mock-ctx-btn mock-ctx-toggle is-on" id="toggleCourseTitle" onclick="togglePushAll('includeCourseTitle', this)" title="Include this field in Push All">On</button>
+            <span class="mock-ctx-font">
+              <button class="mock-ctx-font-btn" onclick="adjustFontOverride('courseTitle', -0.1)" title="Decrease font on phones">A&#x2212;</button>
+              <span class="mock-ctx-font-val" id="fontVal_courseTitle" onclick="resetFontOverride('courseTitle')" title="Click to reset to auto">auto</span>
+              <button class="mock-ctx-font-btn" onclick="adjustFontOverride('courseTitle', 0.1)" title="Increase font on phones">A+</button>
+            </span>
           </div>
         </div>
 
@@ -1762,6 +1783,11 @@
             <button class="mock-ctx-btn mock-ctx-clear" onclick="clearTitle()" title="Clear this field">Clear</button>
             <button class="mock-ctx-btn mock-ctx-revert" onclick="revertField('fieldLabel')" title="Revert this field to its previous value (Esc)">Revert</button>
             <button class="mock-ctx-btn mock-ctx-toggle is-on" id="toggleTitle" onclick="togglePushAll('includeTitle', this)" title="Include this field in Push All">On</button>
+            <span class="mock-ctx-font">
+              <button class="mock-ctx-font-btn" onclick="adjustFontOverride('label', -0.1)" title="Decrease font on phones">A&#x2212;</button>
+              <span class="mock-ctx-font-val" id="fontVal_label" onclick="resetFontOverride('label')" title="Click to reset to auto">auto</span>
+              <button class="mock-ctx-font-btn" onclick="adjustFontOverride('label', 0.1)" title="Increase font on phones">A+</button>
+            </span>
           </div>
         </div>
 
@@ -1808,6 +1834,11 @@
             <button class="mock-ctx-btn mock-ctx-clear" onclick="clearMessage()" title="Clear this field">Clear</button>
             <button class="mock-ctx-btn mock-ctx-revert" onclick="revertField('fieldMessage')" title="Revert this field to its previous value (Esc)">Revert</button>
             <button class="mock-ctx-btn mock-ctx-toggle is-on" id="toggleMessage" onclick="togglePushAll('includeMessage', this)" title="Include this field in Push All">On</button>
+            <span class="mock-ctx-font">
+              <button class="mock-ctx-font-btn" onclick="adjustFontOverride('message', -0.1)" title="Decrease font on phones">A&#x2212;</button>
+              <span class="mock-ctx-font-val" id="fontVal_message" onclick="resetFontOverride('message')" title="Click to reset to auto">auto</span>
+              <button class="mock-ctx-font-btn" onclick="adjustFontOverride('message', 0.1)" title="Increase font on phones">A+</button>
+            </span>
           </div>
         </div>
 
@@ -3915,6 +3946,46 @@ document.addEventListener('input', (e) => {
 });
 
 
+// ── Font size overrides (sent to student phones) ──
+const fontOverrides = { courseTitle: null, label: null, message: null };
+
+function adjustFontOverride(field, delta) {
+  const current = fontOverrides[field] ?? 1.0;
+  const newVal = Math.round(Math.max(0.3, Math.min(2.0, current + delta)) * 10) / 10;
+  fontOverrides[field] = newVal;
+  updateFontValDisplay(field);
+  socket.emit('update-font-override', { field, scale: newVal });
+}
+
+function resetFontOverride(field) {
+  fontOverrides[field] = null;
+  updateFontValDisplay(field);
+  socket.emit('update-font-override', { field, scale: null });
+}
+
+function resetAllFontOverrides() {
+  ['courseTitle', 'label', 'message'].forEach(f => {
+    fontOverrides[f] = null;
+    updateFontValDisplay(f);
+  });
+  // Emit all three resets
+  socket.emit('update-font-override', { field: 'courseTitle', scale: null });
+  socket.emit('update-font-override', { field: 'label', scale: null });
+  socket.emit('update-font-override', { field: 'message', scale: null });
+}
+
+function updateFontValDisplay(field) {
+  const el = document.getElementById('fontVal_' + field);
+  if (!el) return;
+  if (fontOverrides[field] === null) {
+    el.textContent = 'auto';
+    el.classList.remove('is-override');
+  } else {
+    el.textContent = Math.round(fontOverrides[field] * 100) + '%';
+    el.classList.add('is-override');
+  }
+}
+
 // ── Escape key: revert field to value when editing began ──
 const fieldSnapshot = {};
 document.addEventListener('focusin', (e) => {
@@ -5320,6 +5391,7 @@ function doReset() {
 function doStop() {
   if (!document.querySelector('.tb-stop').classList.contains('enabled')) return;
   stopAlarmLoop(); warningFired = false;
+  resetAllFontOverrides();
   // Clear all fields except course title
   setField('fieldLabel', '');
   setField('fieldEndTimeLabel', '');
@@ -6657,6 +6729,7 @@ function playAlarm() {
 
 function stopAlarmLoop() {
   if (alarmLoopTimer) { clearInterval(alarmLoopTimer); alarmLoopTimer = null; }
+  stopPreview(); // also stop any currently playing sound
 }
 
 function previewSound(selectId) {
@@ -6999,15 +7072,10 @@ function renderStudentBoard() {
   });
 
   listEl.innerHTML = sorted.map(s => {
-    const timeAgo = s.timestamp ? formatTimeAgo(s.timestamp) : '';
-    const connClass = s.connected ? 'conn-live' : 'conn-grace';
-    const rowClass = s.connected ? '' : ' disconnected';
-    return `<div class="student-row${rowClass}">
-      <div class="student-conn-dot ${connClass}" title="${s.connected ? 'Connected' : 'Reconnecting...'}"></div>
-      <div class="student-dot dot-${s.state}"></div>
+    return `<div class="student-row row-${s.state}">
+      <div class="student-dot"></div>
       <span class="student-name">${esc(s.name)}</span>
-      <span class="student-state state-${s.state}">${s.state}</span>
-      <span class="student-time">${timeAgo}</span>
+      <span class="student-state">${s.state}</span>
     </div>`;
   }).join('');
 }

@@ -375,6 +375,7 @@
     <div class="seq-next-name" id="seqNextName"></div>
   </div>
   <div class="status-badge" id="statusBadge">No timer set</div>
+  <div id="fontDebug" style="position:fixed;bottom:60px;left:5px;font-size:10px;color:yellow;z-index:9999;background:rgba(0,0,0,0.7);padding:2px 6px;border-radius:4px;"></div>
 </div>
 
 <!-- Class code — OBS mode only (hidden by default, shown via JS when ?obs=true) -->
@@ -787,15 +788,30 @@ function strokeColor(cls) {
 
 // ── Auto-size fields: shrink font to fit within max-height ──
 // Uses the CSS-defined font-size as the max, scales down by percentage
+// When a font override is set by the instructor, it takes precedence.
 const autoSizeFields = ['courseTitle', 'label', 'message'];
-const autoSizeMinScale = 0.4; // won't shrink below 40% of CSS default
-const autoSizeStep = 0.05;     // shrink 5% at a time
+const autoSizeMinScale = 0.4;
+const autoSizeStep = 0.05;
+let currentFontOverrides = { courseTitle: null, label: null, message: null };
 
 function autoSizeField(el) {
-  // Reset to CSS default (remove inline override)
+  const override = currentFontOverrides[el.id];
+  if (override !== null && override !== undefined) {
+    // Instructor set a manual override — apply directly as font-size
+    // Remove max-height/overflow so scaled text isn't clipped
+    el.style.maxHeight = 'none';
+    el.style.overflow = 'visible';
+    // Get the CSS base font size (reset inline first to read the stylesheet value)
+    el.style.fontSize = '';
+    const basePx = parseFloat(getComputedStyle(el).fontSize);
+    el.style.fontSize = Math.round(basePx * override * 100) / 100 + 'px';
+    return;
+  }
+  // Auto-size: restore container constraints and shrink to fit
+  el.style.maxHeight = '';
+  el.style.overflow = '';
   el.style.fontSize = '';
   if (!el.textContent) return;
-  // Get the CSS-defined font size as our maximum
   const maxPx = parseFloat(getComputedStyle(el).fontSize);
   let scale = 1.0;
   let sizePx = maxPx;
@@ -828,6 +844,15 @@ socket.on('timer-update', (s) => {
   document.getElementById('courseTitle').textContent = s.courseTitle || '';
   document.getElementById('label').textContent = s.label || '';
   document.getElementById('message').textContent = s.message || '';
+  // Apply font overrides from instructor (if any)
+  if (s.fontOverrides) {
+    currentFontOverrides.courseTitle = s.fontOverrides.courseTitle;
+    currentFontOverrides.label = s.fontOverrides.label;
+    currentFontOverrides.message = s.fontOverrides.message;
+    // DEBUG: show override values on screen
+    const dbg = document.getElementById('fontDebug');
+    if (dbg) dbg.textContent = 'FO: ' + JSON.stringify(s.fontOverrides);
+  }
   autoSizeAllFields();
 
   // End time — use server-pushed label instead of hardcoded text

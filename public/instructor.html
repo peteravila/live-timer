@@ -6713,6 +6713,7 @@ loadInstructorQR();
 // ── Audio: distinct synthesized sounds ──
 // ── Alarm / warning playback ──
 let alarmLoopTimer = null;
+let timerAlarmAudio = null; // tracks the currently playing timer-completion sound
 
 function playAlarm() {
   const val = document.getElementById('alarmSound').value;
@@ -6720,15 +6721,33 @@ function playAlarm() {
   stopAlarmLoop();
   if (!val || !val.startsWith('custom:')) return;
   const soundId = val.split(':')[1];
-  playCustomSound(soundId);
+  playTimerAlarmSound(soundId);
   if (shouldLoop) {
-    alarmLoopTimer = setInterval(() => playCustomSound(soundId), 3000);
+    alarmLoopTimer = setInterval(() => playTimerAlarmSound(soundId), 3000);
   }
+}
+
+async function playTimerAlarmSound(soundId) {
+  // Stop previous timer alarm audio
+  if (timerAlarmAudio) {
+    try { timerAlarmAudio.pause(); timerAlarmAudio.currentTime = 0; } catch(e) {}
+    timerAlarmAudio = null;
+  }
+  // Also stop any preview audio
+  stopPreview();
+  // Play the sound
+  const audio = await playCustomSound(soundId);
+  if (audio) timerAlarmAudio = audio;
 }
 
 function stopAlarmLoop() {
   if (alarmLoopTimer) { clearInterval(alarmLoopTimer); alarmLoopTimer = null; }
-  stopPreview(); // also stop any currently playing sound
+  // Stop the timer alarm audio
+  if (timerAlarmAudio) {
+    try { timerAlarmAudio.pause(); timerAlarmAudio.currentTime = 0; } catch(e) {}
+    timerAlarmAudio = null;
+  }
+  stopPreview();
 }
 
 function previewSound(selectId) {
@@ -7601,7 +7620,9 @@ function renderAlarmsList() {
     return;
   }
   let html = '';
+  const rowBgs = [null, 'rgba(255,255,255,0.02)']; // odd=default, even=lighter
   alarmsData.forEach((a, i) => {
+    const inputBg = (i % 2 === 1) ? 'rgba(255,255,255,0.04)' : '';
     const [h, m] = (a.time || '00:00').split(':').map(Number);
     const alarmAmPm = h >= 12 ? 'PM' : 'AM';
     const alarmDispH = ((h % 12) || 12);
@@ -7639,6 +7660,7 @@ function renderAlarmsList() {
           '<button class="alarm-ampm-btn" id="alarmAP_' + a.id + '" onclick="toggleAlarmAmPm(\'' + a.id + '\')">' + alarmAmPm + '</button>' +
         '</div>' +
         '<input type="text" class="alarm-label-input" value="' + esc(a.label || '') + '" ' +
+          (inputBg ? 'style="background:' + inputBg + '" ' : '') +
           'placeholder="Label (e.g. First Break)" ' +
           'onchange="updateAlarmField(\'' + a.id + '\', \'label\', this.value)">' +
         '<input type="checkbox" class="alarm-toggle" title="Enable/disable" ' +

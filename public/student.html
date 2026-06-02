@@ -695,6 +695,7 @@ socket.on('class-progress-visible', (visible) => {
     ring.classList.remove('has-progress', 'show-donut');
   } else if (classProgressData) {
     ring.classList.add('has-progress');
+    renderDonutChart(classProgressData);
   }
 });
 
@@ -747,6 +748,7 @@ function renderDonutChart(data) {
 if (!isDisplayViewer) {
   document.getElementById('progressRingSvg').addEventListener('click', () => {
     if (!classProgressVisible || !classProgressData) return;
+    renderDonutChart(classProgressData); // always re-render with latest data before showing
     document.getElementById('progressRingSvg').classList.toggle('show-donut');
   });
 }

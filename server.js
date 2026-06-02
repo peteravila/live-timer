@@ -1456,7 +1456,7 @@ io.on('connection', (socket) => {
         }
       }
       emitStudentCount(session);
-      // Don't broadcast student list here — student stays on list during grace period
+      broadcastStudentList(session);
       broadcastClassProgress(session);
       emitInstructorPhoneStatus(session);
     }

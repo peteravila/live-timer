@@ -3008,10 +3008,10 @@ function applyPalette(paletteId) {
   }
   // Update color-scheme for native inputs
   root.style.colorScheme = palette.colors['--color-scheme'];
-  // Save to localStorage (instructor-scoped if available)
+  // Save to localStorage — both scoped (per-instructor) and unscoped (for instant load before login)
   try {
-    const key = instructorKey ? 'livetimer-palette:' + instructorKey : 'livetimer-palette';
-    localStorage.setItem(key, paletteId);
+    if (instructorKey) localStorage.setItem('livetimer-palette:' + instructorKey, paletteId);
+    localStorage.setItem('livetimer-palette', paletteId);
   } catch(e) {}
   // Update picker active state
   document.querySelectorAll('.palette-swatch').forEach(sw => {

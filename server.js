@@ -18,6 +18,46 @@ const io = new Server(server);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '10mb' })); // increased for custom audio uploads
 
+// ── Security: input sanitization ────────────────────────────
+function sanitize(str, maxLen = 500) {
+  if (typeof str !== 'string') return '';
+  return str.slice(0, maxLen)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+// Sanitize without HTML escaping (for fields stored in DB but rendered via textContent)
+function sanitizeLen(str, maxLen = 500) {
+  if (typeof str !== 'string') return '';
+  return str.slice(0, maxLen);
+}
+
+// ── Security: login rate limiting ───────────────────────────
+const loginAttempts = new Map(); // ip -> { count, firstAttempt }
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
+const RATE_LIMIT_MAX = 10; // max attempts per window
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (!entry || now - entry.firstAttempt > RATE_LIMIT_WINDOW) {
+    loginAttempts.set(ip, { count: 1, firstAttempt: now });
+    return true; // allowed
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT_MAX;
+}
+
+// Clean up stale entries every 30 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of loginAttempts) {
+    if (now - entry.firstAttempt > RATE_LIMIT_WINDOW) loginAttempts.delete(ip);
+  }
+}, 30 * 60 * 1000);
+
 // ── MongoDB ─────────────────────────────────────────────────
 const MONGODB_URI = process.env.MONGODB_URI;
 let db = null;
@@ -911,8 +951,10 @@ app.get('/api/custom-sounds/:id/data', requireAuth, async (req, res) => {
 
 // ── Auth endpoints (no middleware needed) ────────────────────
 app.post('/api/signup', async (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.ip;
+  if (!checkRateLimit(ip)) return res.status(429).json({ error: 'Too many attempts. Please try again in 15 minutes.' });
   const { email, password, name } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  if (!email || !password) return res.status(400).json({ error: 'Login ID and password required' });
   if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
   try {
     const instructor = await createInstructor(email, password, name);
@@ -924,8 +966,10 @@ app.post('/api/signup', async (req, res) => {
 });
 
 app.post('/api/login', async (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.ip;
+  if (!checkRateLimit(ip)) return res.status(429).json({ error: 'Too many attempts. Please try again in 15 minutes.' });
   const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  if (!email || !password) return res.status(400).json({ error: 'Login ID and password required' });
   try {
     const instructor = await authenticateInstructor(email, password);
     await ensureApiKey(instructor);
@@ -1158,6 +1202,7 @@ app.get('/qr-only', (req, res) => {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LiveTimer QR Code</title>
+<link rel="icon" type="image/svg+xml" href="/livetimer-icon.svg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -1346,6 +1391,8 @@ io.on('connection', (socket) => {
 
   // Student validates with class code — routes to the correct instructor
   socket.on('validate-code', (code) => {
+    if (typeof code !== 'string' || code.length > 10) return;
+    code = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
     const ownerInstructorId = codeToInstructor.get(code);
     if (ownerInstructorId) {
       role = 'student';
@@ -1366,6 +1413,8 @@ io.on('connection', (socket) => {
   // Student identifies with persistent UUID and optional name
   socket.on('student-identify', async ({ id, name, isInstructor }) => {
     if (role !== 'student' || !session) return;
+    if (typeof id !== 'string' || id.length > 100) return;
+    name = sanitize(name, 30);
 
     // Verify instructor-phone claim via API key in socket auth
     let verifiedInstructor = false;
@@ -1529,12 +1578,12 @@ io.on('connection', (socket) => {
 
   socket.on('set-timer', ({ minutes, label, message, showEndTime, transparent, blackBg, clockOnly }) => {
     if (role !== 'instructor' || !session) return;
-    const secs = Math.max(0, Math.round(minutes * 60));
+    const secs = Math.max(0, Math.min(86400, Math.round(minutes * 60))); // cap at 24 hours
     session.timerState.totalSeconds = secs;
     session.timerState.originalTotal = secs;
     session.timerState.remainingSeconds = secs;
-    session.timerState.label = label || '';
-    session.timerState.message = message || '';
+    session.timerState.label = sanitizeLen(label, 200);
+    session.timerState.message = sanitizeLen(message, 500);
     session.timerState.showEndTime = showEndTime !== false;
     session.timerState.transparent = !!transparent;
     session.timerState.blackBg = !!blackBg;
@@ -1645,28 +1694,28 @@ io.on('connection', (socket) => {
 
   socket.on('update-message', ({ message }) => {
     if (role !== 'instructor' || !session) return;
-    session.timerState.message = message || '';
+    session.timerState.message = sanitizeLen(message, 500);
     broadcast(session);
     saveTimerState(instructorId, session);
   });
 
   socket.on('update-label', ({ label }) => {
     if (role !== 'instructor' || !session) return;
-    session.timerState.label = label || '';
+    session.timerState.label = sanitizeLen(label, 200);
     broadcast(session);
     saveTimerState(instructorId, session);
   });
 
   socket.on('update-end-time-label', ({ endTimeLabel }) => {
     if (role !== 'instructor' || !session) return;
-    session.timerState.endTimeLabel = endTimeLabel || 'Class resumes at';
+    session.timerState.endTimeLabel = sanitizeLen(endTimeLabel, 100) || 'Class resumes at';
     broadcast(session);
     saveTimerState(instructorId, session);
   });
 
   socket.on('update-course-title', ({ courseTitle }) => {
     if (role !== 'instructor' || !session) return;
-    session.timerState.courseTitle = courseTitle || '';
+    session.timerState.courseTitle = sanitizeLen(courseTitle, 200);
     broadcast(session);
     saveTimerState(instructorId, session);
   });

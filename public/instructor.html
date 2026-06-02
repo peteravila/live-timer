@@ -4657,14 +4657,12 @@ function updateMockupLive(s) {
   document.getElementById('mockDigitsText').textContent = fmt(s.remainingSeconds);
   digits.classList.toggle('has-hours', Math.abs(s.remainingSeconds) >= 3600);
 
-  // Update ring
+  // Update ring — linear depletion (matches student page)
   const refTotal = s.originalTotal || s.totalSeconds;
   if (refTotal > 0) {
     const remaining = Math.max(0, s.remainingSeconds);
     const pct = remaining / refTotal;
-    const RESCALE_THRESHOLD = 600;
-    const ringPct = refTotal <= RESCALE_THRESHOLD ? pct : Math.pow(pct, 0.55);
-    ringFg.style.strokeDashoffset = MOCK_CIRCUMFERENCE * (1 - ringPct);
+    ringFg.style.strokeDashoffset = MOCK_CIRCUMFERENCE * (1 - pct);
   } else {
     ringFg.style.strokeDashoffset = 0;
   }
@@ -6999,13 +6997,18 @@ function updateButtonStates() {
                           getField('fieldEndTimeLabel') !== 'Class resumes at';
   clearBtn.classList.toggle('enabled', hasLabel || hasMessage || hasDuration || hasName || hasEndTimeLabel);
 
-  // Digit spinners: hidden when timer is running or paused
+  // Digit spinners: hide arrows when running/paused, but keep clock button visible for +Add
   const spinnerActive = !running && !paused;
   document.querySelectorAll('.ds-btn').forEach(btn => {
     btn.classList.toggle('disabled', !spinnerActive);
+    btn.style.visibility = spinnerActive ? '' : 'hidden';
   });
-  document.querySelectorAll('.digit-spinner').forEach(el => {
+  document.querySelectorAll('.digit-spinner-label').forEach(el => {
     el.style.visibility = spinnerActive ? '' : 'hidden';
+  });
+  // Keep the clock button (digit-expand-btn) and digits always visible/clickable
+  document.querySelectorAll('.digit-expand-btn').forEach(el => {
+    el.style.visibility = '';
   });
 
   // Field play buttons: disabled when no duration set and not paused

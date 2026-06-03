@@ -85,7 +85,7 @@ const SALT_ROUNDS = 10;
 async function createInstructor(email, password, name, isAdmin = false) {
   if (!db) throw new Error('Database not available');
   const existing = await db.collection('instructors').findOne({ email: email.toLowerCase() });
-  if (existing) throw new Error('An account with this email already exists');
+  if (existing) throw new Error('An account with this Login ID already exists');
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
   const instructor = {
     email: email.toLowerCase(),

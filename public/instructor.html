@@ -1423,7 +1423,7 @@
   .login-box h1 { color: var(--green); margin-bottom: 6px; font-size: 1.6rem; }
   .login-box .login-subtitle { color: var(--dim); font-size: 0.85rem; margin-bottom: 24px; text-align: center; }
   .login-box label { display: block; font-size: 0.8rem; color: var(--dim); margin-bottom: 4px; margin-top: 14px; }
-  .login-box input[type="email"],
+  .login-box input[type="text"],
   .login-box input[type="password"] {
     width: 100%; padding: 10px 12px; border-radius: 6px;
     border: 1.5px solid rgba(255,255,255,0.2); background: var(--subtle-bg2); color: var(--text);
@@ -1669,8 +1669,8 @@
     <h1>LiveTimer</h1>
     <div class="login-subtitle">Instructor Login</div>
     <form id="loginForm" autocomplete="on">
-      <label for="loginEmail">Email</label>
-      <input type="email" id="loginEmail" name="email" autocomplete="email" required>
+      <label for="loginEmail">Login ID</label>
+      <input type="text" id="loginEmail" name="email" autocomplete="username" required>
       <label for="loginPassword">Password</label>
       <input type="password" id="loginPassword" name="password" autocomplete="current-password" required>
       <button type="submit" class="login-btn" id="loginBtn">Log In</button>

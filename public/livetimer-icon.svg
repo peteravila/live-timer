@@ -1,16 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <style>
-    .icon-stroke { fill: #1a1a2e; stroke: #1a1a2e; }
-    .icon-fill { fill: #1a1a2e; }
-    .icon-line { stroke: #1a1a2e; }
+    .lt-stroke { stroke: #1a1a2e; }
+    .lt-fill { fill: #1a1a2e; }
     @media (prefers-color-scheme: dark) {
-      .icon-stroke { fill: #e0e0e0; stroke: #e0e0e0; }
-      .icon-fill { fill: #e0e0e0; }
-      .icon-line { stroke: #e0e0e0; }
+      .lt-stroke { stroke: #e0e0e0; }
+      .lt-fill { fill: #e0e0e0; }
     }
   </style>
-  <path class="icon-line" d="M 50 10 A 40 40 0 1 1 16 32" fill="none" stroke-width="9" stroke-linecap="round"/>
-  <polygon class="icon-fill" points="8,20 18,40 28,24"/>
-  <line class="icon-line" x1="50" y1="50" x2="50" y2="28" stroke-width="7" stroke-linecap="round"/>
-  <line class="icon-line" x1="50" y1="50" x2="66" y2="58" stroke-width="5" stroke-linecap="round"/>
+  <path class="lt-stroke" d="M 90 50 A 40 40 0 1 1 50 10" fill="none" stroke-width="8" stroke-linecap="round"/>
+  <line class="lt-stroke" x1="50" y1="50" x2="70" y2="30" stroke-width="7" stroke-linecap="round"/>
+  <g transform="translate(-10.25,10) rotate(45 82 18)">
+    <polygon class="lt-fill" points="72,28 92,28 82,8"/>
+  </g>
 </svg>

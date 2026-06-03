@@ -97,23 +97,41 @@ async function createInstructor(email, password, name, isAdmin = false) {
   const result = await db.collection('instructors').insertOne(instructor);
   instructor._id = result.insertedId;
 
-  // Seed new instructor with default sounds (if any exist)
+  // Seed new instructor with defaults (sounds, timers, alarms)
+  const instId = result.insertedId.toString();
   try {
-    const defaults = await loadDefaultSounds();
-    if (defaults.length > 0) {
-      // Give each sound a new ID so they're independent copies
-      const seeded = defaults.map(s => ({
+    const defSounds = await loadDefaultSounds();
+    if (defSounds.length > 0) {
+      const seeded = defSounds.map(s => ({
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        name: s.name,
-        data: s.data,
-        mimeType: s.mimeType,
-        createdAt: new Date(),
+        name: s.name, data: s.data, mimeType: s.mimeType, createdAt: new Date(),
       }));
-      await saveCustomSounds(result.insertedId.toString(), seeded);
+      await saveCustomSounds(instId, seeded);
     }
-  } catch (e) {
-    console.error('  Failed to seed default sounds for new instructor:', e.message);
-  }
+  } catch (e) { console.error('  Failed to seed default sounds:', e.message); }
+
+  try {
+    const defTimers = await loadDefaultTimers();
+    if (defTimers.length > 0) {
+      const seeded = defTimers.map(t => ({
+        ...t,
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      }));
+      await saveLibrary(instId, seeded);
+    }
+  } catch (e) { console.error('  Failed to seed default timers:', e.message); }
+
+  try {
+    const defAlarms = await loadDefaultAlarms();
+    if (defAlarms.length > 0) {
+      const seeded = defAlarms.map(a => ({
+        ...a,
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      }));
+      const defaultSet = { id: 'default', name: 'Default', alarms: seeded };
+      await saveAlarmSets(instId, { activeSetId: 'default', sets: [defaultSet] });
+    }
+  } catch (e) { console.error('  Failed to seed default alarms:', e.message); }
 
   return instructor;
 }
@@ -499,6 +517,56 @@ async function saveDefaultSounds(sounds) {
     );
   } catch (e) {
     console.error('  MongoDB saveDefaultSounds failed:', e.message);
+  }
+}
+
+// ── Default timers (admin-managed, seeded to new instructors) ──
+async function loadDefaultTimers() {
+  if (!db) return [];
+  try {
+    const doc = await db.collection('defaultTimers').findOne({ _id: 'defaults' });
+    return doc && doc.timers ? doc.timers : [];
+  } catch (e) {
+    console.error('  MongoDB loadDefaultTimers failed:', e.message);
+    return [];
+  }
+}
+
+async function saveDefaultTimers(timers) {
+  if (!db) return;
+  try {
+    await db.collection('defaultTimers').updateOne(
+      { _id: 'defaults' },
+      { $set: { timers, updatedAt: new Date() } },
+      { upsert: true }
+    );
+  } catch (e) {
+    console.error('  MongoDB saveDefaultTimers failed:', e.message);
+  }
+}
+
+// ── Default alarms (admin-managed, seeded to new instructors) ──
+async function loadDefaultAlarms() {
+  if (!db) return [];
+  try {
+    const doc = await db.collection('defaultAlarms').findOne({ _id: 'defaults' });
+    return doc && doc.alarms ? doc.alarms : [];
+  } catch (e) {
+    console.error('  MongoDB loadDefaultAlarms failed:', e.message);
+    return [];
+  }
+}
+
+async function saveDefaultAlarms(alarms) {
+  if (!db) return;
+  try {
+    await db.collection('defaultAlarms').updateOne(
+      { _id: 'defaults' },
+      { $set: { alarms, updatedAt: new Date() } },
+      { upsert: true }
+    );
+  } catch (e) {
+    console.error('  MongoDB saveDefaultAlarms failed:', e.message);
   }
 }
 
@@ -1148,6 +1216,57 @@ app.get('/api/admin/default-sounds/:id/data', requireAdmin, async (req, res) => 
   const sound = sounds.find(s => s.id === req.params.id);
   if (!sound) return res.status(404).json({ error: 'Sound not found' });
   res.json({ id: sound.id, name: sound.name, data: sound.data, mimeType: sound.mimeType });
+});
+
+// ── Admin: Default timers ──
+app.get('/api/admin/default-timers', requireAdmin, async (req, res) => {
+  res.json(await loadDefaultTimers());
+});
+
+app.post('/api/admin/default-timers', requireAdmin, async (req, res) => {
+  const timer = req.body;
+  timer.id = timer.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  timer.name = sanitizeLen(timer.name, 100);
+  timer.label = sanitizeLen(timer.label, 200);
+  timer.message = sanitizeLen(timer.message, 500);
+  timer.endTimeLabel = sanitizeLen(timer.endTimeLabel, 100);
+  const timers = await loadDefaultTimers();
+  const idx = timers.findIndex(t => t.id === timer.id);
+  if (idx >= 0) timers[idx] = timer;
+  else timers.push(timer);
+  await saveDefaultTimers(timers);
+  res.json(timers);
+});
+
+app.delete('/api/admin/default-timers/:id', requireAdmin, async (req, res) => {
+  let timers = await loadDefaultTimers();
+  timers = timers.filter(t => t.id !== req.params.id);
+  await saveDefaultTimers(timers);
+  res.json(timers);
+});
+
+// ── Admin: Default alarms ──
+app.get('/api/admin/default-alarms', requireAdmin, async (req, res) => {
+  res.json(await loadDefaultAlarms());
+});
+
+app.post('/api/admin/default-alarms', requireAdmin, async (req, res) => {
+  const alarm = req.body;
+  alarm.id = alarm.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  alarm.label = sanitize(alarm.label, 100);
+  const alarms = await loadDefaultAlarms();
+  const idx = alarms.findIndex(a => a.id === alarm.id);
+  if (idx >= 0) alarms[idx] = alarm;
+  else alarms.push(alarm);
+  await saveDefaultAlarms(alarms);
+  res.json(alarms);
+});
+
+app.delete('/api/admin/default-alarms/:id', requireAdmin, async (req, res) => {
+  let alarms = await loadDefaultAlarms();
+  alarms = alarms.filter(a => a.id !== req.params.id);
+  await saveDefaultAlarms(alarms);
+  res.json(alarms);
 });
 
 // ── QR code (auth required — scoped to instructor's class code) ──

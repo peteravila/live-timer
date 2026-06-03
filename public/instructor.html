@@ -2309,6 +2309,22 @@
             </div>
 
             <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
+            <label class="settings-label" style="font-size:0.85rem; color:#e74c3c;">ADMIN — DEFAULT TIMERS</label>
+            <div style="font-size:0.75rem; color:var(--dim); margin-top:4px; margin-bottom:8px;">These timers are copied to every new instructor's library on account creation.</div>
+            <div class="settings-indent">
+              <div id="defaultTimersList" style="margin-bottom:8px; max-height:300px; overflow-y:auto;"></div>
+              <button class="settings-btn" onclick="addDefaultTimer()">+ Add Default Timer</button>
+            </div>
+
+            <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
+            <label class="settings-label" style="font-size:0.85rem; color:#e74c3c;">ADMIN — DEFAULT ALARMS</label>
+            <div style="font-size:0.75rem; color:var(--dim); margin-top:4px; margin-bottom:8px;">These alarms are copied to every new instructor's default alarm set on account creation.</div>
+            <div class="settings-indent">
+              <div id="defaultAlarmsList" style="margin-bottom:8px; max-height:300px; overflow-y:auto;"></div>
+              <button class="settings-btn" onclick="addDefaultAlarm()">+ Add Default Alarm</button>
+            </div>
+
+            <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
             <label class="settings-label" style="font-size:0.85rem; color:#e74c3c;">ADMIN — SCREENSHOT MODE</label>
             <div class="settings-indent" style="display:flex; align-items:center; gap:10px;">
               <label class="switch"><input type="checkbox" id="screenshotMode" onchange="toggleScreenshotMode()"><span class="slider"></span></label>
@@ -3228,6 +3244,8 @@ async function startApp() {
       document.getElementById('adminSection').style.display = '';
       loadAdminInstructors();
       loadDefaultSounds();
+      loadDefaultTimers();
+      loadDefaultAlarms();
     }
   } catch (e) { /* couldn't fetch — no greeting, no admin */ }
   // Fetch permanent API key for OBS/display URLs
@@ -4969,6 +4987,166 @@ async function deleteDefaultSound(id) {
       renderDefaultSoundsList();
     }
   } catch (e) { console.error('deleteDefaultSound:', e); }
+}
+
+// ── Admin: Default Timers ──
+var defaultTimersData = [];
+
+async function loadDefaultTimers() {
+  try {
+    const resp = await authFetch('/api/admin/default-timers');
+    if (resp.ok) { defaultTimersData = await resp.json(); renderDefaultTimersList(); }
+  } catch (e) { console.error('loadDefaultTimers:', e); }
+}
+
+function renderDefaultTimersList() {
+  const container = document.getElementById('defaultTimersList');
+  if (!container) return;
+  if (defaultTimersData.length === 0) {
+    container.innerHTML = '<div style="font-size:0.8rem; color:var(--dim);">No default timers yet.</div>';
+    return;
+  }
+  const hdrs = '<div style="display:grid; grid-template-columns:1fr 60px 1fr 80px 40px; gap:4px; padding:4px 6px; font-size:0.65rem; color:var(--dim); text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid var(--border);">'+
+    '<span>Name</span><span>Min</span><span>Label</span><span>End Time</span><span></span></div>';
+  const rows = defaultTimersData.map((t, i) => {
+    const bg = i % 2 === 0 ? '' : 'background:rgba(255,255,255,0.02);';
+    return '<div style="display:grid; grid-template-columns:1fr 60px 1fr 80px 40px; gap:4px; padding:4px 6px; align-items:center; font-size:0.8rem; ' + bg + '" data-dt-id="' + esc(t.id) + '">' +
+      '<input type="text" value="' + esc(t.name || '') + '" data-field="name" class="admin-cell-input" style="font-size:0.8rem;" onchange="updateDefaultTimer(\'' + esc(t.id) + '\', \'name\', this.value)">' +
+      '<input type="number" value="' + (t.minutes || 0) + '" data-field="minutes" class="admin-cell-input" style="font-size:0.8rem; width:50px;" onchange="updateDefaultTimer(\'' + esc(t.id) + '\', \'minutes\', parseFloat(this.value))">' +
+      '<input type="text" value="' + esc(t.label || '') + '" data-field="label" class="admin-cell-input" style="font-size:0.8rem;" onchange="updateDefaultTimer(\'' + esc(t.id) + '\', \'label\', this.value)">' +
+      '<select data-field="showEndTime" class="admin-cell-input" style="font-size:0.75rem;" onchange="updateDefaultTimer(\'' + esc(t.id) + '\', \'showEndTime\', this.value===\'true\')">' +
+        '<option value="true"' + (t.showEndTime !== false ? ' selected' : '') + '>Show</option>' +
+        '<option value="false"' + (t.showEndTime === false ? ' selected' : '') + '>Hide</option>' +
+      '</select>' +
+      '<button style="background:none; border:none; color:var(--red); cursor:pointer; font-size:0.9rem;" onclick="deleteDefaultTimer(\'' + esc(t.id) + '\')" title="Delete">&#10005;</button>' +
+    '</div>';
+  }).join('');
+  container.innerHTML = hdrs + rows;
+}
+
+async function addDefaultTimer() {
+  const timer = { name: 'New Timer', minutes: 15, label: '', message: '', showEndTime: true };
+  try {
+    const resp = await authFetch('/api/admin/default-timers', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(timer)
+    });
+    if (resp.ok) { defaultTimersData = await resp.json(); renderDefaultTimersList(); }
+  } catch (e) { console.error('addDefaultTimer:', e); }
+}
+
+async function updateDefaultTimer(id, field, value) {
+  const timer = defaultTimersData.find(t => t.id === id);
+  if (!timer) return;
+  timer[field] = value;
+  try {
+    const resp = await authFetch('/api/admin/default-timers', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(timer)
+    });
+    if (resp.ok) { defaultTimersData = await resp.json(); }
+  } catch (e) { console.error('updateDefaultTimer:', e); }
+}
+
+async function deleteDefaultTimer(id) {
+  if (!await customConfirm('Delete this default timer?')) return;
+  try {
+    const resp = await authFetch('/api/admin/default-timers/' + id, { method: 'DELETE' });
+    if (resp.ok) { defaultTimersData = await resp.json(); renderDefaultTimersList(); }
+  } catch (e) { console.error('deleteDefaultTimer:', e); }
+}
+
+// ── Admin: Default Alarms ──
+var defaultAlarmsData = [];
+
+async function loadDefaultAlarms() {
+  try {
+    const resp = await authFetch('/api/admin/default-alarms');
+    if (resp.ok) { defaultAlarmsData = await resp.json(); renderDefaultAlarmsList(); }
+  } catch (e) { console.error('loadDefaultAlarms:', e); }
+}
+
+function renderDefaultAlarmsList() {
+  const container = document.getElementById('defaultAlarmsList');
+  if (!container) return;
+  if (defaultAlarmsData.length === 0) {
+    container.innerHTML = '<div style="font-size:0.8rem; color:var(--dim);">No default alarms yet.</div>';
+    return;
+  }
+  const hdrs = '<div style="display:grid; grid-template-columns:50px 50px 50px 1fr 60px 60px 40px; gap:4px; padding:4px 6px; font-size:0.65rem; color:var(--dim); text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid var(--border);">'+
+    '<span>Hour</span><span>Min</span><span>AM/PM</span><span>Label</span><span>Flash</span><span>Repeat</span><span></span></div>';
+  const rows = defaultAlarmsData.map((a, i) => {
+    const bg = i % 2 === 0 ? '' : 'background:rgba(255,255,255,0.02);';
+    const [h, m] = (a.time || '08:00').split(':').map(Number);
+    const dispH = ((h % 12) || 12);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    return '<div style="display:grid; grid-template-columns:50px 50px 50px 1fr 60px 60px 40px; gap:4px; padding:4px 6px; align-items:center; font-size:0.8rem; ' + bg + '">' +
+      '<input type="number" value="' + dispH + '" min="1" max="12" class="admin-cell-input" style="font-size:0.8rem; width:40px;" onchange="updateDefaultAlarmTime(\'' + esc(a.id) + '\', \'hour\', this.value)">' +
+      '<input type="number" value="' + String(m).padStart(2,'0') + '" min="0" max="59" class="admin-cell-input" style="font-size:0.8rem; width:40px;" onchange="updateDefaultAlarmTime(\'' + esc(a.id) + '\', \'minute\', this.value)">' +
+      '<select class="admin-cell-input" style="font-size:0.75rem;" onchange="updateDefaultAlarmTime(\'' + esc(a.id) + '\', \'ampm\', this.value)">' +
+        '<option value="AM"' + (ampm === 'AM' ? ' selected' : '') + '>AM</option>' +
+        '<option value="PM"' + (ampm === 'PM' ? ' selected' : '') + '>PM</option>' +
+      '</select>' +
+      '<input type="text" value="' + esc(a.label || '') + '" class="admin-cell-input" style="font-size:0.8rem;" onchange="updateDefaultAlarmField(\'' + esc(a.id) + '\', \'label\', this.value)">' +
+      '<label style="display:flex; align-items:center; justify-content:center;"><input type="checkbox" class="custom-cb"' + (a.visualAlert ? ' checked' : '') + ' onchange="updateDefaultAlarmField(\'' + esc(a.id) + '\', \'visualAlert\', this.checked)"></label>' +
+      '<label style="display:flex; align-items:center; justify-content:center;"><input type="checkbox" class="custom-cb"' + (a.repeatAlert ? ' checked' : '') + ' onchange="updateDefaultAlarmField(\'' + esc(a.id) + '\', \'repeatAlert\', this.checked)"></label>' +
+      '<button style="background:none; border:none; color:var(--red); cursor:pointer; font-size:0.9rem;" onclick="deleteDefaultAlarm(\'' + esc(a.id) + '\')" title="Delete">&#10005;</button>' +
+    '</div>';
+  }).join('');
+  container.innerHTML = hdrs + rows;
+}
+
+async function addDefaultAlarm() {
+  const alarm = { time: '08:00', label: 'New Alarm', enabled: true, visualAlert: true, repeatAlert: false, days: [0,1,2,3,4,5,6] };
+  try {
+    const resp = await authFetch('/api/admin/default-alarms', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(alarm)
+    });
+    if (resp.ok) { defaultAlarmsData = await resp.json(); renderDefaultAlarmsList(); }
+  } catch (e) { console.error('addDefaultAlarm:', e); }
+}
+
+async function updateDefaultAlarmField(id, field, value) {
+  const alarm = defaultAlarmsData.find(a => a.id === id);
+  if (!alarm) return;
+  alarm[field] = value;
+  try {
+    const resp = await authFetch('/api/admin/default-alarms', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(alarm)
+    });
+    if (resp.ok) { defaultAlarmsData = await resp.json(); }
+  } catch (e) { console.error('updateDefaultAlarmField:', e); }
+}
+
+async function updateDefaultAlarmTime(id, part, value) {
+  const alarm = defaultAlarmsData.find(a => a.id === id);
+  if (!alarm) return;
+  const [h, m] = (alarm.time || '08:00').split(':').map(Number);
+  let hour = h, minute = m;
+  const isAM = h < 12;
+  if (part === 'hour') {
+    let v = parseInt(value, 10) || 12;
+    if (v < 1) v = 1; if (v > 12) v = 12;
+    hour = isAM ? (v === 12 ? 0 : v) : (v === 12 ? 12 : v + 12);
+  } else if (part === 'minute') {
+    minute = Math.max(0, Math.min(59, parseInt(value, 10) || 0));
+  } else if (part === 'ampm') {
+    const disp = ((h % 12) || 12);
+    hour = value === 'PM' ? (disp === 12 ? 12 : disp + 12) : (disp === 12 ? 0 : disp);
+  }
+  alarm.time = String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
+  try {
+    const resp = await authFetch('/api/admin/default-alarms', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(alarm)
+    });
+    if (resp.ok) { defaultAlarmsData = await resp.json(); }
+  } catch (e) { console.error('updateDefaultAlarmTime:', e); }
+}
+
+async function deleteDefaultAlarm(id) {
+  if (!await customConfirm('Delete this default alarm?')) return;
+  try {
+    const resp = await authFetch('/api/admin/default-alarms/' + id, { method: 'DELETE' });
+    if (resp.ok) { defaultAlarmsData = await resp.json(); renderDefaultAlarmsList(); }
+  } catch (e) { console.error('deleteDefaultAlarm:', e); }
 }
 
 function toggleScreenshotMode() {

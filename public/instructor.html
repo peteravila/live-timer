@@ -3109,7 +3109,7 @@ loginForm.addEventListener('submit', async (e) => {
     localStorage.setItem('livetimer-token', data.token);
     startApp();
   } catch (err) {
-    loginError.textContent = 'Login failed. Please check your email and password, or contact your administrator to reset your password.';
+    loginError.textContent = 'Login failed. Please check your Login ID and password, or contact your administrator to reset your password.';
   } finally {
     loginBtn.disabled = false;
   }
@@ -3598,7 +3598,7 @@ async function adminAddInstructor() {
   const email = document.getElementById('adminAddEmail').value.trim();
   const password = document.getElementById('adminAddPassword').value;
   const isAdmin = document.getElementById('adminAddIsAdmin').checked;
-  if (!email || !password) { statusEl.textContent = 'Email and password are required.'; statusEl.style.color = 'var(--red)'; return; }
+  if (!email || !password) { statusEl.textContent = 'Login ID and password are required.'; statusEl.style.color = 'var(--red)'; return; }
   if (password.length < 6) { statusEl.textContent = 'Password must be at least 6 characters.'; statusEl.style.color = 'var(--red)'; return; }
   try {
     const resp = await fetch('/api/admin/add-instructor', {

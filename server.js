@@ -141,9 +141,9 @@ async function createInstructor(email, password, name, isAdmin = false) {
 async function authenticateInstructor(email, password) {
   if (!db) throw new Error('Database not available');
   const instructor = await db.collection('instructors').findOne({ email: email.toLowerCase() });
-  if (!instructor) throw new Error('Invalid email or password');
+  if (!instructor) throw new Error('Invalid Login ID or password');
   const valid = await bcrypt.compare(password, instructor.password);
-  if (!valid) throw new Error('Invalid email or password');
+  if (!valid) throw new Error('Invalid Login ID or password');
   return instructor;
 }
 
@@ -1140,7 +1140,7 @@ app.post('/api/admin/toggle-admin', requireAdmin, async (req, res) => {
 
 app.post('/api/admin/add-instructor', requireAdmin, async (req, res) => {
   const { email, password, name, isAdmin } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  if (!email || !password) return res.status(400).json({ error: 'Login ID and password required' });
   if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
   try {
     const instructor = await createInstructor(email, password, name, isAdmin);

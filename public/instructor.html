@@ -3687,6 +3687,7 @@ function filterAdminGrid() {
 let library = [];
 let activeLibId = null;
 let timerIsRunning = false;
+let noClockAnnouncementActive = false;
 let timerTotal = 0;
 let timerOriginalTotal = 0;
 let timerRemaining = 0;
@@ -5589,13 +5590,16 @@ async function doStart() {
   // noClock mode: just push text and modes, don't start a countdown
   const isNoClock = document.getElementById('fieldNoClock').checked;
   if (!isNoClock) {
+    noClockAnnouncementActive = false;
     // Start after a brief delay to let the server process the pushes
     setTimeout(() => {
       socket.emit('start');
       lastPushTime = Date.now();
     }, 100);
   } else {
+    noClockAnnouncementActive = true;
     lastPushTime = Date.now();
+    updateButtonStates();
   }
 }
 function doPause() {
@@ -5611,6 +5615,7 @@ function doReset() {
 function doStop() {
   if (!document.querySelector('.tb-stop').classList.contains('enabled')) return;
   stopAlarmLoop(); stopAllFiringAlarms(); warningFired = false;
+  noClockAnnouncementActive = false;
   resetAllFontOverrides();
   // Clear all fields except course title
   setField('fieldLabel', '');
@@ -7257,8 +7262,7 @@ function updateButtonStates() {
 
   // Stop: enabled when running, paused, done, or noClock announcement is active
   const stopBtn = document.querySelector('.tb-stop');
-  const noClockActive = document.getElementById('fieldNoClock').checked && (getField('fieldLabel') || getField('fieldMessage'));
-  stopBtn.classList.toggle('enabled', running || paused || done || noClockActive);
+  stopBtn.classList.toggle('enabled', running || paused || done || noClockAnnouncementActive);
 
   // Reset: enabled when timer is set and not at full time
   const resetBtn = document.querySelector('.tb-reset');

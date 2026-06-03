@@ -4505,7 +4505,7 @@ async function pushFieldAndStart(fieldId) {
 
   // Not paused — push the current timer duration and start fresh
   const minutes = getTimerMinutes();
-  if (minutes <= 0) return;
+  if (minutes <= 0 && !document.getElementById('fieldNoClock').checked) return;
   const showEndTime = document.getElementById('fieldShowEnd').checked;
   socket.emit('set-timer-only', { minutes, showEndTime });
   socket.emit('update-display-modes', getDisplayModePayload());
@@ -5411,7 +5411,7 @@ function getTimerMinutes() {
 function loadTime() {
   const minutes = getTimerMinutes();
   const showEndTime = document.getElementById('fieldShowEnd').checked;
-  if (minutes <= 0) return;
+  if (minutes <= 0 && !document.getElementById('fieldNoClock').checked) return;
   socket.emit('set-timer-only', { minutes, showEndTime });
   socket.emit('update-display-modes', getDisplayModePayload());
 }
@@ -5561,7 +5561,8 @@ async function doStart() {
 
   if (useTime && !isPaused) {
     const minutes = getTimerMinutes();
-    if (minutes > 0) {
+    const noClockMode = document.getElementById('fieldNoClock').checked;
+    if (minutes > 0 || noClockMode) {
       const showEndTime = document.getElementById('fieldShowEnd').checked;
       socket.emit('set-timer-only', { minutes, showEndTime });
     }
@@ -5585,11 +5586,17 @@ async function doStart() {
   if (useEndTimeLabel) markPushed('fieldEndTimeLabel');
   if (useMessage) markPushed('fieldMessage');
 
-  // Start after a brief delay to let the server process the pushes
-  setTimeout(() => {
-    socket.emit('start');
+  // noClock mode: just push text and modes, don't start a countdown
+  const isNoClock = document.getElementById('fieldNoClock').checked;
+  if (!isNoClock) {
+    // Start after a brief delay to let the server process the pushes
+    setTimeout(() => {
+      socket.emit('start');
+      lastPushTime = Date.now();
+    }, 100);
+  } else {
     lastPushTime = Date.now();
-  }, 100);
+  }
 }
 function doPause() {
   if (!document.querySelector('.tb-pause').classList.contains('enabled')) return;
@@ -6058,7 +6065,8 @@ async function libSaveRow(id) {
   if (!name) { await customAlert('Name is required.'); return; }
   const excludeId = row.dataset.newRow ? undefined : id;
   if (isTimerNameTaken(name, excludeId)) { await customAlert('A timer named "' + name + '" already exists.'); return; }
-  if (minutes <= 0) { await customAlert('Duration must be greater than 0.'); return; }
+  const isNoClock = !!get('noClock');
+  if (minutes <= 0 && !isNoClock) { await customAlert('Duration must be greater than 0.'); return; }
   const bgMode = get('bgMode');
   const item = {
     id: row.dataset.newRow ? undefined : id,
@@ -6156,7 +6164,8 @@ async function submitNewTimerDialog() {
   const minutes = hours * 60 + mins;
   if (!name) { await customAlert('Name is required.'); return; }
   if (isTimerNameTaken(name, ntEditId)) { await customAlert('A timer named "' + name + '" already exists.'); return; }
-  if (minutes <= 0) { await customAlert('Duration must be greater than 0.'); return; }
+  const ntNoClock = document.getElementById('ntNoClock').checked;
+  if (minutes <= 0 && !ntNoClock) { await customAlert('Duration must be greater than 0.'); return; }
   const bgMode = document.getElementById('ntBgMode').value;
   const item = {
     name,
@@ -7246,9 +7255,10 @@ function updateButtonStates() {
   const pauseBtn = document.querySelector('.tb-pause');
   pauseBtn.classList.toggle('enabled', running || (screenshotMode && paused));
 
-  // Stop: enabled only when running or paused or done
+  // Stop: enabled when running, paused, done, or noClock announcement is active
   const stopBtn = document.querySelector('.tb-stop');
-  stopBtn.classList.toggle('enabled', running || paused || done);
+  const noClockActive = document.getElementById('fieldNoClock').checked && (getField('fieldLabel') || getField('fieldMessage'));
+  stopBtn.classList.toggle('enabled', running || paused || done || noClockActive);
 
   // Reset: enabled when timer is set and not at full time
   const resetBtn = document.querySelector('.tb-reset');

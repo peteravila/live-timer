@@ -5613,7 +5613,8 @@ function doReset() {
   setTimeout(() => socket.emit('start'), 150);
 }
 function doStop() {
-  if (!document.querySelector('.tb-stop').classList.contains('enabled')) return;
+  const stopBtn = document.querySelector('.tb-stop');
+  if (!stopBtn.classList.contains('enabled') && !noClockAnnouncementActive) return;
   stopAlarmLoop(); stopAllFiringAlarms(); warningFired = false;
   noClockAnnouncementActive = false;
   resetAllFontOverrides();
@@ -5624,10 +5625,15 @@ function doStop() {
   markPushed('fieldLabel');
   markPushed('fieldEndTimeLabel');
   markPushed('fieldMessage');
+  // Reset display modes on mockup
+  document.getElementById('fieldNoClock').checked = false;
+  document.getElementById('fieldClockOnly').checked = false;
+  setBgModeFromFlags(false, false);
   // Reset spinners and display to 00:00
   setDurationFromMinutes(0);
   document.getElementById('mockDigitsText').textContent = fmtHM(0);
   socket.emit('stop');
+  updateButtonStates();
 }
 function doRestore() {
   if (!document.querySelector('.tb-restore').classList.contains('enabled')) return;

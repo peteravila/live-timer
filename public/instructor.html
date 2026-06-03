@@ -1285,7 +1285,7 @@
   }
   .alarm-card {
     display: flex; flex-direction: column; gap: 2px;
-    padding: 5px 10px; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px;
+    padding: 5px 10px; border: 1px solid rgba(0,0,0,0.25); border-radius: 6px;
     transition: all 0.15s;
   }
   .alarm-card.alarm-selected { background: rgba(52, 152, 219, 0.12); border-color: rgba(52, 152, 219, 0.4); }
@@ -7895,7 +7895,7 @@ function renderAlarmsList() {
           '<button class="alarm-ampm-btn" id="alarmAP_' + a.id + '" onclick="toggleAlarmAmPm(\'' + a.id + '\')">' + alarmAmPm + '</button>' +
         '</div>' +
         '<input type="text" class="alarm-label-input" value="' + esc(a.label || '') + '" ' +
-          'style="background:' + (i % 2 === 0 ? 'var(--card)' : 'rgba(0,0,0,0.08)') + ' !important;" ' +
+          'style="background:inherit !important;" ' +
           'placeholder="Label (e.g. First Break)" ' +
           'onchange="updateAlarmField(\'' + a.id + '\', \'label\', this.value)">' +
         '<input type="checkbox" class="alarm-toggle" title="Enable/disable" ' +

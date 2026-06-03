@@ -112,12 +112,14 @@ async function createInstructor(email, password, name, isAdmin = false) {
 
   try {
     const defTimers = await loadDefaultTimers();
+    console.log('  Default timers to seed:', defTimers.length);
     if (defTimers.length > 0) {
       const seeded = defTimers.map(t => ({
         ...t,
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       }));
       await saveLibrary(instId, seeded);
+      console.log('  Seeded', seeded.length, 'timers for instructor', instId);
     }
   } catch (e) { console.error('  Failed to seed default timers:', e.message); }
 

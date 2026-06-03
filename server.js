@@ -1808,6 +1808,13 @@ io.on('connection', (socket) => {
     session.timerState.message = '';
     session.timerState.endTimeLabel = '';
     session.timerState.showEndTime = false;
+    session.timerState.noClock = false;
+    session.timerState.clockOnly = false;
+    session.timerState.transparent = false;
+    session.timerState.blackBg = false;
+    if (session.timerState.fontOverrides) {
+      session.timerState.fontOverrides = { courseTitle: null, label: null, message: null };
+    }
     stopTick(session);
     clearSequenceState(session);
     broadcastSequenceState(session);

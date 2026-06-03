@@ -1225,7 +1225,7 @@
   }
   .alarm-spin-btn {
     padding: 0; width: 18px; height: 14px; border: 1px solid var(--border-mid);
-    border-radius: 3px; background: var(--alarm-input-bg, transparent); color: var(--blue);
+    border-radius: 3px; background: transparent; color: var(--blue);
     font-size: 0.55rem; cursor: pointer; display: flex; align-items: center;
     justify-content: center; transition: all 0.15s; flex-shrink: 0; line-height: 1;
     user-select: none;
@@ -1237,14 +1237,14 @@
   }
   .alarm-ampm-btn {
     padding: 2px 6px; border: 1px solid var(--border-mid); border-radius: 4px;
-    background: var(--alarm-input-bg, transparent); color: var(--text); font-size: 0.75rem; font-weight: 600;
+    background: transparent; color: var(--text); font-size: 0.75rem; font-weight: 600;
     cursor: pointer; font-family: inherit; transition: all 0.15s; user-select: none;
     min-width: 32px; text-align: center;
   }
   .alarm-ampm-btn:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
   .alarm-label-input {
     flex: 1; min-width: 0; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px;
-    background: var(--alarm-row-bg, var(--subtle-bg)); color: var(--text); font-size: 0.82rem; font-family: inherit;
+    background: transparent; color: var(--text); font-size: 0.82rem; font-family: inherit;
   }
   .alarm-label-input::placeholder { color: var(--text-faint); }
   .alarm-toggle {
@@ -1262,7 +1262,7 @@
   .alarm-toggle:checked::after { transform: translateX(15px); }
   .alarm-btn {
     padding: 3px 6px; border: 1px solid var(--border-mid); border-radius: 4px;
-    background: var(--alarm-input-bg, transparent); color: var(--dim); font-size: 0.7rem;
+    background: transparent; color: var(--dim); font-size: 0.7rem;
     cursor: pointer; font-family: inherit; transition: all 0.15s; flex-shrink: 0;
   }
   .alarm-btn:hover { background: var(--hover-green); color: var(--green); border-color: var(--green); }
@@ -1280,19 +1280,13 @@
   .alarm-detail-label { font-size: 0.7rem; color: var(--dim); }
   .alarm-sound-select {
     padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px;
-    background: var(--alarm-input-bg, var(--bg)); color: var(--text); font-size: 0.72rem; font-family: inherit;
+    background: transparent; color: var(--text); font-size: 0.72rem; font-family: inherit;
     max-width: 120px;
   }
   .alarm-card {
     display: flex; flex-direction: column; gap: 2px;
     padding: 5px 10px; border: 1px solid var(--border-mid); border-radius: 6px;
-    background: var(--alarm-row-bg); transition: all 0.15s;
-    --alarm-row-bg: transparent;
-    --alarm-input-bg: transparent;
-  }
-  .alarm-card:nth-child(odd) {
-    --alarm-row-bg: rgba(255,255,255,0.06);
-    --alarm-input-bg: rgba(255,255,255,0.06);
+    transition: all 0.15s;
   }
   .alarm-card.alarm-selected { background: rgba(52, 152, 219, 0.12); border-color: rgba(52, 152, 219, 0.4); }
   .alarm-card.alarm-disabled { /* toggle switch indicates state */ }
@@ -7877,7 +7871,8 @@ function renderAlarmsList() {
 
     const soundOptions = buildAlarmSoundOptions(a.sound || '');
 
-    html += '<div class="' + cls + '" data-alarm-id="' + a.id + '" draggable="false">' +
+    const cardBg = (i % 2 === 0) ? '' : 'background:rgba(255,255,255,0.06);';
+    html += '<div class="' + cls + '" data-alarm-id="' + a.id + '" draggable="false" style="' + cardBg + '">' +
       '<div class="alarm-card-top">' +
         '<span class="alarm-drag-handle" title="Drag to reorder">&#9776;</span>' +
         '<input type="checkbox" class="alarm-select-cb" data-alarm-id="' + a.id + '" onchange="this.closest(\'.alarm-card\').classList.toggle(\'alarm-selected\', this.checked); updateAlarmDeleteBtn()" style="margin:0 4px 0 0; cursor:pointer; accent-color:var(--green);">' +

@@ -1287,12 +1287,12 @@
     display: flex; flex-direction: column; gap: 2px;
     padding: 5px 10px; border: 1px solid var(--border-mid); border-radius: 6px;
     background: var(--alarm-row-bg); transition: all 0.15s;
-    --alarm-row-bg: var(--subtle-bg);
-    --alarm-input-bg: var(--bg);
+    --alarm-row-bg: transparent;
+    --alarm-input-bg: transparent;
   }
-  .alarm-card:nth-child(even) {
+  .alarm-card:nth-child(odd) {
     --alarm-row-bg: rgba(255,255,255,0.06);
-    --alarm-input-bg: rgba(255,255,255,0.08);
+    --alarm-input-bg: rgba(255,255,255,0.06);
   }
   .alarm-card.alarm-selected { background: rgba(52, 152, 219, 0.12); border-color: rgba(52, 152, 219, 0.4); }
   .alarm-card.alarm-disabled { /* toggle switch indicates state */ }
@@ -1706,6 +1706,10 @@
           <div class="checkbox-row" style="margin-bottom:4px;">
             <input type="checkbox" id="fieldClockOnly" class="custom-cb" onchange="updateDisplayModes()">
             <label for="fieldClockOnly" style="font-size:0.78rem;">Clock only</label>
+          </div>
+          <div class="checkbox-row" style="margin-bottom:4px;">
+            <input type="checkbox" id="fieldNoClock" class="custom-cb" onchange="updateDisplayModes()">
+            <label for="fieldNoClock" style="font-size:0.78rem;">No clock</label>
           </div>
           <div>
             <label for="bgModeSelect" style="font-size:0.78rem; color:var(--dim); display:block; margin-bottom:3px;">Background</label>
@@ -3170,6 +3174,7 @@ function logout() {
   document.getElementById('fieldBgTransparent').checked = false;
   document.getElementById('fieldBgBlack').checked = false;
   document.getElementById('fieldClockOnly').checked = false;
+  document.getElementById('fieldNoClock').checked = false;
   document.getElementById('bgModeSelect').value = 'default';
   document.getElementById('optGoToTab').value = 'library';
   document.getElementById('optStartTab').value = 'library';
@@ -4075,6 +4080,7 @@ function getDisplayModePayload() {
     transparent: bg === 'transparent',
     blackBg: bg === 'black',
     clockOnly: document.getElementById('fieldClockOnly').checked,
+    noClock: document.getElementById('fieldNoClock').checked,
   };
 }
 function updateBgMode() {
@@ -4196,6 +4202,8 @@ function saveToLibrary() {
       '<option value="black"' + (currentModes.blackBg ? ' selected' : '') + ' style="background:var(--input-bg);color:var(--text);">Black</option></select>' },
     { key: 'clockOnly', label: 'Clock Only', control:
       '<input type="checkbox" id="toLibClockOnly"' + (currentModes.clockOnly ? ' checked' : '') + ' style="' + cbStyle + '">' },
+    { key: 'noClock', label: 'No Clock', control:
+      '<input type="checkbox" id="toLibNoClock"' + (currentModes.noClock ? ' checked' : '') + ' style="' + cbStyle + '">' },
     { key: 'goToTab', label: 'After Loading', control:
       '<select id="toLibGoToTab" style="' + selectStyle + '">' +
       ['library','students','settings'].map(v =>
@@ -4257,6 +4265,7 @@ function saveToLibrary() {
       transparent: bgVal === 'transparent',
       blackBg: bgVal === 'black',
       clockOnly: document.getElementById('toLibClockOnly').checked,
+      noClock: document.getElementById('toLibNoClock').checked,
       goToTab: document.getElementById('toLibGoToTab').value
     };
   }
@@ -5027,6 +5036,7 @@ function renderDefaultTimersList() {
       '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +
         '<label style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--dim);"><input type="checkbox"' + (t.showEndTime !== false ? ' checked' : '') + ' style="accent-color:var(--green);" onchange="updateDefaultTimer(\'' + id + '\',\'showEndTime\',this.checked)"> Show End Time</label>' +
         '<label style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--dim);"><input type="checkbox"' + (t.clockOnly ? ' checked' : '') + ' style="accent-color:var(--green);" onchange="updateDefaultTimer(\'' + id + '\',\'clockOnly\',this.checked)"> Clock Only</label>' +
+        '<label style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--dim);"><input type="checkbox"' + (t.noClock ? ' checked' : '') + ' style="accent-color:var(--green);" onchange="updateDefaultTimer(\'' + id + '\',\'noClock\',this.checked)"> No Clock</label>' +
         '<div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.65rem;color:var(--dim);text-transform:uppercase;">BG</span><select style="' + selS + '" onchange="updateDefaultTimerBg(\'' + id + '\',this.value)">' +
           '<option value="default"' + (bgMode === 'default' ? ' selected' : '') + '>Default</option>' +
           '<option value="transparent"' + (bgMode === 'transparent' ? ' selected' : '') + '>Transparent</option>' +
@@ -5630,6 +5640,7 @@ function doClearAll() {
   document.getElementById('fieldShowEnd').checked = true;
   setBgModeFromFlags(false, false);
   document.getElementById('fieldClockOnly').checked = false;
+  document.getElementById('fieldNoClock').checked = false;
   document.getElementById('optGoToTab').value = 'library';
   renderLibrary();
   resetMockupIdle();
@@ -5726,6 +5737,7 @@ function getLibCols() {
     { key: 'showEndTime',  hdr: 'Show End Time',   sort: null,      defaultW: 100, align: 'center' },
     { key: 'bgMode',       hdr: 'Background Mode', sort: null,      defaultW: 120, align: 'center' },
     { key: 'clockOnly',    hdr: 'Clock Only',      sort: null,      defaultW: 76, align: 'center' },
+    { key: 'noClock',      hdr: 'No Clock',        sort: null,      defaultW: 70, align: 'center' },
     { key: 'goToTab',      hdr: 'After Loading',   sort: null,      defaultW: 100, align: 'center' }
   ];
 }
@@ -5863,6 +5875,7 @@ function renderLibrary() {
         <option value="black" ${bg === 'black' ? 'selected' : ''}>Black</option>
       </select>
       <input type="checkbox" class="lib-cell-cb" data-field="clockOnly" data-orig="${!!t.clockOnly}" ${t.clockOnly ? 'checked' : ''} onchange="libMarkDirty(this)">
+      <input type="checkbox" class="lib-cell-cb" data-field="noClock" data-orig="${!!t.noClock}" ${t.noClock ? 'checked' : ''} onchange="libMarkDirty(this)">
       <select class="lib-cell-select" data-field="goToTab" data-orig="${goTo}" onchange="libMarkDirty(this)">
         <option value="library" ${goTo === 'library' ? 'selected' : ''}>Library</option>
         <option value="students" ${goTo === 'students' ? 'selected' : ''}>Students</option>
@@ -6065,6 +6078,7 @@ function newTimerDialog() {
   document.getElementById('ntMessage').value = '';
   document.getElementById('ntShowEndTime').checked = true;
   document.getElementById('ntClockOnly').checked = false;
+  document.getElementById('ntNoClock').checked = false;
   document.getElementById('ntBgMode').value = 'default';
   document.getElementById('ntGoToTab').value = 'library';
   bd.classList.add('open');
@@ -6091,6 +6105,7 @@ function editTimerDialog() {
   document.getElementById('ntMessage').value = t.message || '';
   document.getElementById('ntShowEndTime').checked = t.showEndTime !== false;
   document.getElementById('ntClockOnly').checked = !!t.clockOnly;
+  document.getElementById('ntNoClock').checked = !!t.noClock;
   document.getElementById('ntBgMode').value = t.transparent ? 'transparent' : t.blackBg ? 'black' : 'default';
   document.getElementById('ntGoToTab').value = t.goToTab || 'library';
   bd.classList.add('open');
@@ -6120,6 +6135,7 @@ async function submitNewTimerDialog() {
     transparent: bgMode === 'transparent',
     blackBg: bgMode === 'black',
     clockOnly: document.getElementById('ntClockOnly').checked,
+    noClock: document.getElementById('ntNoClock').checked,
     goToTab: document.getElementById('ntGoToTab').value || 'library'
   };
   // In edit mode, include the existing timer's id so the server updates rather than creates
@@ -6188,6 +6204,7 @@ function newBlankRow() {
         <option value="black">Black</option>
       </select>
       <input type="checkbox" class="lib-cell-cb" data-field="clockOnly" data-orig="false" onchange="libMarkDirty(this)">
+      <input type="checkbox" class="lib-cell-cb" data-field="noClock" data-orig="false" onchange="libMarkDirty(this)">
       <select class="lib-cell-select" data-field="goToTab" data-orig="library" onchange="libMarkDirty(this)" style="border-color:#444;background:rgba(255,255,255,0.06);">
         <option value="library" selected>Library</option>
         <option value="students">Students</option>
@@ -6436,6 +6453,7 @@ function loadLibTimer(id) {
   document.getElementById('fieldShowEnd').checked = t.showEndTime !== false;
   setBgModeFromFlags(t.transparent, t.blackBg);
   document.getElementById('fieldClockOnly').checked = !!t.clockOnly;
+  document.getElementById('fieldNoClock').checked = !!t.noClock;
 
   // Per-item options — map legacy tab names (text/timer/options tabs removed)
   let goTo = t.goToTab || 'library';
@@ -6629,6 +6647,7 @@ async function duplicateTimer(id) {
   document.getElementById('fieldShowEnd').checked = newest.showEndTime !== false;
   setBgModeFromFlags(newest.transparent, newest.blackBg);
   document.getElementById('fieldClockOnly').checked = !!newest.clockOnly;
+  document.getElementById('fieldNoClock').checked = !!newest.noClock;
   let newGoTo = newest.goToTab || 'library';
   if (newGoTo === 'identity' || newGoTo === 'setup' || newGoTo === 'text') newGoTo = 'library';
   if (newGoTo === 'time' || newGoTo === 'timer') newGoTo = 'library';
@@ -6952,12 +6971,11 @@ async function playTimerAlarmSound(soundId) {
 
 function stopAlarmLoop() {
   if (alarmLoopTimer) { clearInterval(alarmLoopTimer); alarmLoopTimer = null; }
-  // Stop the timer alarm audio
   if (timerAlarmAudio) {
     try { timerAlarmAudio.pause(); timerAlarmAudio.currentTime = 0; } catch(e) {}
     timerAlarmAudio = null;
   }
-  stopPreview();
+  stopAllAudio();
 }
 
 function previewSound(selectId) {
@@ -7101,7 +7119,8 @@ async function addCustomSound(input) {
 
 // Cache for fetched custom sound audio data
 var customSoundDataCache = {};
-var currentPreviewAudio = null; // tracks the currently playing preview
+var currentPreviewAudio = null;
+var allActiveAudios = new Set(); // tracks every playing audio for guaranteed cleanup
 
 function stopPreview() {
   if (currentPreviewAudio) {
@@ -7111,30 +7130,35 @@ function stopPreview() {
   }
 }
 
-async function playCustomSound(soundId) {
-  // Stop any currently playing preview
+function stopAllAudio() {
   stopPreview();
-  // Check cache first
-  if (customSoundDataCache[soundId]) {
-    const cached = customSoundDataCache[soundId];
-    const audio = new Audio('data:' + cached.mimeType + ';base64,' + cached.data);
-    currentPreviewAudio = audio;
-    audio.play().catch(() => {});
-    audio.onended = () => { if (currentPreviewAudio === audio) currentPreviewAudio = null; };
-    return audio;
+  allActiveAudios.forEach(a => {
+    try { a.pause(); a.currentTime = 0; } catch(e) {}
+  });
+  allActiveAudios.clear();
+}
+
+async function playCustomSound(soundId) {
+  stopPreview();
+  var cached = customSoundDataCache[soundId];
+  if (!cached) {
+    try {
+      const resp = await authFetch('/api/custom-sounds/' + soundId + '/data');
+      if (!resp.ok) return null;
+      const snd = await resp.json();
+      customSoundDataCache[snd.id] = { data: snd.data, mimeType: snd.mimeType };
+      cached = customSoundDataCache[snd.id];
+    } catch (e) { console.error('playCustomSound:', e); return null; }
   }
-  // Fetch from server
-  try {
-    const resp = await authFetch('/api/custom-sounds/' + soundId + '/data');
-    if (!resp.ok) return null;
-    const snd = await resp.json();
-    customSoundDataCache[snd.id] = { data: snd.data, mimeType: snd.mimeType };
-    const audio = new Audio('data:' + snd.mimeType + ';base64,' + snd.data);
-    currentPreviewAudio = audio;
-    audio.play().catch(() => {});
-    audio.onended = () => { if (currentPreviewAudio === audio) currentPreviewAudio = null; };
-    return audio;
-  } catch (e) { console.error('playCustomSound:', e); return null; }
+  const audio = new Audio('data:' + cached.mimeType + ';base64,' + cached.data);
+  currentPreviewAudio = audio;
+  allActiveAudios.add(audio);
+  audio.play().catch(() => {});
+  audio.onended = () => {
+    if (currentPreviewAudio === audio) currentPreviewAudio = null;
+    allActiveAudios.delete(audio);
+  };
+  return audio;
 }
 
 
@@ -7179,10 +7203,11 @@ function updateButtonStates() {
   const paused = hasTimer && !running && timerRemaining > 0;
   const done = hasTimer && timerRemaining <= 0;
 
-  // Start: enabled when paused OR when there's a duration to push+start
+  // Start: enabled when paused OR when there's a duration (or noClock mode) to push+start
   const startBtn = document.querySelector('.tb-start');
   const hasDuration = getDurationMinutes() > 0;
-  startBtn.classList.toggle('enabled', (paused) || hasDuration);
+  const isNoClock = document.getElementById('fieldNoClock').checked;
+  startBtn.classList.toggle('enabled', (paused) || hasDuration || isNoClock);
 
   // Pause: enabled when running (or when paused in screenshot mode)
   const pauseBtn = document.querySelector('.tb-pause');
@@ -8145,8 +8170,7 @@ function stopAlarmFiring(id) {
     try { alarmFiringAudios[id].pause(); alarmFiringAudios[id].currentTime = 0; } catch(e) {}
     delete alarmFiringAudios[id];
   }
-  // Stop any audio that playCustomSound set as currentPreviewAudio
-  stopPreview();
+  stopAllAudio();
 }
 
 function stopAllFiringAlarms() {
@@ -8154,11 +8178,14 @@ function stopAllFiringAlarms() {
     if (a._firing) {
       a._firing = false;
       a._fired = true;
-      stopAlarmFiring(a.id);
+      if (alarmFiringTimers[a.id]) {
+        clearInterval(alarmFiringTimers[a.id]);
+        delete alarmFiringTimers[a.id];
+      }
+      delete alarmFiringAudios[a.id];
     }
   });
-  // Catch anything that slipped through
-  stopPreview();
+  stopAllAudio();
   stopAlarmFlash();
 }
 
@@ -8696,6 +8723,8 @@ async function loadPaletteFromServer() {
         </label>
         <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--dim); cursor:pointer;">
           <input type="checkbox" id="ntClockOnly" style="accent-color:var(--green);"> Clock Only
+          <label style="display:inline-flex; align-items:center; gap:4px; margin-left:12px;">
+          <input type="checkbox" id="ntNoClock" style="accent-color:var(--green);"> No Clock</label>
         </label>
       </div>
       <div style="display:flex; gap:16px;">

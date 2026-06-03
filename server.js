@@ -224,6 +224,7 @@ const DEFAULT_TIMER_STATE = {
   transparent: false,
   blackBg: false,
   clockOnly: false,
+  noClock: false,
   fontOverrides: { courseTitle: null, label: null, message: null },
 };
 
@@ -1697,7 +1698,7 @@ io.on('connection', (socket) => {
     broadcast(session);
   });
 
-  socket.on('set-timer', ({ minutes, label, message, showEndTime, transparent, blackBg, clockOnly }) => {
+  socket.on('set-timer', ({ minutes, label, message, showEndTime, transparent, blackBg, clockOnly, noClock }) => {
     if (role !== 'instructor' || !session) return;
     const secs = Math.max(0, Math.min(86400, Math.round(minutes * 60))); // cap at 24 hours
     session.timerState.totalSeconds = secs;
@@ -1709,6 +1710,7 @@ io.on('connection', (socket) => {
     session.timerState.transparent = !!transparent;
     session.timerState.blackBg = !!blackBg;
     session.timerState.clockOnly = !!clockOnly;
+    session.timerState.noClock = !!noClock;
     session.timerState.running = false;
     session.timerState.endTime = null;
     session.timerState.endTimeFormatted = '';
@@ -1841,11 +1843,12 @@ io.on('connection', (socket) => {
     saveTimerState(instructorId, session);
   });
 
-  socket.on('update-display-modes', ({ transparent, blackBg, clockOnly }) => {
+  socket.on('update-display-modes', ({ transparent, blackBg, clockOnly, noClock }) => {
     if (role !== 'instructor' || !session) return;
     session.timerState.transparent = !!transparent;
     session.timerState.blackBg = !!blackBg;
     session.timerState.clockOnly = !!clockOnly;
+    session.timerState.noClock = !!noClock;
     broadcast(session);
     saveTimerState(instructorId, session);
   });

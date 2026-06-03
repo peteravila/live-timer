@@ -31,6 +31,14 @@
   body.mode-transparent { background: transparent !important; }
   body.mode-black-bg { background: #000 !important; }
 
+  /* No-clock mode — hide ring, digits, end time; pull message up */
+  body.mode-no-clock .progress-ring,
+  body.mode-no-clock .digits,
+  body.mode-no-clock .end-time,
+  body.mode-no-clock .done-banner,
+  body.mode-no-clock .status-badge { display: none !important; }
+  body.mode-no-clock .message { margin-top: 0; }
+
   /* Clock-only mode — hide everything except digits */
   body.mode-clock-only .course-title,
   body.mode-clock-only .progress-ring,
@@ -900,8 +908,10 @@ socket.on('timer-update', (s) => {
     document.body.classList.toggle('mode-clock-only', urlClockOnly);
   } else {
     document.body.classList.toggle('mode-transparent', !!s.transparent);
-    document.body.classList.toggle('mode-black-bg', !!s.blackBg);
+    // noClock defaults to black bg unless user explicitly set transparent
+    document.body.classList.toggle('mode-black-bg', !!s.blackBg || (!!s.noClock && !s.transparent));
     document.body.classList.toggle('mode-clock-only', !!s.clockOnly);
+    document.body.classList.toggle('mode-no-clock', !!s.noClock);
   }
   ring.style.stroke = (paused && !s.screenshotMode) ? '#444' : strokeColor(cls);
 

@@ -5006,26 +5006,53 @@ function renderDefaultTimersList() {
     container.innerHTML = '<div style="font-size:0.8rem; color:var(--dim);">No default timers yet.</div>';
     return;
   }
-  const hdrs = '<div style="display:grid; grid-template-columns:1fr 60px 1fr 80px 40px; gap:4px; padding:4px 6px; font-size:0.65rem; color:var(--dim); text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid var(--border);">'+
-    '<span>Name</span><span>Min</span><span>Label</span><span>End Time</span><span></span></div>';
-  const rows = defaultTimersData.map((t, i) => {
-    const bg = i % 2 === 0 ? '' : 'background:rgba(255,255,255,0.02);';
-    return '<div style="display:grid; grid-template-columns:1fr 60px 1fr 80px 40px; gap:4px; padding:4px 6px; align-items:center; font-size:0.8rem; ' + bg + '" data-dt-id="' + esc(t.id) + '">' +
-      '<input type="text" value="' + esc(t.name || '') + '" data-field="name" class="admin-cell-input" style="font-size:0.8rem;" onchange="updateDefaultTimer(\'' + esc(t.id) + '\', \'name\', this.value)">' +
-      '<input type="number" value="' + (t.minutes || 0) + '" data-field="minutes" class="admin-cell-input" style="font-size:0.8rem; width:50px;" onchange="updateDefaultTimer(\'' + esc(t.id) + '\', \'minutes\', parseFloat(this.value))">' +
-      '<input type="text" value="' + esc(t.label || '') + '" data-field="label" class="admin-cell-input" style="font-size:0.8rem;" onchange="updateDefaultTimer(\'' + esc(t.id) + '\', \'label\', this.value)">' +
-      '<select data-field="showEndTime" class="admin-cell-input" style="font-size:0.75rem;" onchange="updateDefaultTimer(\'' + esc(t.id) + '\', \'showEndTime\', this.value===\'true\')">' +
-        '<option value="true"' + (t.showEndTime !== false ? ' selected' : '') + '>Show</option>' +
-        '<option value="false"' + (t.showEndTime === false ? ' selected' : '') + '>Hide</option>' +
-      '</select>' +
-      '<button style="background:none; border:none; color:var(--red); cursor:pointer; font-size:0.9rem;" onclick="deleteDefaultTimer(\'' + esc(t.id) + '\')" title="Delete">&#10005;</button>' +
+  const iS = 'padding:2px 5px;border-radius:4px;border:1px solid var(--border-mid);background:rgba(255,255,255,0.04);color:var(--text);font-size:0.78rem;font-family:inherit;';
+  const selS = 'padding:2px 4px;border-radius:4px;border:1px solid var(--border-mid);background:var(--input-bg);color:var(--text);font-size:0.75rem;font-family:inherit;';
+  const lblS = 'font-size:0.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;';
+  const cards = defaultTimersData.map((t, i) => {
+    const bg = i % 2 === 0 ? 'var(--subtle-bg)' : 'rgba(255,255,255,0.02)';
+    const id = esc(t.id);
+    const bgMode = t.transparent ? 'transparent' : t.blackBg ? 'black' : 'default';
+    return '<div style="background:' + bg + ';border:1px solid var(--border-mid);border-radius:6px;padding:8px 10px;margin-bottom:4px;">' +
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' +
+        '<div style="flex:1;min-width:0;"><div style="' + lblS + '">Name</div><input type="text" value="' + esc(t.name || '') + '" style="' + iS + 'width:100%;" onchange="updateDefaultTimer(\'' + id + '\',\'name\',this.value)"></div>' +
+        '<div style="width:70px;"><div style="' + lblS + '">Duration</div><input type="number" value="' + (t.minutes || 0) + '" min="0" style="' + iS + 'width:100%;text-align:center;" onchange="updateDefaultTimer(\'' + id + '\',\'minutes\',parseFloat(this.value))"></div>' +
+        '<div style="flex:1;min-width:0;"><div style="' + lblS + '">Display Title</div><input type="text" value="' + esc(t.label || '') + '" style="' + iS + 'width:100%;" onchange="updateDefaultTimer(\'' + id + '\',\'label\',this.value)"></div>' +
+        '<button style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;flex-shrink:0;margin-top:10px;" onclick="deleteDefaultTimer(\'' + id + '\')" title="Delete">&#10005;</button>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' +
+        '<div style="flex:1;min-width:0;"><div style="' + lblS + '">End Time Label</div><input type="text" value="' + esc(t.endTimeLabel || '') + '" placeholder="Class resumes at" style="' + iS + 'width:100%;" onchange="updateDefaultTimer(\'' + id + '\',\'endTimeLabel\',this.value)"></div>' +
+        '<div style="flex:1;min-width:0;"><div style="' + lblS + '">Message</div><input type="text" value="' + esc(t.message || '') + '" style="' + iS + 'width:100%;" onchange="updateDefaultTimer(\'' + id + '\',\'message\',this.value)"></div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +
+        '<label style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--dim);"><input type="checkbox"' + (t.showEndTime !== false ? ' checked' : '') + ' style="accent-color:var(--green);" onchange="updateDefaultTimer(\'' + id + '\',\'showEndTime\',this.checked)"> Show End Time</label>' +
+        '<label style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--dim);"><input type="checkbox"' + (t.clockOnly ? ' checked' : '') + ' style="accent-color:var(--green);" onchange="updateDefaultTimer(\'' + id + '\',\'clockOnly\',this.checked)"> Clock Only</label>' +
+        '<div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.65rem;color:var(--dim);text-transform:uppercase;">BG</span><select style="' + selS + '" onchange="updateDefaultTimerBg(\'' + id + '\',this.value)">' +
+          '<option value="default"' + (bgMode === 'default' ? ' selected' : '') + '>Default</option>' +
+          '<option value="transparent"' + (bgMode === 'transparent' ? ' selected' : '') + '>Transparent</option>' +
+          '<option value="black"' + (bgMode === 'black' ? ' selected' : '') + '>Black</option></select></div>' +
+        '<div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.65rem;color:var(--dim);text-transform:uppercase;">After Loading</span><select style="' + selS + '" onchange="updateDefaultTimer(\'' + id + '\',\'goToTab\',this.value)">' +
+          '<option value="library"' + ((t.goToTab || 'library') === 'library' ? ' selected' : '') + '>Timers</option>' +
+          '<option value="students"' + (t.goToTab === 'students' ? ' selected' : '') + '>Students</option>' +
+          '<option value="settings"' + (t.goToTab === 'settings' ? ' selected' : '') + '>Settings</option></select></div>' +
+      '</div>' +
     '</div>';
   }).join('');
-  container.innerHTML = hdrs + rows;
+  container.innerHTML = cards;
+}
+
+function updateDefaultTimerBg(id, value) {
+  const timer = defaultTimersData.find(t => t.id === id);
+  if (!timer) return;
+  timer.transparent = value === 'transparent';
+  timer.blackBg = value === 'black';
+  authFetch('/api/admin/default-timers', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(timer)
+  }).then(r => r.ok ? r.json() : null).then(d => { if (d) defaultTimersData = d; });
 }
 
 async function addDefaultTimer() {
-  const timer = { name: 'New Timer', minutes: 15, label: '', message: '', showEndTime: true };
+  const timer = { name: 'New Timer', minutes: 15, label: '', message: '', endTimeLabel: '', showEndTime: true, clockOnly: false, transparent: false, blackBg: false, goToTab: 'library' };
   try {
     const resp = await authFetch('/api/admin/default-timers', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(timer)

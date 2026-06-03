@@ -5965,6 +5965,45 @@ function libCancelEditing() {
   if (libEditingId) libCancelRow(libEditingId);
 }
 
+// ── Library grid keyboard shortcuts: Enter=save, Escape=cancel, Tab/Shift+Tab=navigate ──
+document.addEventListener('keydown', (e) => {
+  const el = e.target;
+  const inLibGrid = el.closest('#libraryList') || el.closest('#tab-library');
+  if (!inLibGrid) return;
+  const isEditable = el.matches('input, select, textarea');
+  if (!isEditable) return;
+
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (document.getElementById('btnLibSave').classList.contains('enabled')) {
+      libSaveEditing();
+    }
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    if (document.getElementById('btnLibCancel').classList.contains('enabled')) {
+      libCancelEditing();
+    }
+  } else if (e.key === 'Tab') {
+    const row = el.closest('.lib-row');
+    if (!row) return;
+    const fields = Array.from(row.querySelectorAll('input[data-field], select[data-field]'));
+    if (fields.length === 0) return;
+    const idx = fields.indexOf(el);
+    if (idx < 0) return;
+    if (e.shiftKey) {
+      if (idx > 0) {
+        e.preventDefault();
+        fields[idx - 1].focus();
+      }
+    } else {
+      if (idx < fields.length - 1) {
+        e.preventDefault();
+        fields[idx + 1].focus();
+      }
+    }
+  }
+});
+
 // ── Inline grid editing: dirty tracking, save, cancel ──
 function libMarkDirty(input) {
   const row = input.closest('.lib-row');

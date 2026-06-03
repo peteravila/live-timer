@@ -7871,7 +7871,7 @@ function renderAlarmsList() {
 
     const soundOptions = buildAlarmSoundOptions(a.sound || '');
 
-    const cardBg = (i % 2 === 0) ? '' : 'background:rgba(255,255,255,0.08) !important;';
+    const cardBg = (i % 2 === 0) ? '' : 'background:rgba(255,255,255,0.75) !important;';
     html += '<div class="' + cls + '" data-alarm-id="' + a.id + '" draggable="false" style="' + cardBg + '">' +
       '<div class="alarm-card-top">' +
         '<span class="alarm-drag-handle" title="Drag to reorder">&#9776;</span>' +

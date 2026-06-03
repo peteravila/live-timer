@@ -7895,7 +7895,7 @@ function renderAlarmsList() {
           '<button class="alarm-ampm-btn" id="alarmAP_' + a.id + '" onclick="toggleAlarmAmPm(\'' + a.id + '\')">' + alarmAmPm + '</button>' +
         '</div>' +
         '<input type="text" class="alarm-label-input" value="' + esc(a.label || '') + '" ' +
-          (inputBg ? 'style="background:' + inputBg + '" ' : '') +
+          'style="background:' + (i % 2 === 0 ? 'var(--card)' : 'rgba(0,0,0,0.06)') + ' !important;" ' +
           'placeholder="Label (e.g. First Break)" ' +
           'onchange="updateAlarmField(\'' + a.id + '\', \'label\', this.value)">' +
         '<input type="checkbox" class="alarm-toggle" title="Enable/disable" ' +

@@ -1,4 +1,4 @@
-<!-- public/student.html -->
+<!-- public/student.html  —  LiveTimer v1.00.007 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -29,6 +29,15 @@
 
   /* Background modes — applies to all student views */
   body.mode-transparent { background: transparent !important; }
+  body.mode-transparent .course-title,
+  body.mode-transparent .label,
+  body.mode-transparent .digits,
+  body.mode-transparent .end-time,
+  body.mode-transparent .message,
+  body.mode-transparent .done-banner {
+    text-shadow: 0 0 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.8);
+  }
+  body.mode-transparent .progress-bg { stroke: rgba(0,0,0,0.3); }
   body.mode-black-bg { background: #000 !important; }
 
   /* No-clock mode — hide ring, digits, end time; pull message up */

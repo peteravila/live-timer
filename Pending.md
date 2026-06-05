@@ -1,6 +1,6 @@
 # LiveTimer — Pending Items
 
-**Updated:** May 29, 2026
+**Updated:** June 4, 2026
 
 ---
 
@@ -20,15 +20,7 @@ Marketing brochure (v10) has been generated as both PDF and DOCX. Current layout
 
 ---
 
-### 3. Instructor Page Shrinkage
-
-The viewport meta tag was removed in a previous session to fix the instructor page shrinking on certain screens. Not yet confirmed whether the fix worked.
-
-**Status:** Needs confirmation
-
----
-
-### 4. Free Tier Sleep
+### 3. Free Tier Sleep
 
 Render spins down after ~15 min inactivity. The keep-alive ping (instructor.html pings `/api/library` every 5 minutes) mitigates this but only while the instructor tab is active — browsers throttle background tabs.
 
@@ -40,8 +32,8 @@ Render spins down after ~15 min inactivity. The keep-alive ping (instructor.html
 
 - ~~**Timer state persistence to MongoDB**~~ — Done. Auto-recovery of running timers on restart.
 - ~~**Multi-instructor support**~~ — Done. Full per-instructor data isolation.
-- ~~**Authentication**~~ — Done. JWT-based with admin roles.
-- ~~**Progress ring scaling**~~ — Done. Power curve for long timers.
+- ~~**Authentication**~~ — Done. JWT-based with admin roles. Login ID (not email-only).
+- ~~**Progress ring scaling**~~ — Removed. Linear ring depletion now.
 - ~~**Debug code cleanup**~~ — Done. submitCode() cleaned up.
 - ~~**Library mismatch**~~ — Resolved.
 - ~~**Push button race condition**~~ — Fixed via mousedown-capture + 2-second sync guard.
@@ -53,3 +45,15 @@ Render spins down after ~15 min inactivity. The keep-alive ping (instructor.html
 - ~~**Instructor phone connection**~~ — Done. Not counted as student.
 - ~~**Saved orders**~~ — Done. Named timer arrangements.
 - ~~**Custom dialogs**~~ — Done. Frosted glass modals.
+- ~~**Anonymous class progress**~~ — Done. Donut chart on student phone ring tap.
+- ~~**No Clock mode**~~ — Done. Message-only display, 0 duration allowed.
+- ~~**Font size overrides**~~ — Done. A−/A+ controls per field, sent to phones.
+- ~~**Wake Lock API**~~ — Done. Phone screen stays on for entire session.
+- ~~**Grace period on disconnect**~~ — Done. 30-minute window for seamless reconnect.
+- ~~**Default timers/alarms admin**~~ — Done. Seeded to new instructor accounts.
+- ~~**Security hardening**~~ — Done. Input sanitization + login rate limiting.
+- ~~**Login ID system**~~ — Done. Accepts any string, not just email.
+- ~~**Favicon**~~ — Done. SVG icon with light/dark mode.
+- ~~**Instructor Guide**~~ — Done. PDF and DOCX.
+- ~~**Code refactor**~~ — Done. Consolidated duplicated start/load/save paths into shared utilities.
+- ~~**Instructor page shrinkage**~~ — Removed from pending (viewport meta tag fix).

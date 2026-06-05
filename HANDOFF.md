@@ -6,8 +6,8 @@ LiveTimer is a real-time classroom timer for virtual Zoom/OBS instruction. The i
 
 ## URLs (Production)
 
-- **Instructor panel:** https://classroom-timer.onrender.com/instructor
-- **Student view:** https://classroom-timer.onrender.com/ (or /student.html)
+- **Instructor panel:** https://livetimer-classroomtimer.onrender.com/instructor
+- **Student view:** https://livetimer-classroomtimer.onrender.com/ (or /student.html)
 - **Hosting:** Render.com (free tier) — auto-deploys from GitHub
 
 Note: The root URL `/` serves student.html via an Express route. The instructor view is at `/instructor`.
@@ -101,12 +101,13 @@ The server manages per-instructor sessions. Each session contains a timer state 
 - Timer: `set-timer`, `start`, `pause`, `stop`, `reset`, `add-time`, `restore`
 - Text: `update-message`, `update-label`, `update-course-title`, `update-end-time-label`
 - Code: `validate-code`, `disconnect-all`
-- Display: `set-transparent`, `set-clock-only`, `toggle-mute`
+- Display: `update-display-modes` (transparent, blackBg, clockOnly, noClock), `toggle-mute`
+- Font: `update-font-override` (field, scale)
 - Sequences: `start-sequence`, `skip-sequence-step`, `stop-sequence`, `get-sequence-state`
-- Check-in: `set-checkin-enabled`, `student-checkin`, `student-identify`, `reset-student-states`
+- Check-in: `set-checkin-enabled`, `set-class-progress-visible`, `student-checkin`, `student-identify`, `reset-student-states`
 
 **Socket.io events (server → client):**
-- `timer-update` — Broadcasts full timerState (4x/second while running)
+- `timer-update` — Broadcasts full timerState including fontOverrides and noClock (4x/second while running)
 - `timer-done` — When countdown reaches zero
 - `client-count` — Connected phone count (excludes instructor phone)
 - `last-timer` — Restore snapshot to instructor
@@ -114,6 +115,7 @@ The server manages per-instructor sessions. Each session contains a timer state 
 - `code-accepted` / `code-rejected` / `code-expired` — Code validation
 - `sequence-state` / `sequence-next-preview` — Sequence playback state
 - `checkin-enabled` — Check-in toggle state
+- `class-progress-visible` / `class-progress` — Anonymous class progress donut chart
 - `student-list` — Real-time student status board
 - `instructor-phone` — Whether instructor's phone is connected
 
@@ -130,6 +132,9 @@ The server manages per-instructor sessions. Each session contains a timer state 
 **Admin (requireAdmin middleware):**
 - `GET /api/admin/instructors` — List all instructors
 - `POST /api/admin/add-instructor`, `update-instructor`, `delete-instructor`, `reset-password`, `toggle-admin`
+- `GET/POST/DELETE /api/admin/default-timers` — Default timer presets for new accounts
+- `GET/POST/DELETE /api/admin/default-alarms` — Default alarm presets for new accounts
+- `GET/POST/DELETE /api/admin/default-sounds` — Default sounds for new accounts
 
 **Library:**
 - `GET /api/library` — List timers
@@ -171,10 +176,14 @@ The server manages per-instructor sessions. Each session contains a timer state 
 - `alarmSettings` — Per-instructor alarm preferences (sound, visual flash)
 - `savedOrders` — Per-instructor named timer arrangements
 - `classCode` — Per-instructor class code persistence
+- `customSounds` — Per-instructor custom alarm sounds (audio data)
+- `defaultTimers` — Admin-managed default timer presets (seeded to new accounts)
+- `defaultAlarms` — Admin-managed default alarm presets (seeded to new accounts)
+- `defaultSounds` — Admin-managed default alarm sounds (seeded to new accounts)
 
 ### Instructor Page (public/instructor.html)
 
-Single self-contained HTML file (~7000+ lines). Key features:
+Single self-contained HTML file (~8800 lines). Key features:
 
 - **Phone mockup with Edit/Live tabs:** Edit mode shows native HTML/CSS mockup with contenteditable fields. Live mode shows an iframe of the actual student page (`?preview&phonesim=true&code=XXXX&key=API_KEY`) with gold border and pulsing "LIVE" badge. Important: `getField()`/`setField()` use `textContent` (not `innerText`) because `innerText` returns empty for `visibility: hidden` elements.
 - **Digit spinners:** Hour/minute spinners on the mockup with hold-to-repeat. Disabled when running. "..." button opens duration popup.
@@ -190,6 +199,13 @@ Single self-contained HTML file (~7000+ lines). Key features:
 - **Alarm sets:** Named alarm collections. Per-alarm: time, sound, visual flash, repeat, day-of-week scheduling.
 - **Check-in board:** Real-time student status (working/done/away/idle) with summary counts and tab badge.
 - **Saved orders:** Named timer arrangements accessible from the search bar.
+- **No Clock mode:** Per-timer option that hides clock and shows only text. For announcements. Duration can be 0. Stop clears from all phones.
+- **Font size overrides:** A−/A+ buttons per field control phone font sizes via CSS transform scale. Stored in timerState.fontOverrides. Reset on Stop.
+- **Default timers/alarms admin:** Admin can manage default presets that seed new instructor accounts.
+- **Login ID system:** Login field accepts any string. "Login ID" label throughout.
+- **Security:** Input sanitization, login rate limiting (10/15min/IP).
+- **Favicon:** LiveTimer SVG icon with light/dark mode adaptation.
+- **Consolidated code architecture:** Shared utility functions (`startOrAnnounce`, `interruptRunningTimer`, `loadTimerToMockup`, `collectMockupFields`, `pushFieldsToServer`) replace 7+ duplicated start paths.
 
 ### Student Page (public/student.html)
 
@@ -197,8 +213,11 @@ Single self-contained HTML file. Mobile-first design.
 
 - **Code entry gate:** Phones must enter class code or scan QR. Large screens (≥800px) bypass as "display" viewers.
 - **Check-in buttons:** Working, Done, Away, Clear — shown when instructor enables check-in. `phonesim` parameter renders these in the Live preview iframe.
+- **Anonymous class progress:** Tap progress ring to see proportional donut chart of class status. Instructor-controlled.
+- **No Clock mode:** When noClock is set, hides ring/digits/end-time/done-banner. Shows only title, label, message. Defaults to black background.
+- **Wake Lock:** Screen stays on for entire session. Re-acquired on tab switch back.
 - **OBS mode:** `?obs=true` skips code gate, respects transparent/clock-only modes.
-- **Color transitions:** idle → green → yellow → orange → pulsing red (done). Hybrid thresholds prevent long timers from changing too early.
+- **Color transitions:** idle → green → yellow → orange → pulsing red (done). Linear ring depletion.
 - **Phone vibration:** `navigator.vibrate()` on timer finish.
 - **`/qr-only` route:** Dedicated QR display page for OBS browser sources.
 

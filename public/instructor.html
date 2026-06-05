@@ -288,7 +288,7 @@
   .digit-arrow.disabled { color: var(--dim); cursor: default; }
   .digit-arrow.disabled:hover { color: var(--dim); background: transparent; }
   .digit-expand-btn {
-    position: absolute; bottom: 0;
+    position: absolute; bottom: -6px;
     background: transparent; border: none;
     color: var(--blue); font-size: 0.75rem; line-height: 1;
     cursor: pointer; transition: color 0.15s;
@@ -1288,6 +1288,7 @@
     padding: 5px 10px; border: 1px solid rgba(0,0,0,0.25); border-radius: 6px;
     transition: all 0.15s;
   }
+  .alarm-card:nth-child(even) { background: rgba(0,0,0,0.08) !important; }
   .alarm-card.alarm-selected { background: rgba(52, 152, 219, 0.12); border-color: rgba(52, 152, 219, 0.4); }
   .alarm-card.alarm-disabled { /* toggle switch indicates state */ }
   .alarm-card.alarm-fired { border-color: var(--green); background: var(--hover-green); }
@@ -2253,7 +2254,7 @@
           <div>
             <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">ABOUT</label>
             <div class="settings-indent" style="font-size:0.8rem; color:var(--dim);">
-              LiveTimer v1.0<br>
+              LiveTimer v1.00.007<br>
               &copy; 2025 Peter Avila. All rights reserved.
             </div>
           </div>
@@ -2282,10 +2283,10 @@
                   <span></span>
                   <input type="text" id="adminAddName" placeholder="Display Name" class="admin-cell-input" style="border-color:#444; background:rgba(255,255,255,0.06);">
                   <input type="text" id="adminAddEmail" placeholder="Login ID" class="admin-cell-input" style="border-color:#444; background:rgba(255,255,255,0.06);">
+                  <input type="text" id="adminAddPassword" placeholder="Password (min 6)" class="admin-cell-input" style="border-color:#444; background:rgba(255,255,255,0.06);">
                   <label style="font-size:0.75rem; color:var(--dim); display:flex; align-items:center; gap:3px; cursor:pointer; justify-content:center;">
                     <input type="checkbox" id="adminAddIsAdmin" class="custom-cb">
                   </label>
-                  <input type="text" id="adminAddPassword" placeholder="Password (min 6)" class="admin-cell-input" style="border-color:#444; background:rgba(255,255,255,0.06);">
                 </div>
               </div>
               <!-- Grid -->
@@ -3040,10 +3041,15 @@ function applyPalette(paletteId) {
 }
 
 function loadSavedPalette() {
-  const key = instructorKey ? 'livetimer-palette:' + instructorKey : 'livetimer-palette';
-  const saved = localStorage.getItem(key);
-  if (saved && PALETTES.find(p => p.id === saved)) {
-    applyPalette(saved);
+  // Try scoped key, then unscoped fallback
+  const scopedKey = instructorKey ? 'livetimer-palette:' + instructorKey : null;
+  const scoped = scopedKey ? localStorage.getItem(scopedKey) : null;
+  const unscoped = localStorage.getItem('livetimer-palette');
+  const paletteId = (scoped && PALETTES.find(p => p.id === scoped)) ? scoped
+                  : (unscoped && PALETTES.find(p => p.id === unscoped)) ? unscoped
+                  : null;
+  if (paletteId) {
+    applyPalette(paletteId); // writes to both scoped + unscoped keys
   }
 }
 
@@ -3299,7 +3305,7 @@ async function showChangePassword() {
 }
 
 // ── Admin: instructor management (grid-based) ──
-const ADMIN_COL_DEFAULTS = [30, 140, 200, 50, 140];
+const ADMIN_COL_DEFAULTS = [30, 140, 200, 160, 60];
 let adminColWidths = null; // initialized after login when instructorKey is set
 let adminInstructors = [];
 
@@ -3334,12 +3340,12 @@ function renderAdminGrid() {
   const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const gridCols = getAdminGridCols();
   // Header
-  const hdrs = ['', 'Display Name', 'Login ID', 'Admin', 'Password'];
+  const hdrs = ['', 'Display Name', 'Login ID', 'Password', 'Admin'];
   let html = '<div class="lib-grid">';
   html += `<div class="lib-grid-header" style="grid-template-columns:${gridCols}">`;
   html += '<div class="lib-hdr-cell" style="padding:4px 2px;"><input type="checkbox" class="lib-select-all" id="adminSelectAll" onchange="adminToggleSelectAll(this)" title="Select all"></div>';
   for (let i = 1; i < hdrs.length; i++) {
-    const align = i === 3 ? ' style="text-align:center;"' : '';
+    const align = i === 4 ? ' style="text-align:center;"' : '';
     const resize = `<div class="col-resize-handle admin-col-resize" data-col="${i}"></div>`;
     html += `<div class="lib-hdr-cell"${align}>${hdrs[i]}${resize}</div>`;
   }
@@ -3351,10 +3357,10 @@ function renderAdminGrid() {
         <input type="checkbox" class="lib-row-cb admin-row-cb" data-email="${esc(i.email)}" onchange="adminUpdateSelection()" style="accent-color:var(--green); cursor:pointer;">
         <input type="text" value="${esc(i.name || '')}" title="${esc(i.name || '')}" data-field="name" data-orig="${esc(i.name || '')}" class="admin-cell-input" oninput="adminMarkDirty(this);this.title=this.value">
         <input type="text" value="${esc(i.email)}" title="${esc(i.email)}" data-field="email" data-orig="${esc(i.email)}" class="admin-cell-input" oninput="adminMarkDirty(this);this.title=this.value">
+        <input type="text" placeholder="new password" title="Set new password" data-field="password" class="admin-cell-input admin-pw-input" data-email="${esc(i.email)}" oninput="adminMarkDirty(this)">
         <label style="display:flex; align-items:center; justify-content:center; cursor:pointer;" title="${i.isAdmin ? 'Admin' : 'Not admin'}">
           <input type="checkbox" class="custom-cb" ${i.isAdmin ? 'checked' : ''} onchange="adminToggleAdmin('${esc(i.email)}', this.checked)">
         </label>
-        <input type="text" placeholder="new password" title="Set new password" data-field="password" class="admin-cell-input admin-pw-input" data-email="${esc(i.email)}" oninput="adminMarkDirty(this)">
       </div>`;
   });
   html += '</div>';
@@ -4477,15 +4483,12 @@ function customAlert(msg) {
 async function pushFieldAndStart(fieldId) {
   document.getElementById(fieldId).blur();
   document.querySelectorAll('.mock-ctx').forEach(b => b.classList.remove('visible'));
-  const isPaused = timerTotal > 0 && timerRemaining > 0 && timerRemaining < timerTotal && !timerIsRunning;
 
-  if (timerIsRunning) {
-    if (!await customConfirm('A timer is currently running. Stop it and start a new one?')) return;
-    stopAlarmLoop(); warningFired = false; socket.emit('reset');
-    await new Promise(r => setTimeout(r, 150));
+  if (timerIsRunning || noClockAnnouncementActive) {
+    if (!await interruptRunningTimer()) return;
   }
-  stopAlarmLoop(); warningFired = false;
-  lastPushTime = Date.now();
+
+  // Push the specific field first
   const pushMap = {
     fieldCourseTitle: pushCourseTitle,
     fieldLabel: loadTitle,
@@ -4494,26 +4497,11 @@ async function pushFieldAndStart(fieldId) {
   };
   if (pushMap[fieldId]) await pushMap[fieldId]();
 
-  if (isPaused) {
-    // Resume from where we left off — don't reset the clock
-    socket.emit('update-display-modes', getDisplayModePayload());
-    setTimeout(() => {
-      socket.emit('start');
-      lastPushTime = Date.now();
-    }, 150);
-    return;
-  }
+  const minutes = getDurationMinutes();
+  const isNoClock = document.getElementById('fieldNoClock').checked;
+  if (minutes <= 0 && !isNoClock && !isTimerPaused()) return;
 
-  // Not paused — push the current timer duration and start fresh
-  const minutes = getTimerMinutes();
-  if (minutes <= 0 && !document.getElementById('fieldNoClock').checked) return;
-  const showEndTime = document.getElementById('fieldShowEnd').checked;
-  socket.emit('set-timer-only', { minutes, showEndTime });
-  socket.emit('update-display-modes', getDisplayModePayload());
-  setTimeout(() => {
-    socket.emit('start');
-    lastPushTime = Date.now();
-  }, 150);
+  await startOrAnnounce({ skipFieldPush: true });
 }
 
 // ── Duration popup ──
@@ -5404,13 +5392,173 @@ async function resolveParams(label, message) {
   return { label: sub(label).replace(/\\n/g, '\n'), message: sub(message).replace(/\\n/g, '\n') };
 }
 
-// ── Timer actions ──
-function getTimerMinutes() {
-  return getDurationMinutes();
+// ══════════════════════════════════════════════════════════════
+// ── SHARED TIMER UTILITIES (consolidated — all start/stop/push
+//    flows go through these to avoid duplicated logic) ──────────
+// ══════════════════════════════════════════════════════════════
+
+// Check if timer is in a paused state
+function isTimerPaused() {
+  return timerTotal > 0 && timerRemaining > 0 && timerRemaining < timerTotal && !timerIsRunning;
 }
 
+// Interrupt a running timer (confirm, reset, wait)
+async function interruptRunningTimer() {
+  if (!timerIsRunning && !noClockAnnouncementActive) return true;
+  if (!await customConfirm('A timer is currently running. Stop it and start a new one?')) return false;
+  stopAlarmLoop(); stopAllFiringAlarms(); warningFired = false;
+  noClockAnnouncementActive = false;
+  resetAllFontOverrides();
+  socket.emit('reset');
+  await new Promise(r => setTimeout(r, 150));
+  return true;
+}
+
+// Push all text fields to server (resolved values)
+function pushFieldsToServer({ courseTitle, label, message, endTimeLabel, modes, minutes, showEndTime } = {}) {
+  if (courseTitle !== undefined) socket.emit('update-course-title', { courseTitle });
+  if (label !== undefined) socket.emit('update-label', { label });
+  if (message !== undefined) socket.emit('update-message', { message });
+  if (endTimeLabel !== undefined) socket.emit('update-end-time-label', { endTimeLabel });
+  if (modes) socket.emit('update-display-modes', modes);
+  if (minutes !== undefined && minutes > 0) {
+    socket.emit('set-timer-only', { minutes, showEndTime: showEndTime !== false });
+  }
+}
+
+// The unified start-or-announce function. All start paths call this.
+// options.closeDurationPopup: close the popup after starting
+// options.skipFieldPush: don't push text fields (e.g., field-level push already did it)
+// options.fieldsToPush: specific fields to push { courseTitle, label, message, endTimeLabel }
+// options.resolvedLabel / resolvedMessage: already-resolved text (skip resolveParams)
+async function startOrAnnounce(options = {}) {
+  const isNoClock = document.getElementById('fieldNoClock').checked;
+  const paused = isTimerPaused();
+
+  stopAlarmLoop(); warningFired = false;
+  lastPushTime = Date.now();
+
+  // Resume from pause — just emit start + display modes
+  if (paused && !options.forceNewTimer) {
+    socket.emit('update-display-modes', getDisplayModePayload());
+    setTimeout(() => {
+      socket.emit('start');
+      lastPushTime = Date.now();
+      if (options.closeDurationPopup) closeDurationPopup();
+    }, 150);
+    return;
+  }
+
+  // Push text fields if not skipped
+  if (!options.skipFieldPush) {
+    let label = options.resolvedLabel;
+    let message = options.resolvedMessage;
+
+    // Resolve placeholders if not already resolved
+    if (label === undefined) label = getField('fieldLabel');
+    if (message === undefined) message = getField('fieldMessage');
+
+    if (!options.resolvedLabel || !options.resolvedMessage) {
+      const resolved = await resolveParams(
+        options.resolvedLabel !== undefined ? options.resolvedLabel : label,
+        options.resolvedMessage !== undefined ? options.resolvedMessage : message
+      );
+      if (!resolved) return; // user cancelled
+      if (resolved.label !== label) setField('fieldLabel', resolved.label);
+      if (resolved.message !== message) setField('fieldMessage', resolved.message);
+      label = resolved.label;
+      message = resolved.message;
+    }
+
+    const ct = getField('fieldCourseTitle').replace(/\\n/g, '\n');
+    const etl = getField('fieldEndTimeLabel');
+    const minutes = getDurationMinutes();
+    const showEndTime = document.getElementById('fieldShowEnd').checked;
+
+    pushFieldsToServer({
+      courseTitle: ct,
+      label,
+      message,
+      endTimeLabel: etl,
+      modes: getDisplayModePayload(),
+      minutes: (minutes > 0 || isNoClock) ? minutes : undefined,
+      showEndTime,
+    });
+
+    markPushed('fieldCourseTitle');
+    markPushed('fieldLabel');
+    markPushed('fieldEndTimeLabel');
+    markPushed('fieldMessage');
+  } else {
+    // Even if we skip field push, always push display modes
+    socket.emit('update-display-modes', getDisplayModePayload());
+    // And push time if there is one
+    const minutes = getDurationMinutes();
+    if (minutes > 0) {
+      const showEndTime = document.getElementById('fieldShowEnd').checked;
+      socket.emit('set-timer-only', { minutes, showEndTime });
+    }
+  }
+
+  // noClock mode: don't start a countdown
+  if (isNoClock) {
+    noClockAnnouncementActive = true;
+    lastPushTime = Date.now();
+    updateButtonStates();
+    if (options.closeDurationPopup) closeDurationPopup();
+    return;
+  }
+
+  // Normal timer: start the countdown
+  noClockAnnouncementActive = false;
+  setTimeout(() => {
+    socket.emit('start');
+    lastPushTime = Date.now();
+    if (options.closeDurationPopup) closeDurationPopup();
+  }, 150);
+}
+
+// Read all mockup fields into a timer-like object (for saving)
+function collectMockupFields() {
+  const modes = getDisplayModePayload();
+  return {
+    name: document.getElementById('fieldName').value.trim(),
+    label: getField('fieldLabel'),
+    minutes: getDurationMinutes(),
+    endTimeLabel: getField('fieldEndTimeLabel'),
+    message: getField('fieldMessage'),
+    showEndTime: document.getElementById('fieldShowEnd').checked,
+    transparent: modes.transparent,
+    blackBg: modes.blackBg,
+    clockOnly: modes.clockOnly,
+    noClock: modes.noClock,
+    goToTab: document.getElementById('optGoToTab').value,
+  };
+}
+
+// Load a timer object into all mockup fields
+function loadTimerToMockup(t) {
+  document.getElementById('fieldName').value = t.name || '';
+  setField('fieldLabel', t.label || '');
+  setDurationFromMinutes(t.minutes || 0);
+  syncTargetFromDuration();
+  setField('fieldEndTimeLabel', t.endTimeLabel || 'Class resumes at');
+  setField('fieldMessage', t.message || '');
+  document.getElementById('fieldShowEnd').checked = t.showEndTime !== false;
+  setBgModeFromFlags(t.transparent, t.blackBg);
+  document.getElementById('fieldClockOnly').checked = !!t.clockOnly;
+  document.getElementById('fieldNoClock').checked = !!t.noClock;
+  // Map legacy tab names
+  let goTo = t.goToTab || 'library';
+  if (['identity','setup','text','time','timer','message','options'].includes(goTo)) goTo = 'library';
+  document.getElementById('optGoToTab').value = goTo;
+  return goTo;
+}
+
+// ── Timer actions (using shared utilities above) ──
+
 function loadTime() {
-  const minutes = getTimerMinutes();
+  const minutes = getDurationMinutes();
   const showEndTime = document.getElementById('fieldShowEnd').checked;
   if (minutes <= 0 && !document.getElementById('fieldNoClock').checked) return;
   socket.emit('set-timer-only', { minutes, showEndTime });
@@ -5418,37 +5566,17 @@ function loadTime() {
 }
 
 async function pushTimeAndStart() {
-  const isPaused = timerTotal > 0 && timerRemaining > 0 && timerRemaining < timerTotal && !timerIsRunning;
-
-  if (timerIsRunning) {
-    if (!await customConfirm('A timer is currently running. Stop it and start a new one?')) return;
-    stopAlarmLoop(); warningFired = false; socket.emit('reset');
-    await new Promise(r => setTimeout(r, 150));
+  if (timerIsRunning || noClockAnnouncementActive) {
+    if (!await interruptRunningTimer()) return;
   }
-
-  if (isPaused) {
-    // Resume from where we left off — don't reset the clock
-    stopAlarmLoop(); warningFired = false;
-    setTimeout(() => {
-      socket.emit('start');
-      lastPushTime = Date.now();
-      closeDurationPopup();
-    }, 150);
+  if (isTimerPaused()) {
+    await startOrAnnounce({ closeDurationPopup: true });
     return;
   }
-
-  stopAlarmLoop(); warningFired = false;
-  const minutes = getTimerMinutes();
-  if (minutes <= 0) return;
-  lastPushTime = Date.now();
-  const showEndTime = document.getElementById('fieldShowEnd').checked;
-  socket.emit('set-timer-only', { minutes, showEndTime });
-  socket.emit('update-display-modes', getDisplayModePayload());
-  setTimeout(() => {
-    socket.emit('start');
-    lastPushTime = Date.now();
-    closeDurationPopup();
-  }, 150);
+  const minutes = getDurationMinutes();
+  const isNoClock = document.getElementById('fieldNoClock').checked;
+  if (minutes <= 0 && !isNoClock) return;
+  await startOrAnnounce({ closeDurationPopup: true, skipFieldPush: true });
 }
 
 let ctPushTime = 0;
@@ -5529,78 +5657,10 @@ function clearEndTimeLabel() {
 
 async function doStart() {
   if (!document.querySelector('.tb-start').classList.contains('enabled')) return;
-
-  // If running, confirm before interrupting
-  if (timerIsRunning) {
-    if (!await customConfirm('A timer is currently running. Stop it and start a new one?')) return;
-    stopAlarmLoop(); warningFired = false; socket.emit('reset');
-    await new Promise(r => setTimeout(r, 150));
+  if (timerIsRunning || noClockAnnouncementActive) {
+    if (!await interruptRunningTimer()) return;
   }
-
-  stopAlarmLoop(); warningFired = false;
-
-  // Block server sync during the push sequence
-  lastPushTime = Date.now();
-
-  const isPaused = timerTotal > 0 && timerRemaining > 0 && timerRemaining < timerTotal;
-
-  // Push all checked fields then start
-  const useCourseTitle  = document.getElementById('includeCourseTitle').checked;
-  const useTitle        = document.getElementById('includeTitle').checked;
-  const useTime         = document.getElementById('includeTime').checked;
-  const useMessage      = document.getElementById('includeMessage').checked;
-  const useEndTimeLabel = document.getElementById('includeEndTimeLabel').checked;
-
-  const rawLabel = useTitle ? getField('fieldLabel') : '';
-  const rawMessage = useMessage ? getField('fieldMessage') : '';
-  const resolved = await resolveParams(rawLabel, rawMessage);
-  if (!resolved) return;
-
-  // Update mockup fields with resolved values
-  if (useTitle && resolved.label !== rawLabel) setField('fieldLabel', resolved.label);
-  if (useMessage && resolved.message !== rawMessage) setField('fieldMessage', resolved.message);
-
-  if (useTime && !isPaused) {
-    const minutes = getTimerMinutes();
-    const noClockMode = document.getElementById('fieldNoClock').checked;
-    if (minutes > 0 || noClockMode) {
-      const showEndTime = document.getElementById('fieldShowEnd').checked;
-      socket.emit('set-timer-only', { minutes, showEndTime });
-    }
-  }
-  // Always push display modes
-  socket.emit('update-display-modes', getDisplayModePayload());
-  if (useTitle) socket.emit('update-label', { label: resolved.label });
-  if (useMessage) socket.emit('update-message', { message: resolved.message });
-  if (useEndTimeLabel) {
-    const etl = getField('fieldEndTimeLabel');
-    socket.emit('update-end-time-label', { endTimeLabel: etl });
-  }
-  if (useCourseTitle) {
-    const ct = getField('fieldCourseTitle').replace(/\\n/g, '\n');
-    socket.emit('update-course-title', { courseTitle: ct });
-  }
-
-  // Mark pushed fields so dirty borders clear
-  if (useCourseTitle) markPushed('fieldCourseTitle');
-  if (useTitle) markPushed('fieldLabel');
-  if (useEndTimeLabel) markPushed('fieldEndTimeLabel');
-  if (useMessage) markPushed('fieldMessage');
-
-  // noClock mode: just push text and modes, don't start a countdown
-  const isNoClock = document.getElementById('fieldNoClock').checked;
-  if (!isNoClock) {
-    noClockAnnouncementActive = false;
-    // Start after a brief delay to let the server process the pushes
-    setTimeout(() => {
-      socket.emit('start');
-      lastPushTime = Date.now();
-    }, 100);
-  } else {
-    noClockAnnouncementActive = true;
-    lastPushTime = Date.now();
-    updateButtonStates();
-  }
+  await startOrAnnounce();
 }
 function doPause() {
   if (!document.querySelector('.tb-pause').classList.contains('enabled')) return;
@@ -5608,13 +5668,15 @@ function doPause() {
 }
 function doReset() {
   if (!document.querySelector('.tb-reset').classList.contains('enabled')) return;
-  stopAlarmLoop(); warningFired = false;
+  stopAlarmLoop(); stopAllFiringAlarms(); warningFired = false;
+  noClockAnnouncementActive = false;
   socket.emit('reset');
   setTimeout(() => socket.emit('start'), 150);
 }
 function doStop() {
   const stopBtn = document.querySelector('.tb-stop');
   if (!stopBtn.classList.contains('enabled') && !noClockAnnouncementActive) return;
+  const wasNoClock = noClockAnnouncementActive;
   stopAlarmLoop(); stopAllFiringAlarms(); warningFired = false;
   noClockAnnouncementActive = false;
   resetAllFontOverrides();
@@ -5632,6 +5694,14 @@ function doStop() {
   // Reset spinners and display to 00:00
   setDurationFromMinutes(0);
   document.getElementById('mockDigitsText').textContent = fmtHM(0);
+  // For noClock announcements, explicitly push the cleared state
+  if (wasNoClock) {
+    pushFieldsToServer({
+      courseTitle: undefined, // leave course title alone
+      label: '', message: '', endTimeLabel: '',
+      modes: { transparent: false, blackBg: false, clockOnly: false, noClock: false },
+    });
+  }
   socket.emit('stop');
   updateButtonStates();
 }
@@ -5642,6 +5712,7 @@ function doRestore() {
 }
 function doClearAll() {
   if (!document.querySelector('.tb-clear').classList.contains('enabled')) return;
+  noClockAnnouncementActive = false;
   activeLibId = null;
   document.getElementById('fieldName').value = '';
   setField('fieldLabel', '');
@@ -6090,6 +6161,7 @@ async function libSaveRow(id) {
     transparent: bgMode === 'transparent',
     blackBg: bgMode === 'black',
     clockOnly: get('clockOnly'),
+    noClock: get('noClock'),
     goToTab: get('goToTab') || 'library'
   };
   try {
@@ -6443,91 +6515,31 @@ function selectTimer(id) {
 }
 
 async function loadAndStart(id) {
-  if (timerIsRunning) {
-    if (!await customConfirm('A timer is currently running. Stop it and start a new one?')) return;
-    stopAlarmLoop(); warningFired = false; socket.emit('reset');
-    await new Promise(r => setTimeout(r, 150));
+  if (timerIsRunning || noClockAnnouncementActive) {
+    if (!await interruptRunningTimer()) return;
   }
   loadLibTimer(id);
-
-  // Hide any contextual buttons that may have appeared during field loading
   document.querySelectorAll('.mock-ctx').forEach(b => b.classList.remove('visible'));
 
-  // Block server sync from overwriting liveText during the push sequence
-  lastPushTime = Date.now();
-
-  // Push everything unconditionally — this is a full preset load
-  const ct = getField('fieldCourseTitle').replace(/\\n/g, '\n');
-  socket.emit('update-course-title', { courseTitle: ct });
-  const rawLabel = getField('fieldLabel');
-  const rawMessage = getField('fieldMessage');
-  const resolved = await resolveParams(rawLabel, rawMessage);
-  if (!resolved) return;
-  if (resolved.label !== rawLabel) setField('fieldLabel', resolved.label);
-  if (resolved.message !== rawMessage) setField('fieldMessage', resolved.message);
-  socket.emit('update-label', { label: resolved.label });
-  socket.emit('update-message', { message: resolved.message });
-  const etl = getField('fieldEndTimeLabel');
-  socket.emit('update-end-time-label', { endTimeLabel: etl });
-  const minutes = getTimerMinutes();
-  if (minutes <= 0) return;
-  const showEndTime = document.getElementById('fieldShowEnd').checked;
-  socket.emit('set-timer-only', { minutes, showEndTime });
-  socket.emit('update-display-modes', getDisplayModePayload());
-
-  // Mark all fields as pushed
-  markPushed('fieldCourseTitle');
-  markPushed('fieldLabel');
-  markPushed('fieldEndTimeLabel');
-  markPushed('fieldMessage');
-
-  // Suppress dirty check for this library item until the user edits a field
+  // Suppress dirty check for this library item
   justLoadedId = id;
   renderLibrary();
 
-  setTimeout(() => {
-    socket.emit('start');
-    // Refresh the push guard so server broadcasts from start don't trigger dirty borders
-    lastPushTime = Date.now();
-  }, 150);
+  await startOrAnnounce();
 }
 
 function loadLibTimer(id) {
   const t = library.find(x => x.id === id);
   if (!t) return;
-
   activeLibId = id;
-  document.getElementById('fieldName').value = t.name || '';
-  setField('fieldLabel', t.label || '');
-  setDurationFromMinutes(t.minutes);
-  syncTargetFromDuration();
-  setField('fieldEndTimeLabel', t.endTimeLabel || 'Class resumes at');
-  setField('fieldMessage', t.message || '');
-  document.getElementById('fieldShowEnd').checked = t.showEndTime !== false;
-  setBgModeFromFlags(t.transparent, t.blackBg);
-  document.getElementById('fieldClockOnly').checked = !!t.clockOnly;
-  document.getElementById('fieldNoClock').checked = !!t.noClock;
-
-  // Per-item options — map legacy tab names (text/timer/options tabs removed)
-  let goTo = t.goToTab || 'library';
-  if (goTo === 'identity' || goTo === 'setup' || goTo === 'text') goTo = 'library';
-  if (goTo === 'time' || goTo === 'timer') goTo = 'library';
-  if (goTo === 'message' || goTo === 'options') goTo = 'library';
-  document.getElementById('optGoToTab').value = goTo;
-
-  // Suppress dirty check — fields were just loaded from this library item
+  const goTo = loadTimerToMockup(t);
   justLoadedId = id;
-
   renderLibrary();
   updateMockDigitsFromSpinners();
   markDirtyFields();
   updateButtonStates();
   autoSizeAllFields();
-
-  // Hide contextual buttons that may have appeared during field loading
   document.querySelectorAll('.mock-ctx').forEach(b => b.classList.remove('visible'));
-
-  // Navigate to the configured tab
   if (goTo !== 'library') switchTab(goTo);
 }
 
@@ -6544,7 +6556,7 @@ function isLibDirty(id) {
   const endTimeLabel = getField('fieldEndTimeLabel');
   const message = getField('fieldMessage');
   const showEnd = document.getElementById('fieldShowEnd').checked;
-  const { transparent, blackBg, clockOnly } = getDisplayModePayload();
+  const { transparent, blackBg, clockOnly, noClock } = getDisplayModePayload();
   const goToTab = document.getElementById('optGoToTab').value;
   return (name !== (t.name || '')) ||
          (norm(label) !== norm(t.label)) ||
@@ -6555,6 +6567,7 @@ function isLibDirty(id) {
          (transparent !== !!t.transparent) ||
          (blackBg !== !!t.blackBg) ||
          (clockOnly !== !!t.clockOnly) ||
+         (noClock !== !!t.noClock) ||
          (goToTab !== (t.goToTab || 'library'));
 }
 
@@ -6608,28 +6621,17 @@ function addTimerTime() {
 }
 
 async function saveOverTimer(id) {
-  if (id !== activeLibId) return; // only save the currently loaded item
+  if (id !== activeLibId) return;
   const t = library.find(x => x.id === id);
   if (!t) return;
-  const newName = document.getElementById('fieldName').value.trim();
-  const newLabel = getField('fieldLabel');
-  const newMins = getDurationMinutes();
+  const fields = collectMockupFields();
   const missing = [];
-  if (!newName) missing.push('Name');
-  if (!newMins) missing.push('Duration');
-  if (!newLabel) missing.push('Display Title');
+  if (!fields.name) missing.push('Name');
+  if (!fields.minutes && !fields.noClock) missing.push('Duration');
+  if (!fields.label) missing.push('Display Title');
   if (missing.length) { await customAlert(missing.join(', ') + ' required.'); return; }
-  t.name = newName;
-  t.label = newLabel;
-  t.minutes = newMins;
-  t.endTimeLabel = getField('fieldEndTimeLabel') || 'Class resumes at';
-  t.message = getField('fieldMessage');
-  t.showEndTime = document.getElementById('fieldShowEnd').checked;
-  const modes = getDisplayModePayload();
-  t.transparent = modes.transparent;
-  t.blackBg = modes.blackBg;
-  t.clockOnly = modes.clockOnly;
-  t.goToTab = document.getElementById('optGoToTab').value;
+  Object.assign(t, fields);
+  if (!t.endTimeLabel) t.endTimeLabel = 'Class resumes at';
   await authFetch('/api/library', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(t) });
   await fetchLibrary();
 }
@@ -6691,22 +6693,12 @@ async function duplicateTimer(id) {
   saveLibraryLocal();
   const newest = library[library.length - 1];
   activeLibId = newest.id;
-  document.getElementById('fieldName').value = newest.name;
-  setField('fieldLabel', newest.label || '');
-  setDurationFromMinutes(newest.minutes);
-  syncTargetFromDuration();
-  setField('fieldEndTimeLabel', newest.endTimeLabel || 'Class resumes at');
-  setField('fieldMessage', newest.message || '');
-  document.getElementById('fieldShowEnd').checked = newest.showEndTime !== false;
-  setBgModeFromFlags(newest.transparent, newest.blackBg);
-  document.getElementById('fieldClockOnly').checked = !!newest.clockOnly;
-  document.getElementById('fieldNoClock').checked = !!newest.noClock;
-  let newGoTo = newest.goToTab || 'library';
-  if (newGoTo === 'identity' || newGoTo === 'setup' || newGoTo === 'text') newGoTo = 'library';
-  if (newGoTo === 'time' || newGoTo === 'timer') newGoTo = 'library';
-  if (newGoTo === 'message' || newGoTo === 'options') newGoTo = 'library';
-  document.getElementById('optGoToTab').value = newGoTo;
+  loadTimerToMockup(newest);
   renderLibrary();
+  updateMockDigitsFromSpinners();
+  markDirtyFields();
+  updateButtonStates();
+  autoSizeAllFields();
 }
 
 // ── Batch operations (toolbar) ──
@@ -7173,7 +7165,8 @@ async function addCustomSound(input) {
 // Cache for fetched custom sound audio data
 var customSoundDataCache = {};
 var currentPreviewAudio = null;
-var allActiveAudios = new Set(); // tracks every playing audio for guaranteed cleanup
+var allActiveAudios = new Set();
+var audioKillSwitch = false; // when true, no new audio will play
 
 function stopPreview() {
   if (currentPreviewAudio) {
@@ -7184,14 +7177,18 @@ function stopPreview() {
 }
 
 function stopAllAudio() {
+  audioKillSwitch = true;
   stopPreview();
   allActiveAudios.forEach(a => {
     try { a.pause(); a.currentTime = 0; } catch(e) {}
   });
   allActiveAudios.clear();
+  // Release kill switch after a short delay (enough for any in-flight async to complete)
+  setTimeout(() => { audioKillSwitch = false; }, 500);
 }
 
 async function playCustomSound(soundId) {
+  if (audioKillSwitch) return null;
   stopPreview();
   var cached = customSoundDataCache[soundId];
   if (!cached) {
@@ -7203,6 +7200,7 @@ async function playCustomSound(soundId) {
       cached = customSoundDataCache[snd.id];
     } catch (e) { console.error('playCustomSound:', e); return null; }
   }
+  if (audioKillSwitch) return null; // check again after async fetch
   const audio = new Audio('data:' + cached.mimeType + ';base64,' + cached.data);
   currentPreviewAudio = audio;
   allActiveAudios.add(audio);
@@ -8607,8 +8605,12 @@ function initSocketLate() {
 let paletteExpanded = false;
 
 function getCurrentPaletteId() {
-  const key = instructorKey ? 'livetimer-palette:' + instructorKey : 'livetimer-palette';
-  return localStorage.getItem(key) || 'midnight';
+  // Check scoped key first, then unscoped fallback
+  if (instructorKey) {
+    const scoped = localStorage.getItem('livetimer-palette:' + instructorKey);
+    if (scoped && PALETTES.find(p => p.id === scoped)) return scoped;
+  }
+  return localStorage.getItem('livetimer-palette') || 'midnight';
 }
 
 function buildMiniSwatches(colors) {
@@ -8689,6 +8691,7 @@ async function loadPaletteFromServer() {
       const data = await res.json();
       if (data.palette && PALETTES.find(p => p.id === data.palette)) {
         applyPalette(data.palette);
+        buildPalettePicker(); // rebuild to reflect server-loaded palette
       }
     }
   } catch(e) { console.error('loadPalette:', e); }

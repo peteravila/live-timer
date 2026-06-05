@@ -10,6 +10,12 @@
 
 ---
 
+## Version Numbering
+
+**Current version: 1.00.001.** Displayed in instructor.html (Settings > About), and as comments at the top of student.html and server.js. Every time any of these three files is modified, increment the version by 0.00.001. Update all three files to keep them in sync.
+
+---
+
 ## Product Name
 
 **LiveTimer** — this is the product/brand name. Use it in all user-facing contexts.
@@ -92,10 +98,21 @@ This is a real-time classroom timer for virtual instruction (Zoom + OBS). An ins
 
 **Authentication:** JWT-based instructor auth. Login gate on the instructor page. Supports signup (first user auto-promoted to admin), login, change password. Admin capabilities: add/edit/delete instructors, reset passwords, toggle admin status. Admin grid accessible from Settings. API key per instructor for preview/phone connections. Server middleware: `requireAuth` (validates JWT on all `/api` routes), `requireAdmin` (checks `isAdmin` flag). MongoDB collection: `instructors` (email, password hash, name, isAdmin, apiKey, createdAt).
 
+**No Clock mode (per-timer):** When `noClock` is checked on a timer, the progress ring, digits, end time, and done banner are hidden on the student page. Only Course Title, Label, and Message display — pulled up with no gap. Background defaults to black. Duration can be 0. The timer doesn't count down — it's a static announcement. The instructor clicks Stop to clear it from all phones. Used for "balance of the day" labs or any message-only display.
+
+**Font size overrides:** Each text field on the mockup has A−/A+ buttons in its context bar. These control the font size on student phones via `transform: scale()`. Overrides are stored in `timerState.fontOverrides` (per field: courseTitle, label, message). When null, auto-size runs normally. When set, auto-size is bypassed. Overrides reset on Stop. The scale value is sent to students in every `timer-update` broadcast.
+
+**Anonymous class progress (donut chart):** Students can tap the progress ring on their phone to see an anonymous proportional donut chart showing working/done/away status. Instructor controls visibility via "Class progress on phones" toggle in Students tab. Server broadcasts `class-progress` event with anonymous counts (no names). The chart uses SVG stroke-dasharray segments inside the same SVG as the progress ring, crossfading with CSS opacity transitions.
+
+**Wake Lock API:** The student page requests `navigator.wakeLock.request('screen')` when the student validates their code. Keeps the phone screen on for the entire session. Re-acquired on visibility change (tab switch back). Prevents most idle disconnects.
+
+**Grace period on disconnect:** When a student's socket disconnects, the server keeps their record in the `students` Map for 30 minutes. If they reconnect within that window (Socket.io auto-reconnects), the grace timer cancels and the student is seamlessly restored. If 30 minutes pass, the student is removed. "Disconnect All Phones" clears all grace timers immediately.
+
 **Display modes (per-timer, saved with library items):**
 - **Transparent**: Background becomes transparent on OBS/display viewers. Phones are unaffected. Useful for OBS overlays.
 - **Clock only**: Hides everything except the countdown digits on OBS/display viewers. Phones show the full view. Digit color transitions still apply.
-- Both modes can be enabled simultaneously. They only affect display/preview/OBS viewers, never phone students.
+- **No Clock**: Hides ring, digits, and end time. Shows only title, label, and message. Defaults to black background.
+- Clock only, transparent, and no clock can be combined as needed. They only affect display/preview/OBS viewers for clock-only and transparent; no clock affects all viewers.
 
 **OBS browser source**: Use `?obs=true` parameter (e.g. `https://your-url/?obs=true`). Skips the code gate, identifies as a display viewer, and respects transparent/clock-only modes regardless of window size.
 
@@ -128,8 +145,18 @@ This is a real-time classroom timer for virtual instruction (Zoom + OBS). An ins
 - **Saved orders** — Named timer arrangements for different classes.
 - **Custom dialogs** — Frosted glass modal dialogs replacing all native confirm/alert/prompt.
 - **Timer state persistence** — MongoDB persistence with auto-recovery of running timers on server restart.
+- **Anonymous class progress** — Students can tap the progress ring to see a proportional donut chart of class status. Instructor-controlled visibility toggle.
+- **No Clock mode** — Timer mode that hides the clock and displays only text. For announcements and "balance of the day" messages. Duration can be 0.
+- **Font size overrides** — Instructor can adjust text size on student phones via A−/A+ controls per field. Uses CSS transform scale. Resets on Stop.
+- **Wake Lock API** — Student phones stay awake for the entire session. Re-acquired on tab switch back.
+- **Grace period on disconnect** — Students stay in the list for 30 minutes after disconnect. Seamless reconnection.
+- **Default timers and alarms** — Admin can manage default timer presets and alarm presets that are automatically seeded to new instructor accounts.
+- **Security hardening** — Server-side input sanitization (HTML escaping, length limits), login rate limiting (10 attempts per 15 min per IP).
+- **Login ID system** — Login field accepts any string (not just email). "Login ID" label throughout UI and error messages.
+- **Favicon** — LiveTimer SVG icon with light/dark mode adaptation via CSS media query. Applied to all pages.
+- **Instructor Guide** — PDF and DOCX documentation for new instructors covering all features.
+- **Code refactor** — Consolidated 7 duplicated start paths, 2 load paths, and multiple save paths into shared utility functions (`startOrAnnounce`, `interruptRunningTimer`, `loadTimerToMockup`, `collectMockupFields`, `pushFieldsToServer`).
 
 ### Pending / In Progress
 - **Email-based forgot password** — Add when manual admin resets become a hassle.
 - **Brochure iteration** — The brochure (v10) has mixed-alignment layout with text wrapping around images, reduced word count, larger fonts. Peter may have further feedback.
-- **Instructor page shrinkage** — Viewport meta tag was removed to fix shrinking on certain screens. Not yet confirmed whether the fix worked.

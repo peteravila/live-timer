@@ -1,4 +1,4 @@
-<!-- public/student.html  —  LiveTimer v1.00.008 -->
+<!-- public/student.html  —  LiveTimer v1.00.009 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -912,15 +912,15 @@ socket.on('timer-update', (s) => {
   if (!s.screenshotMode) document.body.classList.toggle('paused', paused);
   // Display modes — OBS uses URL parameters; all other viewers use server flags
   if (isOBS) {
-    document.body.classList.toggle('mode-transparent', urlTransparent || !!s.transparent);
-    document.body.classList.toggle('mode-black-bg', urlBlack || !!s.blackBg || (!!s.noClock && !s.transparent && !urlTransparent));
-    document.body.classList.toggle('mode-clock-only', urlClockOnly || !!s.clockOnly);
+    document.body.classList.toggle('mode-transparent', urlTransparent);
+    document.body.classList.toggle('mode-black-bg', urlBlack);
+    document.body.classList.toggle('mode-clock-only', urlClockOnly);
   } else {
     document.body.classList.toggle('mode-transparent', !!s.transparent);
     document.body.classList.toggle('mode-black-bg', !!s.blackBg || (!!s.noClock && !s.transparent));
     document.body.classList.toggle('mode-clock-only', !!s.clockOnly);
   }
-  // noClock applies to all viewers (OBS, display, phones)
+  // noClock applies to all viewers regardless of OBS/display/phone
   document.body.classList.toggle('mode-no-clock', !!s.noClock);
   ring.style.stroke = (paused && !s.screenshotMode) ? '#444' : strokeColor(cls);
 

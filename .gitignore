@@ -1,3 +1,8 @@
 node_modules/
 .env
 deploy.bat
+
+# Office / LibreOffice temp & lock files
+.~lock.*#
+~$*
+*.tmp

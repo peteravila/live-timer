@@ -6,7 +6,7 @@
     "urgent": false,
     "items": [
       "LiveTimer now tells you when it's been updated. A dot appears on the Settings gear whenever there's something new, and you can read the full list of changes under Settings → About → What's New.",
-      "Important changes can interrupt with a pop-up — but never while a timer is running. The pop-up waits until your class timer stops."
+      "Notifications of important changes can interrupt with a pop-up — but never while a timer is running. The pop-up waits until your class timer stops."
     ]
   },
   {

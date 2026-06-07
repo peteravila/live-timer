@@ -14,7 +14,7 @@ Note: The root URL `/` serves student.html via an Express route. The instructor 
 
 ## GitHub Repository
 
-- **Repo:** https://github.com/peteravila/classroom-timer
+- **Repo:** https://github.com/peteravila/live-timer (formerly classroom-timer)
 - **Branch:** main
 - **Owner:** Peter (peteravila)
 

@@ -1,0 +1,21 @@
+[
+  {
+    "version": "1.00.010",
+    "date": "2026-06-07",
+    "title": "Update notifications",
+    "urgent": false,
+    "items": [
+      "LiveTimer now tells you when it's been updated. A dot appears on the Settings gear whenever there's something new, and you can read the full list of changes under Settings → About → What's New.",
+      "Important changes can interrupt with a pop-up — but never while a timer is running. The pop-up waits until your class timer stops."
+    ]
+  },
+  {
+    "version": "1.00.009",
+    "date": "2026-06-04",
+    "title": "Baseline release",
+    "urgent": false,
+    "items": [
+      "This is the starting point for the new update-notifications system. Changes made before this release aren't listed here."
+    ]
+  }
+]

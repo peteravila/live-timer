@@ -1,6 +1,6 @@
 # LiveTimer — Pending Items
 
-**Updated:** June 4, 2026
+**Updated:** June 7, 2026
 
 ---
 
@@ -29,6 +29,8 @@ Render spins down after ~15 min inactivity. The keep-alive ping (instructor.html
 ---
 
 ### Completed (Archive)
+
+- ~~**Updates/changelog system**~~ — Done (v1.00.010). `changelog.json` is the single source for version + history. Settings-gear dot for any unseen entry; What's New overlay in Settings → About; per-entry `urgent` flag interrupts on load but defers until the timer is idle. `lastSeenVersion` tracked per instructor.
 
 - ~~**Timer state persistence to MongoDB**~~ — Done. Auto-recovery of running timers on restart.
 - ~~**Multi-instructor support**~~ — Done. Full per-instructor data isolation.

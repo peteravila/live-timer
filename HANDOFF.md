@@ -206,6 +206,8 @@ Single self-contained HTML file (~8800 lines). Key features:
 - **Security:** Input sanitization, login rate limiting (10/15min/IP).
 - **Favicon:** LiveTimer SVG icon with light/dark mode adaptation.
 - **Consolidated code architecture:** Shared utility functions (`startOrAnnounce`, `interruptRunningTimer`, `loadTimerToMockup`, `collectMockupFields`, `pushFieldsToServer`) replace 7+ duplicated start paths.
+- **Transparent mode text outline:** Text-shadow on all text elements for readability against any background.
+- **Version numbering:** v1.00.009 displayed in Settings > About and as comments in student.html/server.js.
 
 ### Student Page (public/student.html)
 

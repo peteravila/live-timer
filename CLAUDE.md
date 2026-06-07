@@ -12,7 +12,16 @@
 
 ## Version Numbering
 
-**Current version: 1.00.001.** Displayed in instructor.html (Settings > About), and as comments at the top of student.html and server.js. Every time any of these three files is modified, increment the version by 0.00.001. Update all three files to keep them in sync.
+**Current version: 1.00.010.** The version lives in **one place only**: the top (newest) entry of `changelog.json` — `changelog[0].version` IS the app version. The server reads it into `APP_VERSION` at startup.
+
+To release a new version, add a new entry to the top of `changelog.json` with the incremented version (by 0.00.001) — that's the single edit. Do NOT hardcode the version anywhere else.
+
+Where the version surfaces (all read from `APP_VERSION` / changelog.json, never hardcoded):
+- Instructor Settings → About (`#aboutVersion`, populated from `GET /api/changelog`).
+- `GET /version` — plain-text running version, for confirming a deploy went live.
+- Server startup log — prints `LiveTimer v<version>` on boot (visible in Render logs).
+
+The old per-file header comments in server.js and student.html are now plain non-load-bearing notes; they no longer carry the version and don't need syncing.
 
 ---
 
@@ -122,6 +131,8 @@ This is a real-time classroom timer for virtual instruction (Zoom + OBS). An ins
 
 **Restore feature:** When a timer starts, the server snapshots it as `lastTimer` (label, message, originalTotal, showEndTime, endTimeLabel, endTime). If the timer is stopped or the page refreshes, the instructor can restore it — the server recalculates remaining time from the original endTime.
 
+**Update notifications:** `changelog.json` (project root, newest entry first) is the single source for both the app version and the update history. Each entry has `version`, `date`, `title`, optional `urgent` boolean, and an `items` array. The server reads it at startup (`APP_VERSION` = `changelog[0].version`) and exposes `GET /api/changelog` (entries + version + the instructor's `lastSeenVersion`) and `POST /api/changelog/seen` (sets `lastSeenVersion` = current version on the instructor record). Client logic (instructor.html): `getUnseenUpdates()` is the one function that decides what's new (entries newer than `lastSeenVersion`, via `compareVersions()`); a red dot shows on the Settings gear and the What's New button whenever anything is unseen; the What's New overlay (Settings → About) renders the full changelog via the single `renderUpdatesHTML()` function and marks everything seen on open. An unseen `urgent` entry additionally interrupts with the overlay on load — but never while a timer is running/paused; it defers via `maybeShowDeferredUpdates()` until the timer next goes idle. Most releases stay un-flagged (dot only); flag `urgent: true` only for changes instructors must notice.
+
 ### Deployment
 - Push updated files to GitHub (Peter uses the GitHub web editor or deploy.bat)
 - Render auto-deploys from latest commit (or use Manual Deploy)
@@ -156,6 +167,9 @@ This is a real-time classroom timer for virtual instruction (Zoom + OBS). An ins
 - **Favicon** — LiveTimer SVG icon with light/dark mode adaptation via CSS media query. Applied to all pages.
 - **Instructor Guide** — PDF and DOCX documentation for new instructors covering all features.
 - **Code refactor** — Consolidated 7 duplicated start paths, 2 load paths, and multiple save paths into shared utility functions (`startOrAnnounce`, `interruptRunningTimer`, `loadTimerToMockup`, `collectMockupFields`, `pushFieldsToServer`).
+- **Transparent mode text outline** — Text-shadow outline on all text elements when transparent background is active, for readability against any background image.
+- **Version numbering** — v1.00.010. Single source: `changelog.json[0].version` → `APP_VERSION`. Surfaced via Settings > About, `GET /version`, and the server startup log. Increments by 0.00.001 per release (one edit to changelog.json).
+- **Update notifications** — `changelog.json` single source for version + history. Settings-gear dot for any unseen entry; What's New overlay in Settings → About; `urgent` entries interrupt on load but defer until the timer is idle. Endpoints: `GET /api/changelog`, `POST /api/changelog/seen`.
 
 ### Pending / In Progress
 - **Email-based forgot password** — Add when manual admin resets become a hassle.

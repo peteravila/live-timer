@@ -1454,6 +1454,32 @@
     transition: color 0.12s;
   }
   .settings-cog:hover { color: var(--text); }
+  .settings-cog { position: relative; }
+  /* Update-available notification dot (shared by the gear and the What's New button) */
+  .update-dot {
+    position: absolute; top: 0; right: 0;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--red); border: 1.5px solid var(--card);
+    box-shadow: 0 0 0 1px var(--red);
+    pointer-events: none;
+  }
+  /* Changelog entries inside the What's New overlay */
+  .upd-entry { margin-bottom: 18px; }
+  .upd-entry-head {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-bottom: 6px; flex-wrap: wrap;
+  }
+  .upd-entry-title { font-weight: 700; color: var(--text); font-size: 0.95rem; }
+  .upd-entry-meta { font-size: 0.72rem; color: var(--dim); }
+  .upd-entry-badge {
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;
+    text-transform: uppercase; color: #fff; background: var(--red);
+    padding: 1px 6px; border-radius: 8px;
+  }
+  .upd-entry.unseen { border-left: 2px solid var(--green); padding-left: 10px; }
+  .upd-entry ul { margin: 0; padding-left: 18px; }
+  .upd-entry li { margin-bottom: 5px; color: var(--text); font-size: 0.85rem; line-height: 1.45; }
+  .upd-empty { color: var(--dim); font-size: 0.85rem; }
   .help-btn {
     background: none; border: 1.5px solid var(--dim); color: var(--dim); cursor: pointer;
     width: 22px; height: 22px; border-radius: 50%; font-size: 0.75rem; font-weight: 700;
@@ -2253,9 +2279,12 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
           <div>
             <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">ABOUT</label>
-            <div class="settings-indent" style="font-size:0.8rem; color:var(--dim);">
-              LiveTimer v1.00.009<br>
-              &copy; 2025 Peter Avila. All rights reserved.
+            <div class="settings-indent">
+              <button class="settings-btn" onclick="openUpdates()" style="position:relative;">What's New<span class="update-dot" id="whatsNewDot" style="display:none;"></span></button>
+              <div style="font-size:0.8rem; color:var(--dim); margin-top:10px;">
+                LiveTimer <span id="aboutVersion">v1.00.010</span><br>
+                &copy; 2025 Peter Avila. All rights reserved.
+              </div>
             </div>
           </div>
 
@@ -2336,6 +2365,20 @@
 </div><!-- /settings-overlay -->
 
 <!-- Help Overlay -->
+<div class="help-overlay hidden" id="updatesOverlay" onclick="if(event.target===this)closeUpdates()">
+  <div class="help-panel" style="max-width:560px;">
+    <div class="help-header">
+      <h2>What's New</h2>
+      <div class="help-header-actions">
+        <button class="help-close" onclick="closeUpdates()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+    <div class="help-body" id="updatesBody">
+      <!-- populated by renderUpdatesHTML() -->
+    </div>
+  </div>
+</div>
+
 <div class="help-overlay hidden" id="helpOverlay" onclick="if(event.target===this)closeHelp()">
   <div class="help-panel">
     <div class="help-header">
@@ -3212,9 +3255,15 @@ async function startApp() {
     topbar.className = 'login-topbar';
     const cog = document.createElement('button');
     cog.className = 'settings-cog';
+    cog.id = 'settingsCog';
     cog.title = 'Settings';
     cog.onclick = openSettings;
     cog.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const updDot = document.createElement('span');
+    updDot.className = 'update-dot';
+    updDot.id = 'updateDot';
+    updDot.style.display = 'none';
+    cog.appendChild(updDot);
     topbar.appendChild(cog);
     const helpBtn = document.createElement('button');
     helpBtn.className = 'help-btn';
@@ -3279,6 +3328,115 @@ async function startApp() {
   loadSavedPalette();
   try { await loadPaletteFromServer(); } catch(e) { console.error('loadPalette:', e); }
   buildPalettePicker();
+
+  // Check for app updates (notification dot + interrupt-when-idle for urgent items)
+  checkForUpdates();
+}
+
+// ── Update notifications ────────────────────────────────────
+// changelog.json (server-side) is the single source of update content + version.
+// This client computes what's "unseen" from {entries, lastSeenVersion} and shows
+// a dot for any unseen entry, plus an interrupt modal only for urgent unseen ones.
+let changelogState = { version: '', entries: [], lastSeenVersion: null };
+let deferredUrgentUpdates = false;
+
+// Compare "a.bb.ccc" version strings numerically. >0 if a is newer.
+function compareVersions(a, b) {
+  const pa = String(a).split('.').map(n => parseInt(n, 10) || 0);
+  const pb = String(b).split('.').map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d) return d > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
+// The one place that decides which changelog entries are new to this instructor.
+function getUnseenUpdates() {
+  const { entries, lastSeenVersion } = changelogState;
+  if (!Array.isArray(entries)) return [];
+  if (!lastSeenVersion) return entries.slice(); // never seen anything → all unseen
+  return entries.filter(e => compareVersions(e.version, lastSeenVersion) > 0);
+}
+
+// Show/hide both notification dots based on unseen count.
+function updateDotVisibility() {
+  const show = getUnseenUpdates().length > 0;
+  ['updateDot', 'whatsNewDot'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = show ? '' : 'none';
+  });
+}
+
+// The one render function — used by both the auto-popup and the Settings viewer.
+function renderUpdatesHTML(entries) {
+  if (!entries || !entries.length) return '<p class="upd-empty">No updates to show yet.</p>';
+  const unseen = new Set(getUnseenUpdates().map(e => e.version));
+  return entries.map(e => {
+    const items = (e.items || []).map(it => `<li>${esc(it)}</li>`).join('');
+    const badge = e.urgent ? '<span class="upd-entry-badge">Important</span>' : '';
+    const cls = unseen.has(e.version) ? ' unseen' : '';
+    const meta = [e.version ? 'v' + esc(e.version) : '', e.date ? esc(e.date) : ''].filter(Boolean).join(' &middot; ');
+    return `<div class="upd-entry${cls}">
+      <div class="upd-entry-head">
+        <span class="upd-entry-title">${esc(e.title || 'Update')}</span>
+        ${badge}
+        <span class="upd-entry-meta">${meta}</span>
+      </div>
+      <ul>${items}</ul>
+    </div>`;
+  }).join('');
+}
+
+// Open the What's New overlay (full changelog). Opening counts as seeing it.
+function openUpdates() {
+  document.getElementById('updatesBody').innerHTML = renderUpdatesHTML(changelogState.entries);
+  document.getElementById('updatesOverlay').classList.remove('hidden');
+  deferredUrgentUpdates = false;
+  markUpdatesSeen();
+}
+
+function closeUpdates() {
+  document.getElementById('updatesOverlay').classList.add('hidden');
+}
+
+// Mark all current updates seen: update local state + persist to server.
+async function markUpdatesSeen() {
+  if (!getUnseenUpdates().length) return;
+  changelogState.lastSeenVersion = changelogState.version;
+  updateDotVisibility();
+  try { await authFetch('/api/changelog/seen', { method: 'POST' }); }
+  catch (e) { /* not critical — re-marks next session */ }
+}
+
+// Fetch changelog, set version + dots, and interrupt only for urgent unseen items.
+async function checkForUpdates() {
+  try {
+    const resp = await authFetch('/api/changelog');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    changelogState = {
+      version: data.version || '',
+      entries: Array.isArray(data.entries) ? data.entries : [],
+      lastSeenVersion: data.lastSeenVersion || null,
+    };
+    const vEl = document.getElementById('aboutVersion');
+    if (vEl && changelogState.version) vEl.textContent = 'v' + changelogState.version;
+    updateDotVisibility();
+    const hasUrgent = getUnseenUpdates().some(e => e.urgent);
+    if (hasUrgent) {
+      if (timerIsRunning) deferredUrgentUpdates = true; // wait until class timer stops
+      else openUpdates();
+    }
+  } catch (e) { /* offline / not critical */ }
+}
+
+// Called when a timer transitions to idle — shows any deferred urgent update.
+function maybeShowDeferredUpdates() {
+  if (deferredUrgentUpdates && !timerIsRunning) {
+    deferredUrgentUpdates = false;
+    openUpdates();
+  }
 }
 
 // ── Change password ──
@@ -3715,6 +3873,9 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'Escape' && !document.getElementById('helpOverlay').classList.contains('hidden')) {
     closeHelp();
+  }
+  if (e.key === 'Escape' && !document.getElementById('updatesOverlay').classList.contains('hidden')) {
+    closeUpdates();
   }
 });
 
@@ -4762,7 +4923,9 @@ socket.on('connect', () => {
 // ── Socket events ──
 let initialSyncDone = false;
 socket.on('timer-update', (s) => {
+  const wasRunning = timerIsRunning;
   timerIsRunning = s.running;
+  if (wasRunning && !s.running) maybeShowDeferredUpdates(); // timer just went idle
   timerTotal = s.totalSeconds;
   timerOriginalTotal = s.originalTotal || s.totalSeconds;
   timerRemaining = s.remainingSeconds;

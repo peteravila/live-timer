@@ -1,4 +1,4 @@
-// server.js  —  LiveTimer v1.00.009
+// server.js  —  LiveTimer (version is sourced from changelog.json — see APP_VERSION below)
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
@@ -17,6 +17,19 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '10mb' })); // increased for custom audio uploads
+
+// ── Changelog / version (single source of truth) ────────────
+// changelog.json is the ONE place the app version and update history live.
+// Newest entry first; entry[0].version IS the current app version.
+let CHANGELOG = [];
+try {
+  CHANGELOG = JSON.parse(fs.readFileSync(path.join(__dirname, 'changelog.json'), 'utf8'));
+  if (!Array.isArray(CHANGELOG)) CHANGELOG = [];
+} catch (e) {
+  console.error('Could not load changelog.json:', e.message);
+  CHANGELOG = [];
+}
+const APP_VERSION = (CHANGELOG[0] && CHANGELOG[0].version) || '0.00.000';
 
 // ── Security: input sanitization ────────────────────────────
 function sanitize(str, maxLen = 500) {
@@ -825,6 +838,8 @@ function advanceSequence(s) {
 // ── Routes ───────────────────────────────────────────────────
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'student.html')));
 app.get('/instructor', (req, res) => res.sendFile(path.join(__dirname, 'public', 'instructor.html')));
+// Plain-text running version — for confirming a deploy went live. Reads APP_VERSION (changelog.json).
+app.get('/version', (req, res) => res.type('text/plain').send('LiveTimer v' + APP_VERSION));
 
 // ── Library REST endpoints (auth required) ──────────────────
 app.get('/api/library', requireAuth, (req, res) => {
@@ -1057,6 +1072,35 @@ app.get('/api/me', (req, res) => {
   const payload = verifyToken(auth.slice(7));
   if (!payload) return res.status(401).json({ error: 'Invalid or expired token' });
   res.json({ name: payload.name, email: payload.email, isAdmin: !!payload.isAdmin });
+});
+
+// ── Changelog / update notifications ────────────────────────
+// Returns the full changelog, the current version, and this instructor's
+// lastSeenVersion. The client decides what's "unseen" from these three values.
+app.get('/api/changelog', requireAuth, async (req, res) => {
+  try {
+    const instructor = await db.collection('instructors').findOne({ _id: new ObjectId(req.instructor.id) });
+    res.json({
+      version: APP_VERSION,
+      entries: CHANGELOG,
+      lastSeenVersion: (instructor && instructor.lastSeenVersion) || null,
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to load changelog' });
+  }
+});
+
+// Marks every current update as seen for this instructor.
+app.post('/api/changelog/seen', requireAuth, async (req, res) => {
+  try {
+    await db.collection('instructors').updateOne(
+      { _id: new ObjectId(req.instructor.id) },
+      { $set: { lastSeenVersion: APP_VERSION } }
+    );
+    res.json({ success: true, lastSeenVersion: APP_VERSION });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to save' });
+  }
 });
 
 // API key for display viewers (OBS, large screens)
@@ -2004,7 +2048,7 @@ const PORT = process.env.PORT || 3000;
   }
 
   server.listen(PORT, () => {
-    console.log(`\n  LiveTimer is running!`);
+    console.log(`\n  LiveTimer v${APP_VERSION} is running!`);
     console.log(`   Instructor panel : http://localhost:${PORT}/instructor`);
     console.log(`   Student view     : http://localhost:${PORT}/`);
     console.log(`\n   Share the student URL (or QR code) with your class.\n`);

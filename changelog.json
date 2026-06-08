@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.00.012",
+    "date": "2026-06-07",
+    "title": "End-time line can be a text field",
+    "urgent": false,
+    "items": [
+      "The end-time line now has two controls: “Show End Time Label” (shows your label text) and “Show End Time” (appends the actual clock time). Turn the time off to use the line as a free text field. Existing timers are unchanged."
+    ]
+  },
+  {
     "version": "1.00.011",
     "date": "2026-06-07",
     "title": "Naming and display fixes",

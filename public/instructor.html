@@ -1723,7 +1723,11 @@
         <div class="text-side-label">Display Modes</div>
         <div class="left-options-panel">
           <div class="checkbox-row" style="margin-bottom:4px;">
-            <input type="checkbox" id="fieldShowEnd" class="custom-cb" checked onchange="socket.emit('update-show-end-time', { showEndTime: this.checked })">
+            <input type="checkbox" id="fieldShowEndLabel" class="custom-cb" checked>
+            <label for="fieldShowEndLabel" style="font-size:0.78rem;">Show end time label</label>
+          </div>
+          <div class="checkbox-row" style="margin-bottom:4px;">
+            <input type="checkbox" id="fieldShowEnd" class="custom-cb" checked>
             <label for="fieldShowEnd" style="font-size:0.78rem;">Show end time</label>
           </div>
           <div class="checkbox-row" style="margin-bottom:4px;">
@@ -3215,6 +3219,8 @@ function logout() {
 
   // Reset options to defaults
   document.getElementById('fieldShowEnd').checked = true;
+  document.getElementById('fieldShowEndLabel').checked = true;
+  syncEndTimeFlagUI();
   document.getElementById('fieldBgDefault').checked = true;
   document.getElementById('fieldBgTransparent').checked = false;
   document.getElementById('fieldBgBlack').checked = false;
@@ -4332,6 +4338,7 @@ function saveToLibrary() {
   const currentEndTimeLabel = getField('fieldEndTimeLabel');
   const currentMessage = getField('fieldMessage');
   const currentShowEnd = document.getElementById('fieldShowEnd').checked;
+  const currentShowEndLabel = document.getElementById('fieldShowEndLabel').checked;
   const currentModes = getDisplayModePayload();
   const currentGoToTab = document.getElementById('optGoToTab').value;
   const bgPreview = currentModes.transparent ? 'Transparent' : currentModes.blackBg ? 'Black' : 'Default';
@@ -4359,6 +4366,8 @@ function saveToLibrary() {
       '<input type="text" id="toLibMessage" value="' + esc(currentMessage) + '" style="' + inputStyle + '">' },
     { key: 'showEndTime', label: 'Show End Time', control:
       '<input type="checkbox" id="toLibShowEnd"' + (currentShowEnd ? ' checked' : '') + ' style="' + cbStyle + '">' },
+    { key: 'showEndTimeLabel', label: 'Show End Time Label', control:
+      '<input type="checkbox" id="toLibShowEndLabel"' + (currentShowEndLabel ? ' checked' : '') + ' style="' + cbStyle + '">' },
     { key: 'bgMode', label: 'Background', control:
       '<select id="toLibBgMode" style="' + selectStyle + '">' +
       '<option value="default"' + (!currentModes.transparent && !currentModes.blackBg ? ' selected' : '') + ' style="background:var(--input-bg);color:var(--text);">Default</option>' +
@@ -4426,6 +4435,7 @@ function saveToLibrary() {
       endTimeLabel: document.getElementById('toLibEndTimeLabel').value || '',
       message: document.getElementById('toLibMessage').value || '',
       showEndTime: document.getElementById('toLibShowEnd').checked,
+      showEndTimeLabel: document.getElementById('toLibShowEndLabel').checked,
       transparent: bgVal === 'transparent',
       blackBg: bgVal === 'black',
       clockOnly: document.getElementById('toLibClockOnly').checked,
@@ -4451,6 +4461,7 @@ function saveToLibrary() {
       if (chosenFields.includes('endTimeLabel')) item.endTimeLabel = vals.endTimeLabel;
       if (chosenFields.includes('message'))      item.message = vals.message;
       if (chosenFields.includes('showEndTime'))  item.showEndTime = vals.showEndTime;
+      if (chosenFields.includes('showEndTimeLabel'))  item.showEndTimeLabel = vals.showEndTimeLabel;
       if (chosenFields.includes('bgMode')) {
         item.transparent = vals.transparent;
         item.blackBg = vals.blackBg;
@@ -4483,6 +4494,7 @@ function saveToLibrary() {
         if (chosenFields.includes('endTimeLabel')) t.endTimeLabel = vals.endTimeLabel;
         if (chosenFields.includes('message'))      t.message = vals.message;
         if (chosenFields.includes('showEndTime'))  t.showEndTime = vals.showEndTime;
+        if (chosenFields.includes('showEndTimeLabel'))  t.showEndTimeLabel = vals.showEndTimeLabel;
         if (chosenFields.includes('bgMode')) {
           t.transparent = vals.transparent;
           t.blackBg = vals.blackBg;
@@ -5346,10 +5358,27 @@ document.getElementById('fieldName').addEventListener('input', () => checkDirty(
 document.getElementById('fieldLabel').addEventListener('input', () => checkDirty());
 document.getElementById('fieldEndTimeLabel').addEventListener('input', () => checkDirty());
 document.getElementById('fieldMessage').addEventListener('input', () => checkDirty());
+function effLabelClient(showEndTime, showEndTimeLabel) {
+  if (showEndTime !== false) return true;
+  if (showEndTimeLabel === undefined) return false;
+  return showEndTimeLabel !== false;
+}
+function syncEndTimeFlagUI() {
+  const showEnd = document.getElementById('fieldShowEnd').checked;
+  const lbl = document.getElementById('fieldShowEndLabel');
+  if (showEnd) { lbl.checked = true; lbl.disabled = true; } else { lbl.disabled = false; }
+}
 document.getElementById('fieldShowEnd').addEventListener('change', () => {
+  syncEndTimeFlagUI();
   checkDirty();
   socket.emit('update-show-end-time', { showEndTime: document.getElementById('fieldShowEnd').checked });
+  socket.emit('update-show-end-time-label', { showEndTimeLabel: document.getElementById('fieldShowEndLabel').checked });
 });
+document.getElementById('fieldShowEndLabel').addEventListener('change', () => {
+  checkDirty();
+  socket.emit('update-show-end-time-label', { showEndTimeLabel: document.getElementById('fieldShowEndLabel').checked });
+});
+syncEndTimeFlagUI(); // set initial locked state of the label checkbox
 // Capture course title on mousedown — before focus leaves the field and before
 // a queued timer-update can overwrite the field with stale server state
 document.getElementById('btnPushCourseTitle').addEventListener('mousedown', () => {
@@ -5585,14 +5614,14 @@ async function interruptRunningTimer() {
 }
 
 // Push all text fields to server (resolved values)
-function pushFieldsToServer({ courseTitle, label, message, endTimeLabel, modes, minutes, showEndTime } = {}) {
+function pushFieldsToServer({ courseTitle, label, message, endTimeLabel, modes, minutes, showEndTime, showEndTimeLabel } = {}) {
   if (courseTitle !== undefined) socket.emit('update-course-title', { courseTitle });
   if (label !== undefined) socket.emit('update-label', { label });
   if (message !== undefined) socket.emit('update-message', { message });
   if (endTimeLabel !== undefined) socket.emit('update-end-time-label', { endTimeLabel });
   if (modes) socket.emit('update-display-modes', modes);
   if (minutes !== undefined && minutes > 0) {
-    socket.emit('set-timer-only', { minutes, showEndTime: showEndTime !== false });
+    socket.emit('set-timer-only', { minutes, showEndTime: showEndTime !== false, showEndTimeLabel });
   }
 }
 
@@ -5644,6 +5673,7 @@ async function startOrAnnounce(options = {}) {
     const etl = getField('fieldEndTimeLabel');
     const minutes = getDurationMinutes();
     const showEndTime = document.getElementById('fieldShowEnd').checked;
+    const showEndTimeLabel = document.getElementById('fieldShowEndLabel').checked;
 
     pushFieldsToServer({
       courseTitle: ct,
@@ -5653,6 +5683,7 @@ async function startOrAnnounce(options = {}) {
       modes: getDisplayModePayload(),
       minutes: (minutes > 0 || isNoClock) ? minutes : undefined,
       showEndTime,
+      showEndTimeLabel,
     });
 
     markPushed('fieldCourseTitle');
@@ -5666,7 +5697,8 @@ async function startOrAnnounce(options = {}) {
     const minutes = getDurationMinutes();
     if (minutes > 0) {
       const showEndTime = document.getElementById('fieldShowEnd').checked;
-      socket.emit('set-timer-only', { minutes, showEndTime });
+      const showEndTimeLabel = document.getElementById('fieldShowEndLabel').checked;
+      socket.emit('set-timer-only', { minutes, showEndTime, showEndTimeLabel });
     }
   }
 
@@ -5698,6 +5730,7 @@ function collectMockupFields() {
     endTimeLabel: getField('fieldEndTimeLabel'),
     message: getField('fieldMessage'),
     showEndTime: document.getElementById('fieldShowEnd').checked,
+    showEndTimeLabel: document.getElementById('fieldShowEndLabel').checked,
     transparent: modes.transparent,
     blackBg: modes.blackBg,
     clockOnly: modes.clockOnly,
@@ -5715,6 +5748,8 @@ function loadTimerToMockup(t) {
   setField('fieldEndTimeLabel', t.endTimeLabel || 'Class resumes at');
   setField('fieldMessage', t.message || '');
   document.getElementById('fieldShowEnd').checked = t.showEndTime !== false;
+  document.getElementById('fieldShowEndLabel').checked = effLabelClient(t.showEndTime, t.showEndTimeLabel);
+  syncEndTimeFlagUI();
   setBgModeFromFlags(t.transparent, t.blackBg);
   document.getElementById('fieldClockOnly').checked = !!t.clockOnly;
   document.getElementById('fieldNoClock').checked = !!t.noClock;
@@ -5730,8 +5765,9 @@ function loadTimerToMockup(t) {
 function loadTime() {
   const minutes = getDurationMinutes();
   const showEndTime = document.getElementById('fieldShowEnd').checked;
+  const showEndTimeLabel = document.getElementById('fieldShowEndLabel').checked;
   if (minutes <= 0 && !document.getElementById('fieldNoClock').checked) return;
-  socket.emit('set-timer-only', { minutes, showEndTime });
+  socket.emit('set-timer-only', { minutes, showEndTime, showEndTimeLabel });
   socket.emit('update-display-modes', getDisplayModePayload());
 }
 
@@ -5891,6 +5927,8 @@ function doClearAll() {
   setField('fieldEndTimeLabel', '');
   setField('fieldMessage', '');
   document.getElementById('fieldShowEnd').checked = true;
+  document.getElementById('fieldShowEndLabel').checked = true;
+  syncEndTimeFlagUI();
   setBgModeFromFlags(false, false);
   document.getElementById('fieldClockOnly').checked = false;
   document.getElementById('fieldNoClock').checked = false;
@@ -6328,6 +6366,7 @@ async function libSaveRow(id) {
     endTimeLabel: get('endTimeLabel') || '',
     message: get('message') || '',
     showEndTime: get('showEndTime'),
+    showEndTimeLabel: (library.find(x => x.id === id) || {}).showEndTimeLabel,
     transparent: bgMode === 'transparent',
     blackBg: bgMode === 'black',
     clockOnly: get('clockOnly'),
@@ -6398,6 +6437,7 @@ function editTimerDialog() {
   document.getElementById('ntEndTimeLabel').value = t.endTimeLabel || 'Class resumes at';
   document.getElementById('ntMessage').value = t.message || '';
   document.getElementById('ntShowEndTime').checked = t.showEndTime !== false;
+  document.getElementById('ntShowEndLabel').checked = effLabelClient(t.showEndTime, t.showEndTimeLabel);
   document.getElementById('ntClockOnly').checked = !!t.clockOnly;
   document.getElementById('ntNoClock').checked = !!t.noClock;
   document.getElementById('ntBgMode').value = t.transparent ? 'transparent' : t.blackBg ? 'black' : 'default';
@@ -6427,6 +6467,7 @@ async function submitNewTimerDialog() {
     endTimeLabel: document.getElementById('ntEndTimeLabel').value || '',
     message: document.getElementById('ntMessage').value || '',
     showEndTime: document.getElementById('ntShowEndTime').checked,
+    showEndTimeLabel: document.getElementById('ntShowEndLabel').checked,
     transparent: bgMode === 'transparent',
     blackBg: bgMode === 'black',
     clockOnly: document.getElementById('ntClockOnly').checked,
@@ -6726,6 +6767,7 @@ function isLibDirty(id) {
   const endTimeLabel = getField('fieldEndTimeLabel');
   const message = getField('fieldMessage');
   const showEnd = document.getElementById('fieldShowEnd').checked;
+  const showEndLabel = document.getElementById('fieldShowEndLabel').checked;
   const { transparent, blackBg, clockOnly, noClock } = getDisplayModePayload();
   const goToTab = document.getElementById('optGoToTab').value;
   return (name !== (t.name || '')) ||
@@ -6734,6 +6776,7 @@ function isLibDirty(id) {
          (norm(endTimeLabel) !== norm(t.endTimeLabel || 'Class resumes at')) ||
          (norm(message) !== norm(t.message)) ||
          (showEnd !== (t.showEndTime !== false)) ||
+         (showEndLabel !== effLabelClient(t.showEndTime, t.showEndTimeLabel)) ||
          (transparent !== !!t.transparent) ||
          (blackBg !== !!t.blackBg) ||
          (clockOnly !== !!t.clockOnly) ||
@@ -8947,6 +8990,9 @@ async function loadPaletteFromServer() {
       <div style="display:flex; gap:20px; flex-wrap:wrap;">
         <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--dim); cursor:pointer;">
           <input type="checkbox" id="ntShowEndTime" checked style="accent-color:var(--green);"> Show End Time
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--dim); cursor:pointer;">
+          <input type="checkbox" id="ntShowEndLabel" checked style="accent-color:var(--green);"> Show End Time Label
         </label>
         <label style="display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--dim); cursor:pointer;">
           <input type="checkbox" id="ntClockOnly" style="accent-color:var(--green);"> Clock Only

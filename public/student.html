@@ -873,6 +873,7 @@ socket.on('timer-update', (s) => {
 
   // End time — use server-pushed label instead of hardcoded text
   const etEl = document.getElementById('endTime');
+  const _etLabel = s.endTimeLabel || '';
   if (s.showEndTime && s.endTime && (s.running || s.screenshotMode)) {
     const d = new Date(s.endTime);
     let h = d.getHours();
@@ -884,6 +885,9 @@ socket.on('timer-update', (s) => {
   } else if (s.showEndTime && !s.running && s.remainingSeconds > 0 && s.remainingSeconds < s.totalSeconds) {
     const prefix = s.endTimeLabel || 'Class resumes at';
     etEl.textContent = prefix + ' (paused)';
+  } else if (!s.showEndTime && s.showEndTimeLabel === true && _etLabel) {
+    // Label-only: end-time label used as a free text line (time suppressed)
+    etEl.textContent = _etLabel;
   } else {
     etEl.textContent = '';
   }

@@ -232,6 +232,7 @@ const DEFAULT_TIMER_STATE = {
   running: false,
   endTime: null,
   showEndTime: true,
+  showEndTimeLabel: true,
   endTimeFormatted: '',
   endTimeLabel: 'Class resumes at',
   transparent: false,
@@ -240,6 +241,14 @@ const DEFAULT_TIMER_STATE = {
   noClock: false,
   fontOverrides: { courseTitle: null, label: null, message: null },
 };
+
+// End-time label visibility: showing the time implies showing the label;
+// for legacy timers with no label flag, it follows showEndTime.
+function effLabel(showEndTime, showEndTimeLabel) {
+  if (showEndTime !== false) return true;
+  if (showEndTimeLabel === undefined) return false;
+  return showEndTimeLabel !== false;
+}
 
 function createSession(instructorId) {
   return {
@@ -777,6 +786,7 @@ function loadSequenceStep(s, index) {
   s.timerState.label = step.label || '';
   s.timerState.message = step.message || '';
   s.timerState.showEndTime = step.showEndTime !== false;
+  s.timerState.showEndTimeLabel = effLabel(step.showEndTime, step.showEndTimeLabel);
   s.timerState.endTimeLabel = 'Class resumes at';
   s.timerState.running = false;
   s.timerState.endTime = null;
@@ -796,6 +806,7 @@ function autoStartTimer(s) {
     originalTotal: s.timerState.originalTotal,
     remainingSeconds: s.timerState.remainingSeconds,
     showEndTime: s.timerState.showEndTime,
+    showEndTimeLabel: s.timerState.showEndTimeLabel,
     endTimeLabel: s.timerState.endTimeLabel,
     endTime: Date.now() + s.timerState.remainingSeconds * 1000,
   };
@@ -1742,7 +1753,7 @@ io.on('connection', (socket) => {
     broadcast(session);
   });
 
-  socket.on('set-timer', ({ minutes, label, message, showEndTime, transparent, blackBg, clockOnly, noClock }) => {
+  socket.on('set-timer', ({ minutes, label, message, showEndTime, showEndTimeLabel, transparent, blackBg, clockOnly, noClock }) => {
     if (role !== 'instructor' || !session) return;
     const secs = Math.max(0, Math.min(86400, Math.round(minutes * 60))); // cap at 24 hours
     session.timerState.totalSeconds = secs;
@@ -1751,6 +1762,7 @@ io.on('connection', (socket) => {
     session.timerState.label = sanitizeLen(label, 200);
     session.timerState.message = sanitizeLen(message, 500);
     session.timerState.showEndTime = showEndTime !== false;
+    session.timerState.showEndTimeLabel = effLabel(showEndTime, showEndTimeLabel);
     session.timerState.transparent = !!transparent;
     session.timerState.blackBg = !!blackBg;
     session.timerState.clockOnly = !!clockOnly;
@@ -1763,13 +1775,14 @@ io.on('connection', (socket) => {
     saveTimerState(instructorId, session);
   });
 
-  socket.on('set-timer-only', ({ minutes, showEndTime }) => {
+  socket.on('set-timer-only', ({ minutes, showEndTime, showEndTimeLabel }) => {
     if (role !== 'instructor' || !session) return;
     const secs = Math.max(0, Math.round(minutes * 60));
     session.timerState.totalSeconds = secs;
     session.timerState.originalTotal = secs;
     session.timerState.remainingSeconds = secs;
     session.timerState.showEndTime = showEndTime !== false;
+    session.timerState.showEndTimeLabel = effLabel(showEndTime, showEndTimeLabel);
     session.timerState.running = false;
     session.timerState.endTime = null;
     session.timerState.endTimeFormatted = '';
@@ -1787,6 +1800,7 @@ io.on('connection', (socket) => {
       originalTotal: session.timerState.originalTotal,
       remainingSeconds: session.timerState.remainingSeconds,
       showEndTime: session.timerState.showEndTime,
+      showEndTimeLabel: session.timerState.showEndTimeLabel,
       endTimeLabel: session.timerState.endTimeLabel,
       endTime: Date.now() + session.timerState.remainingSeconds * 1000,
     };
@@ -1852,6 +1866,7 @@ io.on('connection', (socket) => {
     session.timerState.message = '';
     session.timerState.endTimeLabel = '';
     session.timerState.showEndTime = false;
+    session.timerState.showEndTimeLabel = false;
     session.timerState.noClock = false;
     session.timerState.clockOnly = false;
     session.timerState.transparent = false;
@@ -1907,6 +1922,14 @@ io.on('connection', (socket) => {
   socket.on('update-show-end-time', ({ showEndTime }) => {
     if (role !== 'instructor' || !session) return;
     session.timerState.showEndTime = showEndTime !== false;
+    if (session.timerState.showEndTime) session.timerState.showEndTimeLabel = true;
+    broadcast(session);
+    saveTimerState(instructorId, session);
+  });
+
+  socket.on('update-show-end-time-label', ({ showEndTimeLabel }) => {
+    if (role !== 'instructor' || !session) return;
+    session.timerState.showEndTimeLabel = session.timerState.showEndTime ? true : (showEndTimeLabel !== false);
     broadcast(session);
     saveTimerState(instructorId, session);
   });
@@ -1932,6 +1955,7 @@ io.on('connection', (socket) => {
     session.timerState.totalSeconds = session.lastTimer.originalTotal;
     session.timerState.remainingSeconds = remaining;
     session.timerState.showEndTime = session.lastTimer.showEndTime;
+    session.timerState.showEndTimeLabel = effLabel(session.lastTimer.showEndTime, session.lastTimer.showEndTimeLabel);
     session.timerState.endTimeLabel = session.lastTimer.endTimeLabel;
     session.timerState.running = true;
     session.timerState.endTime = newEndTime;
@@ -1958,6 +1982,7 @@ io.on('connection', (socket) => {
         message: libItem.message || '',
         totalSeconds: Math.max(0, Math.round((libItem.minutes || 0) * 60)),
         showEndTime: libItem.showEndTime !== false,
+        showEndTimeLabel: effLabel(libItem.showEndTime, libItem.showEndTimeLabel),
         autoStart: step.autoStart !== false,
       };
     }).filter(Boolean);

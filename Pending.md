@@ -28,6 +28,14 @@ Render spins down after ~15 min inactivity. The keep-alive ping (instructor.html
 
 ---
 
+### 4. Batch Alarm Editing
+
+Allow changing several alarms at once, the way timers can be batch-edited (multi-select, then apply a change to all selected). Currently alarms must be edited one at a time.
+
+**Status:** Requested
+
+---
+
 ### Completed (Archive)
 
 - ~~**Updates/changelog system**~~ — Done (v1.00.010). `changelog.json` is the single source for version + history. Settings-gear dot for any unseen entry; What's New overlay in Settings → About; per-entry `urgent` flag interrupts on load but defers until the timer is idle. `lastSeenVersion` tracked per instructor.

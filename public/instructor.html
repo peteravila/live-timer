@@ -129,6 +129,8 @@
     border-top: 2px solid transparent; transition: all 0.15s;
   }
   .mockup-tab:hover { color: var(--text-muted); }
+  /* Make dropdown option rows readable in every palette (esp. dark schemes) */
+  select option { background-color: var(--card); color: var(--text); }
   .mockup-tab.active { color: var(--blue); border-top-color: var(--blue); }
 
   /* Live preview iframe inside phone frame */
@@ -1718,7 +1720,7 @@
         <input type="text" class="text-side-input" id="fieldName" placeholder="e.g. Break 15" autocomplete="off">
         <div class="text-side-hint">Library only — not shown to students.</div>
         <hr style="border:none; border-top:1px solid var(--border-light); margin:4px 0;">
-        <div class="text-side-label">Options</div>
+        <div class="text-side-label">Display Modes</div>
         <div class="left-options-panel">
           <div class="checkbox-row" style="margin-bottom:4px;">
             <input type="checkbox" id="fieldShowEnd" class="custom-cb" checked onchange="socket.emit('update-show-end-time', { showEndTime: this.checked })">
@@ -2141,12 +2143,12 @@
           <hr style="border:none; border-top:1px solid var(--border); margin:20px 0;">
 
           <div style="margin-bottom:20px;">
-            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">STUDENT UPDATES</label>
-            <div style="font-size:0.75rem; color:var(--dim); margin-top:4px;">When muted, timer changes only appear in the preview — not on student screens.</div>
+            <label class="settings-label" style="font-size:0.85rem; color:var(--text-muted);">PREP MODE</label>
+            <div style="font-size:0.75rem; color:var(--dim); margin-top:4px;">Prep Mode lets you set up and test without disrupting students. When it’s on, your changes appear only in your preview — not on student screens.</div>
             <div class="settings-indent">
               <div class="checkbox-row">
                 <input type="checkbox" id="muteStudents" class="custom-cb">
-                <label for="muteStudents" style="font-size:0.85rem; color:var(--text-muted);">Mute</label>
+                <label for="muteStudents" style="font-size:0.85rem; color:var(--text-muted);">Prep Mode</label>
               </div>
             </div>
           </div>
@@ -2445,10 +2447,10 @@
         </div>
       </div>
 
-      <!-- 2. Options (Left Panel) -->
+      <!-- 2. Display Modes (Left Panel) -->
       <div class="help-section">
         <button class="help-section-toggle" onclick="toggleHelpSection(this)">
-          <span>Options (Left Panel)</span><span class="help-chevron">&#9654;</span>
+          <span>Display Modes (Left Panel)</span><span class="help-chevron">&#9654;</span>
         </button>
         <div class="help-section-content">
           <p>On the left side of the phone mockup, you'll find per-timer options. These settings are saved with each timer in the library:</p>
@@ -2721,8 +2723,8 @@
           <h4>After Starting Tab</h4>
           <p>Choose which tab to switch to automatically when you start a timer. Options: Timers, Students, or Settings.</p>
 
-          <h4>Mute</h4>
-          <p>When muted, timer updates are only sent to the instructor view (and any preview connections), not to student devices. Useful for testing or setting up timers without disrupting students who are already connected.</p>
+          <h4>Prep Mode</h4>
+          <p>Prep Mode sends your timer updates only to your instructor view (and any preview connections), not to student devices. Use it to set up or test timers without disrupting students who are already connected.</p>
 
           <h4>Library Backup</h4>
           <p>Export your entire timer library to a JSON file for backup, or import a previously exported file. Your library is also automatically backed up in your browser's local storage.</p>
@@ -4895,6 +4897,7 @@ function resetMockupIdle() {
 
 // ── Formatting helpers ──
 function fmt(secs) {
+  if (!isFinite(secs)) secs = 0;
   const neg = secs < 0;
   const abs = Math.abs(secs);
   const h = Math.floor(abs / 3600);
@@ -4908,6 +4911,7 @@ function fmt(secs) {
 
 // Format as HH:MM (no seconds) — used for idle/duration display on mockup
 function fmtHM(secs) {
+  if (!isFinite(secs)) secs = 0;
   const abs = Math.abs(secs);
   const h = Math.floor(abs / 3600);
   const m = Math.floor((abs % 3600) / 60);
@@ -5367,11 +5371,13 @@ function getSpinVal(id) {
   const el = document.getElementById(id);
   const input = el.parentNode && el.parentNode.querySelector('.spin-input');
   if (input && el.style.display === 'none') return parseInt(input.value, 10) || 0;
-  return parseInt(el.textContent, 10);
+  const _v = parseInt(el.textContent, 10);
+  return isNaN(_v) ? 0 : _v;
 }
 function setSpinVal(id, val) {
   const el = document.getElementById(id);
   const [lo, hi] = spinLimits[id];
+  if (isNaN(val)) val = lo;
   const range = hi - lo + 1;
   let carry = 0;
   if (val > hi) { val = lo + (val - hi - 1) % range; carry = 1; }
@@ -5493,6 +5499,7 @@ function getDurationMinutes() {
   return getSpinVal('durH') * 60 + getSpinVal('durM');
 }
 function setDurationFromMinutes(totalMins) {
+  if (!isFinite(totalMins)) totalMins = 0;
   totalMins = Math.max(0, Math.round(totalMins));
   setSpinVal('durH', Math.floor(totalMins / 60));
   setSpinVal('durM', totalMins % 60);

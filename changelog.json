@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.00.011",
+    "date": "2026-06-07",
+    "title": "Naming and display fixes",
+    "urgent": false,
+    "items": [
+      "“Mute” is now “Prep Mode” — same feature, clearer name: set up and test timers without disrupting students.",
+      "The left-panel “Options” are now labeled “Display Modes.”",
+      "Fixed sound-menu names being unreadable in dark color schemes (e.g., Charcoal).",
+      "Hardened the timer clocks so a stray value can’t leave them stuck showing “NaN.”"
+    ]
+  },
+  {
     "version": "1.00.010",
     "date": "2026-06-07",
     "title": "Update notifications",

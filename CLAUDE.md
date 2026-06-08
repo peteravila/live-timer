@@ -12,7 +12,7 @@
 
 ## Version Numbering
 
-**Current version: 1.00.010.** The version lives in **one place only**: the top (newest) entry of `changelog.json` — `changelog[0].version` IS the app version. The server reads it into `APP_VERSION` at startup.
+**Current version: 1.00.011.** The version lives in **one place only**: the top (newest) entry of `changelog.json` — `changelog[0].version` IS the app version. The server reads it into `APP_VERSION` at startup.
 
 To release a new version, add a new entry to the top of `changelog.json` with the incremented version (by 0.00.001) — that's the single edit. Do NOT hardcode the version anywhere else.
 
@@ -170,6 +170,7 @@ This is a real-time classroom timer for virtual instruction (Zoom + OBS). An ins
 - **Transparent mode text outline** — Text-shadow outline on all text elements when transparent background is active, for readability against any background image.
 - **Version numbering** — v1.00.010. Single source: `changelog.json[0].version` → `APP_VERSION`. Surfaced via Settings > About, `GET /version`, and the server startup log. Increments by 0.00.001 per release (one edit to changelog.json).
 - **Update notifications** — `changelog.json` single source for version + history. Settings-gear dot for any unseen entry; What's New overlay in Settings → About; `urgent` entries interrupt on load but defer until the timer is idle. Endpoints: `GET /api/changelog`, `POST /api/changelog/seen`.
+- **Prep Mode / Display Modes rename + fixes** (v1.00.011) — The mute toggle is now labeled **Prep Mode**; the left-panel **Options** are now **Display Modes** (UI labels only — `muteStudents`/`toggle-mute` and the display-mode flags are unchanged). Dropdown `<option>` rows now use palette colors so sound names are readable in dark schemes. NaN guards added to `fmt`/`fmtHM`/`getSpinVal`/`setSpinVal`/`setDurationFromMinutes` so clocks can't get stuck showing "NaN."
 
 ### Pending / In Progress
 - **Email-based forgot password** — Add when manual admin resets become a hassle.

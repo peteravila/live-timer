@@ -6025,6 +6025,7 @@ function getLibCols() {
     { key: 'label',        hdr: 'Display Title',   sort: 'label',   defaultW: 140 },
     { key: 'endTimeLabel', hdr: 'End Time Label',  sort: null,      defaultW: 120 },
     { key: 'message',      hdr: 'Message',         sort: 'message', defaultW: 180 },
+    { key: 'showEndTimeLabel', hdr: 'Show End Time Label', sort: null, defaultW: 130, align: 'center' },
     { key: 'showEndTime',  hdr: 'Show End Time',   sort: null,      defaultW: 100, align: 'center' },
     { key: 'bgMode',       hdr: 'Background Mode', sort: null,      defaultW: 120, align: 'center' },
     { key: 'clockOnly',    hdr: 'Clock Only',      sort: null,      defaultW: 76, align: 'center' },
@@ -6159,7 +6160,8 @@ function renderLibrary() {
       <input type="text" class="lib-cell-input" data-field="label" data-orig="${esc(t.label || '')}" value="${esc(t.label || '')}" title="${esc(t.label || '')}" oninput="libMarkDirty(this);this.title=this.value">
       <input type="text" class="lib-cell-input" data-field="endTimeLabel" data-orig="${esc(t.endTimeLabel || '')}" value="${esc(t.endTimeLabel || '')}" title="${esc(t.endTimeLabel || '')}" oninput="libMarkDirty(this);this.title=this.value">
       <input type="text" class="lib-cell-input" data-field="message" data-orig="${esc(t.message || '')}" value="${esc(t.message || '')}" title="${esc(t.message || '')}" oninput="libMarkDirty(this);this.title=this.value">
-      <input type="checkbox" class="lib-cell-cb" data-field="showEndTime" data-orig="${t.showEndTime !== false}" ${t.showEndTime !== false ? 'checked' : ''} onchange="libMarkDirty(this)">
+      <input type="checkbox" class="lib-cell-cb" data-field="showEndTimeLabel" data-orig="${effLabelClient(t.showEndTime, t.showEndTimeLabel)}" ${effLabelClient(t.showEndTime, t.showEndTimeLabel) ? 'checked' : ''} ${t.showEndTime !== false ? 'disabled' : ''} onchange="libMarkDirty(this)">
+      <input type="checkbox" class="lib-cell-cb" data-field="showEndTime" data-orig="${t.showEndTime !== false}" ${t.showEndTime !== false ? 'checked' : ''} onchange="libMarkDirty(this);syncGridEndTimeRow(this)">
       <select class="lib-cell-select" data-field="bgMode" data-orig="${bg}" onchange="libMarkDirty(this)">
         <option value="default" ${bg === 'default' ? 'selected' : ''}>Default</option>
         <option value="transparent" ${bg === 'transparent' ? 'selected' : ''}>Transp</option>
@@ -6322,6 +6324,17 @@ function libMarkDirty(input) {
   }
 }
 
+// Grid row dependency: ticking Show End Time forces+locks that row's Show End Time Label.
+function syncGridEndTimeRow(showEndCb) {
+  const row = showEndCb.closest('.lib-row');
+  if (!row) return;
+  const lbl = row.querySelector('[data-field="showEndTimeLabel"]');
+  if (!lbl) return;
+  if (showEndCb.checked) { lbl.checked = true; lbl.disabled = true; }
+  else { lbl.disabled = false; }
+  libMarkDirty(lbl);
+}
+
 function libCancelRow(id) {
   const row = document.querySelector(`.lib-row[data-id="${id}"]`);
   if (!row) return;
@@ -6366,7 +6379,7 @@ async function libSaveRow(id) {
     endTimeLabel: get('endTimeLabel') || '',
     message: get('message') || '',
     showEndTime: get('showEndTime'),
-    showEndTimeLabel: (library.find(x => x.id === id) || {}).showEndTimeLabel,
+    showEndTimeLabel: get('showEndTimeLabel'),
     transparent: bgMode === 'transparent',
     blackBg: bgMode === 'black',
     clockOnly: get('clockOnly'),
@@ -6533,7 +6546,8 @@ function newBlankRow() {
       <input type="text" class="lib-cell-input" data-field="label" data-orig="" value="" placeholder="Display Title" oninput="libMarkDirty(this)" style="border-color:#444;background:rgba(255,255,255,0.06);">
       <input type="text" class="lib-cell-input" data-field="endTimeLabel" data-orig="" value="Class resumes at" placeholder="End time label" oninput="libMarkDirty(this)" style="border-color:#444;background:rgba(255,255,255,0.06);">
       <input type="text" class="lib-cell-input" data-field="message" data-orig="" value="" placeholder="Message" oninput="libMarkDirty(this)" style="border-color:#444;background:rgba(255,255,255,0.06);">
-      <input type="checkbox" class="lib-cell-cb" data-field="showEndTime" data-orig="true" checked onchange="libMarkDirty(this)">
+      <input type="checkbox" class="lib-cell-cb" data-field="showEndTimeLabel" data-orig="true" checked disabled onchange="libMarkDirty(this)">
+      <input type="checkbox" class="lib-cell-cb" data-field="showEndTime" data-orig="true" checked onchange="libMarkDirty(this);syncGridEndTimeRow(this)">
       <select class="lib-cell-select" data-field="bgMode" data-orig="default" onchange="libMarkDirty(this)" style="border-color:#444;background:rgba(255,255,255,0.06);">
         <option value="default" selected>Default</option>
         <option value="transparent">Transp</option>

@@ -1,4 +1,5 @@
 // server.js  —  LiveTimer (version is sourced from changelog.json — see APP_VERSION below)
+// Deploy nudge 2026-06-09 18:11 — no-op comment to force a fresh Render deploy.
 require('dotenv').config();
 const express = require('express');
 const http = require('http');

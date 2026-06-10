@@ -12,7 +12,7 @@
 
 ## Version Numbering
 
-**Current version: 1.00.012.** The version lives in **one place only**: the top (newest) entry of `changelog.json` — `changelog[0].version` IS the app version. The server reads it into `APP_VERSION` at startup.
+**Current version: 1.00.014.** The version lives in **one place only**: the top (newest) entry of `changelog.json` — `changelog[0].version` IS the app version. The server reads it into `APP_VERSION` at startup.
 
 To release a new version, add a new entry to the top of `changelog.json` with the incremented version (by 0.00.001) — that's the single edit. Do NOT hardcode the version anywhere else.
 

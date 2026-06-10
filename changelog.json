@@ -1,5 +1,23 @@
 [
   {
+    "version": "1.00.014",
+    "date": "2026-06-09",
+    "title": "Alarm master switch remembers its setting",
+    "urgent": false,
+    "items": [
+      "The master on/off switch for alarms now stays where you left it after a page refresh (saved per alarm set), instead of always switching back on."
+    ]
+  },
+  {
+    "version": "1.00.013",
+    "date": "2026-06-09",
+    "title": "End Time Label in the Timers grid",
+    "urgent": false,
+    "items": [
+      "The new “Show End Time Label” setting is now a column in the Timers grid, so you can set it per timer right alongside the other fields."
+    ]
+  },
+  {
     "version": "1.00.012",
     "date": "2026-06-07",
     "title": "End-time line can be a text field",

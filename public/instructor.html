@@ -7685,6 +7685,10 @@ function getActiveAlarmSet() {
 function syncAlarmsRef() {
   const set = getActiveAlarmSet();
   alarmsData = set ? set.alarms : [];
+  // Restore the master on/off switch from the active set (persists across refresh)
+  alarmsMasterEnabled = !set || set.masterEnabled !== false;
+  const _mt = document.getElementById('alarmsMasterToggle');
+  if (_mt) _mt.checked = alarmsMasterEnabled;
 }
 
 async function fetchAlarmSets() {
@@ -7706,7 +7710,7 @@ async function fetchAlarmSets() {
 function saveAlarmSetsNow() {
   // Strip transient state from all alarms before saving
   const cleanSets = alarmSetsData.map(s => ({
-    id: s.id, name: s.name,
+    id: s.id, name: s.name, masterEnabled: s.masterEnabled !== false,
     alarms: s.alarms.map(a => {
       const c = { ...a };
       delete c._fired; delete c._firing; delete c._saveTimer;
@@ -8088,6 +8092,9 @@ function hideAlarmSetMenu() {
 
 function toggleAlarmsMaster(on) {
   alarmsMasterEnabled = on;
+  const _set = getActiveAlarmSet();
+  if (_set) _set.masterEnabled = on;
+  saveAlarmSets();
   if (!on) {
     // Stop all currently firing alarms
     alarmsData.forEach(a => {
